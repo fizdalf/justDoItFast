@@ -1,0 +1,8 @@
+{
+  "name": "justDoItFast",
+  "app_id": "ab77c9d1",
+  "type": "ionic-angular",
+  "integrations": {
+    "cordova": {}
+  }
+}
