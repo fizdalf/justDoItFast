@@ -11,21 +11,13 @@ import {GameSessionPreview} from '@org/core/game-session/dto/gameSessionPreview'
 interface JoinSessionPageState {
     sessionId: string | undefined;
     playerName: string | undefined;
-    session: GameSessionPreview | undefined;
+    gameSessionPreview: GameSessionPreview | undefined;
 }
 
 @Injectable()
 export class JoinSessionPageStore extends ComponentStore<JoinSessionPageState> {
-    constructor(
-        private sessionService: GameSessionService,
-        private router: Router
-    ) {
-        super({
-            sessionId: undefined,
-            session: undefined,
-            playerName: undefined,
-        });
-    }
+    private readonly session$ = this.select((state) => state.gameSessionPreview)
+        .pipe(filter(isDefined),);
 
     //// Selectors ////
     public readonly vm$ = this.select(() => {
@@ -34,9 +26,13 @@ export class JoinSessionPageStore extends ComponentStore<JoinSessionPageState> {
             gameSessionPreview: null,
         };
     });
+    private setSession = this.updater((state, session: GameSessionPreview) => {
+        return {
+            ...state,
+            gameSessionPreview: session,
+        };
 
-    private readonly session$ = this.select((state) => state.session)
-        .pipe(filter(isDefined),);
+    })
     //// Updaters ////
     public readonly setSelectedIcon = this.effect<any>((selectedIcon$) => {
         return selectedIcon$.pipe(
@@ -47,13 +43,17 @@ export class JoinSessionPageStore extends ComponentStore<JoinSessionPageState> {
             }),
         );
     });
-    private setSession = this.updater((state, session: GameSessionPreview) => {
-        return {
-            ...state,
-            session: session,
-        };
 
-    })
+    constructor(
+        private sessionService: GameSessionService,
+        private router: Router
+    ) {
+        super({
+            sessionId: undefined,
+            gameSessionPreview: undefined,
+            playerName: undefined,
+        });
+    }
     //// Effects ////
     public readonly loadSession = this.effect<string>((sessionId$: Observable<string>) => {
         return sessionId$.pipe(
