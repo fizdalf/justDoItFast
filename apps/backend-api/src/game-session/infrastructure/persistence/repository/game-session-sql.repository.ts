@@ -34,7 +34,6 @@ export class GameSessionSqlRepository implements GameSessionRepository {
         const [rows, fields] = await this.pool.query<GameSessionRow[]>('select * from game_session where id = ?', [
             id.value,
         ]);
-        console.log(fields, rows);
         if (rows.length == 0) {
             throw new GameSessionNotFoundException(id)
         }
@@ -94,13 +93,10 @@ export class GameSessionSqlRepository implements GameSessionRepository {
 
                 }
             }
-            console.log('done');
         } catch (error) {
-            console.log('rolling back', error);
             await connection.rollback();
             throw error;
         }
-        console.log('committing');
         await connection.commit();
     }
 
