@@ -1,0 +1,84 @@
+.game-session-info {
+  padding: 20px;
+
+  .session-title {
+    font-weight: bold;
+    color: #444;
+    margin-bottom: 20px;
+  }
+
+  .session-details {
+    margin-bottom: 20px;
+    padding-left: 15px;
+
+    h4 {
+      color: #666;
+      margin-bottom: 10px;
+    }
+
+    .team-info {
+      margin-bottom: 20px;
+
+      .team-name {
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 5px;
+      }
+
+      .team-players {
+        padding-left: 10px;
+
+        h5 {
+          font-weight: bold;
+          color: #555;
+          margin-bottom: 5px;
+        }
+
+        .player-name {
+          color: #777;
+        }
+      }
+    }
+  }
+
+  .join-button {
+    padding: 10px 20px;
+    background-color: #009688;
+    color: #fff;
+    cursor: pointer;
+    border: none;
+  }
+
+  .join-button:hover {
+    background-color: #00796b;
+  }
+}
+
+.scan-code-section {
+  padding: 20px;
+
+  .scan-title {
+    font-weight: bold;
+    color: #444;
+    margin-bottom: 20px;
+  }
+
+  .session-id-input {
+    margin: 20px 0;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+
+  .paste-id-button {
+    padding: 10px 20px;
+    background-color: #3f51b5;
+    color: #fff;
+    cursor: pointer;
+    border: none;
+  }
+
+  .paste-id-button:hover {
+    background-color: #303f9f;
+  }
+}
