@@ -16,6 +16,9 @@ import {GameSessionSocketGateway} from './infrastructure/websocket/game-session-
 import {
     GetGameSessionPreviewQueryHandler
 } from './application/get-game-session-preview/get-game-session-preview.query-handler';
+import {
+    GetGameSessionPreviewController
+} from './infrastructure/http/controller/get-session-preview/get-game-session-preview.controller';
 
 const commandHandlers = [
     CreateGameSessionCommandHandler,
@@ -33,6 +36,7 @@ const queryHandlers = [
     controllers: [
         CreateGameSessionController,
         GetCurrentSessionController,
+        GetGameSessionPreviewController,
     ],
     providers: [
         ...commandHandlers,
