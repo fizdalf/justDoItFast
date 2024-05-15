@@ -1,5 +1,5 @@
 import {IQueryHandler, QueryHandler} from '@nestjs/cqrs';
-import {GetCurrentSessionQuery} from '../../domain/query/get-current-session';
+import {GetCurrentSessionQuery} from '../../domain/query/get-current-session.query';
 import {GameSessionId} from '../../domain/valueObjects/GameSessionId';
 import {PlayerId} from '../../domain/valueObjects/PlayerId';
 import {CurrentGameSessionGetter} from '../../domain/service/CurrentGameSessionGetter';
