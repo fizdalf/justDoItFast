@@ -7,6 +7,8 @@ import {GameSessionService} from '../../services/game-session/gameSessionService
 import {ImpGameSessionService} from '../../services/game-session/ImpGameSessionService';
 import {HttpClientModule} from '@angular/common/http';
 import {WebsocketService} from '../../services/websocket/websocket.service';
+import {MatDialog} from '@angular/material/dialog';
+import {PlayerNameRequestDialog} from './components/player-name-request-dialog.component';
 
 @Component({
     selector: 'org-join-session-page',
@@ -33,7 +35,7 @@ export class JoinSessionPageComponent {
     scanFormats: any = ['QR_CODE'];
     vm$ = this.store.vm$;
 
-    constructor(private store: JoinSessionPageStore) {
+    constructor(private store: JoinSessionPageStore, private dialog: MatDialog, private sessionService: GameSessionService) {
 
     }
 
@@ -45,7 +47,12 @@ export class JoinSessionPageComponent {
         // this.store.setSelectedIcon($event);
     }
 
-    joinSession() {
+    joinSession(sessionId: string) {
+        const dialogRef = this.dialog.open(PlayerNameRequestDialog);
 
+        dialogRef.afterClosed().subscribe(result => {
+            if (!result) return;
+            this.sessionService.joinSession(sessionId, result);
+        });
     }
 }
