@@ -9,7 +9,7 @@ import {PlayerName} from '../../../domain/valueObjects/PlayerName';
 import {GameSessionToken} from '../../../domain/valueObjects/GameSessionToken';
 import {JwtService} from '@nestjs/jwt';
 
-export class CreateGameSessionRequestParams {
+export abstract class CreateGameSessionRequestParams {
     @IsNotEmpty()
     hostPlayerName: string;
 }
