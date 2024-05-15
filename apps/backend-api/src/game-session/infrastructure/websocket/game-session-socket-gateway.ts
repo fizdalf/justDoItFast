@@ -10,6 +10,11 @@ import {Server, Socket} from 'socket.io';
 import {Injectable} from '@nestjs/common';
 import {GameSessionToken} from '../../domain/valueObjects/GameSessionToken';
 import {AuthenticationService} from '../authentication/AuthenticationService';
+import {PlayerJoinedGameSessionEvent} from '@org/core/game-session/websocket-events/PlayerJoinedGameSessionEvent';
+import {
+    LoginWebsocketEvent,
+    LoginWebsocketEventPayload
+} from '@org/core/game-session/websocket-events/LoginWebsocketEvent';
 
 
 @WebSocketGateway({cors: {origin: '*'}})
@@ -24,25 +29,21 @@ export class GameSessionSocketGateway implements OnGatewayInit {
 
     }
 
-    @SubscribeMessage('login')
-    async handleEvent(@MessageBody() authToken: string, @ConnectedSocket() client: Socket): Promise<string> {
-        const resp = await this.authService.validateToken(authToken);
+    @SubscribeMessage(LoginWebsocketEvent.eventName())
+    async handleEvent(@MessageBody() payload: LoginWebsocketEventPayload, @ConnectedSocket() client: Socket): Promise<string> {
+        const resp = await this.authService.validateToken(payload.token);
         const token = new GameSessionToken({
             gameSessionId: resp.gameSessionId,
             playerName: resp.playerName,
             playerId: resp.playerId,
             isHost: resp.isHost
-        })
-        console.log('gameSessionId', token.gameSessionId);
-
+        });
         client.join(token.gameSessionId);
-
-        this.server.to(token.gameSessionId).emit('room-event', {someData: token.gameSessionId});
-
         return 'ok';
     }
 
     async informPlayerJoined(gameSessionId: string, playerName: string) {
-        this.server.to(gameSessionId).emit('player-joined', {playerName});
+        const event = new PlayerJoinedGameSessionEvent(playerName);
+        this.server.to(gameSessionId).emit(PlayerJoinedGameSessionEvent.eventName(), event.payload());
     }
 }

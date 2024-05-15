@@ -35,8 +35,6 @@ export class ImpGameSessionService implements GameSessionService {
                 }
             })
         );
-
-        await this.socketService.emit('login', sessionStorage.getItem('gameSessionToken'));
         return rehydrateGameSession(response);
     }
 

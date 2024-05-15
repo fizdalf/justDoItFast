@@ -23,14 +23,27 @@ import {
 } from './infrastructure/http/controller/get-session-preview/get-game-session-preview.controller';
 import {JoinSessionController} from './infrastructure/http/controller/join-session/join-session.controller';
 import {JoinGameSessionCommandHandler} from './application/join-game-session/join-game-session.command-handler';
+import {OnGameSessionJoinedEventHandler} from './infrastructure/websocket/on-game-session-joined.event-handler';
+import {LeaveGameSessionCommandHandler} from './application/leave-game-session/leave-game-session.command-handler';
+import {
+    DisconnectIdlePlayersFromGameSessionTask
+} from './infrastructure/cron/disconnect-idle-players-from-game-session.task';
 
 const commandHandlers = [
     CreateGameSessionCommandHandler,
     JoinGameSessionCommandHandler,
+    LeaveGameSessionCommandHandler,
 ];
 const queryHandlers = [
     GetCurrentSessionQueryHandler,
     GetGameSessionPreviewQueryHandler,
+];
+const eventHandlers = [
+    OnGameSessionJoinedEventHandler,
+];
+
+const tasks = [
+    DisconnectIdlePlayersFromGameSessionTask,
 ];
 
 @Module({
@@ -47,6 +60,8 @@ const queryHandlers = [
     providers: [
         ...commandHandlers,
         ...queryHandlers,
+        ...eventHandlers,
+        ...tasks,
         AuthenticationService,
         {
             provide: GameSessionRepository,

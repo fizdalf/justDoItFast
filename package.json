@@ -69,6 +69,7 @@
     "@nestjs/jwt": "^10.2.0",
     "@nestjs/platform-express": "^10.0.2",
     "@nestjs/platform-socket.io": "^10.3.3",
+    "@nestjs/schedule": "^4.0.2",
     "@nestjs/websockets": "^10.3.3",
     "@ngrx/component-store": "^17.1.0",
     "@zxing/ngx-scanner": "^17.0.3",

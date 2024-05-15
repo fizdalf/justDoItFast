@@ -6,6 +6,7 @@ import {Player} from '../entities/Player';
 import {AggregateRoot} from '@nestjs/cqrs';
 import {GameSessionCreatedDomainEvent} from '../events/game-session-created.event';
 import {GameSessionPlayerJoinedEvent} from '../events/game-session-player-joined.event';
+import {GameSessionPlayerLeftEvent} from '../events/game-session-player-left.event';
 
 export interface GameSessionParams {
     id: GameSessionId;
@@ -93,5 +94,14 @@ export class GameSession extends AggregateRoot {
 
     hostPlayerName() {
         return this.teams.find(team => team.players.some(player => player.id.equals(this.host)))?.players.find(player => player.id.equals(this.host))?.name;
+    }
+
+    leave(playerId: PlayerId) {
+        if(!this.isPlayerInSession(playerId)) {
+            return;
+        }
+
+        this.removePlayer(playerId);
+        this.apply(new GameSessionPlayerLeftEvent(this.id.value, playerId.value));
     }
 }

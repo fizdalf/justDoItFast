@@ -1,9 +1,17 @@
 import {Injectable} from '@angular/core';
 import {ComponentStore} from '@ngrx/component-store';
-import {Observable, tap} from 'rxjs';
+import {combineLatest, Observable, startWith, switchMap, tap} from 'rxjs';
 import {GameSessionService} from '../../services/game-session/gameSessionService';
-import {fromPromise} from 'rxjs/internal/observable/innerFrom';
 import {GameSession, Team} from '../../services/game-session/gameSession';
+import {WebsocketService} from '../../services/websocket/websocket.service';
+import {
+    PlayerJoinedGameSessionEvent,
+    PlayerJoinedGameSessionEventPayload
+} from '@org/core/game-session/websocket-events/PlayerJoinedGameSessionEvent';
+import {
+    LoginWebsocketEvent,
+    LoginWebsocketEventPayload
+} from '@org/core/game-session/websocket-events/LoginWebsocketEvent';
 
 export interface CreateSessionPageViewModel {
     playerCount: number;
@@ -25,11 +33,22 @@ function totalPlayerCount(teams: Team[] | undefined): number {
 
 @Injectable()
 export class CreateSessionPageStore extends ComponentStore<CreateSessionPageState> {
-    constructor(
-        private readonly sessionService: GameSessionService,
-    ) {
-        super({sessionId: undefined, session: undefined});
-    }
+    private readonly logInWebSocket = this.effect((trigger$) =>
+        combineLatest([
+            trigger$,
+            this.websocketService.on('connect').pipe(
+                tap(() => {
+                    console.log('connected again?')
+                }),
+                startWith(undefined),
+            )
+        ]).pipe(
+            tap(() => {
+                console.log('trying to login in websocket');
+                this.websocketService.emit<LoginWebsocketEventPayload>(LoginWebsocketEvent.eventName(), {token: sessionStorage.getItem('gameSessionToken') ?? ''});
+            })
+        )
+    );
 
     //// SELECTORS ////
 
@@ -52,12 +71,28 @@ export class CreateSessionPageStore extends ComponentStore<CreateSessionPageStat
         };
     });
     //// EFFECTS ////
-
-    public readonly fetchSession = this.effect(() =>
-        fromPromise(this.sessionService.openSession())
-            .pipe(
-                tap((session) => this.setSession(session)),
-            )
+    public readonly fetchSession = this.effect((trigger$) =>
+        trigger$.pipe(
+            switchMap(() => this.sessionService.openSession()),
+            tap((session) => {
+                this.logInWebSocket();
+                this.setSession(session);
+            }),
+        )
     );
+    private readonly onSessionJoin = this.effect(() => {
+            return this.websocketService.on<PlayerJoinedGameSessionEventPayload>(PlayerJoinedGameSessionEvent.eventName())
+                .pipe(
+                    tap(({playerName}) => this.fetchSession())
+                );
+        }
+    );
+
+    constructor(
+        private readonly sessionService: GameSessionService,
+        private readonly websocketService: WebsocketService,
+    ) {
+        super({sessionId: undefined, session: undefined});
+    }
 }
 
