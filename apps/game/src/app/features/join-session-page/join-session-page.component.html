@@ -5,7 +5,6 @@
         </h3>
         <div class="session-details">
             <h4>Host: {{ vm.gameSessionPreview.hostPlayerName }}</h4>
-            <h4>Number of teams: {{ vm.gameSessionPreview.teams.length }}</h4>
             <div *ngFor="let team of vm.gameSessionPreview.teams; index as i" class="team-info">
                 <div class="team-name">Team {{ i + 1 }}</div>
                 <div class="team-players">
