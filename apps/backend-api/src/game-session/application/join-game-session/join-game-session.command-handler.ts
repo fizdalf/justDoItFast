@@ -1,4 +1,4 @@
-import {ICommandHandler, IEventBus,} from '@nestjs/cqrs';
+import {CommandHandler, EventBus, ICommandHandler, IEventBus,} from '@nestjs/cqrs';
 import {JoinGameSessionCommand} from '../../domain/commands/join-game-session.command';
 import {GameSessionRepository} from '../../domain/repositories/game-session.repository';
 import {Player} from '../../domain/entities/Player';
@@ -7,10 +7,12 @@ import {GameSessionId} from '../../domain/valueObjects/GameSessionId';
 import {PlayerId} from '../../domain/valueObjects/PlayerId';
 import {PlayerName} from '../../domain/valueObjects/PlayerName';
 
+
+@CommandHandler(JoinGameSessionCommand)
 export class JoinGameSessionCommandHandler implements ICommandHandler<JoinGameSessionCommand> {
     constructor(
         @Inject(GameSessionRepository) private readonly gameSessionRepository: GameSessionRepository,
-        private eventBus: IEventBus
+        @Inject(EventBus) private eventBus: IEventBus
     ) {
     }
 
