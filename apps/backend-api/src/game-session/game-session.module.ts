@@ -21,6 +21,7 @@ import {
 import {
     GetGameSessionPreviewController
 } from './infrastructure/http/controller/get-session-preview/get-game-session-preview.controller';
+import {JoinSessionController} from './infrastructure/http/controller/join-session/join-session.controller';
 
 const commandHandlers = [
     CreateGameSessionCommandHandler,
@@ -39,6 +40,7 @@ const queryHandlers = [
         CreateGameSessionController,
         GetCurrentSessionController,
         GetGameSessionPreviewController,
+        JoinSessionController,
     ],
     providers: [
         ...commandHandlers,
