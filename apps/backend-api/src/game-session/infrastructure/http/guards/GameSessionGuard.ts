@@ -27,7 +27,6 @@ export class GameSessionGuard implements CanActivate {
             })
             return true;
         } catch (e) {
-            console.log('Auth error', e);
             throw new ForbiddenException('Invalid token');
         }
     }
