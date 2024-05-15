@@ -105,7 +105,7 @@ export class GameSessionSqlRepository implements GameSessionRepository {
     }
 
     private async getTeams(id: GameSessionId) {
-        const [rows, fields] = await this.pool.query<RowDataPacket[]>('select * from team where game_session_id = ?', [
+        const [rows] = await this.pool.query<RowDataPacket[]>('select * from team where game_session_id = ?', [
             id.value,
         ]);
 
@@ -123,7 +123,7 @@ export class GameSessionSqlRepository implements GameSessionRepository {
     }
 
     private async getPlayers(id: any) {
-        const [rows, fields] = await this.pool.query<RowDataPacket[]>('select * from team_player where team_id = ?', [
+        const [rows] = await this.pool.query<RowDataPacket[]>('select * from team_player where team_id = ?', [
             id,
         ]);
 
