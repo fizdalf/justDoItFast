@@ -42,4 +42,7 @@ export class GameSessionSocketGateway implements OnGatewayInit {
         return 'ok';
     }
 
+    async informPlayerJoined(gameSessionId: string, playerName: string) {
+        this.server.to(gameSessionId).emit('player-joined', {playerName});
+    }
 }
