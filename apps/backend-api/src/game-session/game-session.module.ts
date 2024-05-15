@@ -12,6 +12,7 @@ import {AuthenticationService} from './infrastructure/authentication/Authenticat
 import {GetCurrentSessionQueryHandler} from './application/get-current-session/get-current-session.query-handler';
 import {CurrentGameSessionGetter} from './domain/service/CurrentGameSessionGetter';
 import {CurrentGameSessionMysqlGetter} from './infrastructure/persistence/CurrentGameSessionMysqlGetter';
+import {GameSessionSocketGateway} from './infrastructure/websocket/game-session-socket-gateway';
 
 const commandHandlers = [
     CreateGameSessionCommandHandler,
@@ -40,7 +41,8 @@ const queryHandlers = [
         {
             provide: CurrentGameSessionGetter,
             useClass: CurrentGameSessionMysqlGetter
-        }
+        },
+        GameSessionSocketGateway
     ]
 })
 export class GameSessionModule {
