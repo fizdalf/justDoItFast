@@ -1,12 +1,14 @@
 import {Injectable} from '@angular/core';
 import {ComponentStore} from '@ngrx/component-store';
 import {GameSessionService} from '../../services/game-session/gameSessionService';
-import {combineLatestWith, filter, Observable, switchMap, tap} from 'rxjs';
+import {Observable, switchMap, tap} from 'rxjs';
 import {Router} from '@angular/router';
-import {isDefined} from '../create-session-page/is.defined';
 
 import {GameSessionPreview} from '@org/core/game-session/dto/gameSessionPreview';
 
+export interface JoinSessionPageStateViewModel {
+    gameSessionPreview: GameSessionPreview | null;
+}
 
 interface JoinSessionPageState {
     sessionId: string | undefined;
@@ -16,16 +18,16 @@ interface JoinSessionPageState {
 
 @Injectable()
 export class JoinSessionPageStore extends ComponentStore<JoinSessionPageState> {
-    private readonly session$ = this.select((state) => state.gameSessionPreview)
-        .pipe(filter(isDefined),);
+    private readonly session$ = this.select((state) => state.gameSessionPreview);
 
     //// Selectors ////
-    public readonly vm$ = this.select(() => {
-        return {
-            availableIcons: [],
-            gameSessionPreview: null,
-        };
-    });
+    public readonly vm$: Observable<{ gameSessionPreview: GameSessionPreview | undefined }> = this.select(
+        this.session$,
+        (session: GameSessionPreview | undefined) => {
+            return {
+                gameSessionPreview: session,
+            };
+        });
     private setSession = this.updater((state, session: GameSessionPreview) => {
         return {
             ...state,
@@ -33,16 +35,16 @@ export class JoinSessionPageStore extends ComponentStore<JoinSessionPageState> {
         };
 
     })
-    //// Updaters ////
-    public readonly setSelectedIcon = this.effect<any>((selectedIcon$) => {
-        return selectedIcon$.pipe(
-            combineLatestWith(this.session$),
-            switchMap(async ([selectedIcon, session]) => {
-                await this.sessionService.joinSession(session.id, selectedIcon.name);
-                this.router.navigate(['/', 'session-join-waiting-room', session.id]);
-            }),
-        );
-    });
+    // //// Updaters ////
+    // public readonly setSelectedIcon = this.effect<any>((selectedIcon$) => {
+    //     return selectedIcon$.pipe(
+    //         combineLatestWith(this.session$),
+    //         switchMap(async ([selectedIcon, session]) => {
+    //             await this.sessionService.joinSession(session.id, selectedIcon.name);
+    //             this.router.navigate(['/', 'session-join-waiting-room', session.id]);
+    //         }),
+    //     );
+    // });
 
     constructor(
         private sessionService: GameSessionService,
@@ -54,6 +56,7 @@ export class JoinSessionPageStore extends ComponentStore<JoinSessionPageState> {
             playerName: undefined,
         });
     }
+
     //// Effects ////
     public readonly loadSession = this.effect<string>((sessionId$: Observable<string>) => {
         return sessionId$.pipe(

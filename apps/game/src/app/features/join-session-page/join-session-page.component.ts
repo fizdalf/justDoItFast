@@ -2,7 +2,6 @@ import {Component} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {ZXingScannerModule} from '@zxing/ngx-scanner';
 import {SelectIconComponent} from '../select-icon-page/components/select-icon/select-icon.component';
-import {Observable} from 'rxjs';
 import {JoinSessionPageStore} from './join-session-page.store';
 import {GameSessionService} from '../../services/game-session/gameSessionService';
 import {ImpGameSessionService} from '../../services/game-session/ImpGameSessionService';
@@ -32,7 +31,7 @@ import {WebsocketService} from '../../services/websocket/websocket.service';
 })
 export class JoinSessionPageComponent {
     scanFormats: any = ['QR_CODE'];
-    vm$: Observable<any> = this.store.vm$;
+    vm$ = this.store.vm$;
 
     constructor(private store: JoinSessionPageStore) {
 
@@ -43,6 +42,10 @@ export class JoinSessionPageComponent {
     }
 
     setSelectedIcon($event: any) {
-        this.store.setSelectedIcon($event);
+        // this.store.setSelectedIcon($event);
+    }
+
+    joinSession() {
+
     }
 }
