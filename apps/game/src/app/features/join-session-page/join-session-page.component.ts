@@ -9,6 +9,7 @@ import {HttpClientModule} from '@angular/common/http';
 import {WebsocketService} from '../../services/websocket/websocket.service';
 import {MatDialog} from '@angular/material/dialog';
 import {PlayerNameRequestDialog} from './components/player-name-request-dialog.component';
+import {Router} from '@angular/router';
 
 @Component({
     selector: 'org-join-session-page',
@@ -35,7 +36,12 @@ export class JoinSessionPageComponent {
     scanFormats: any = ['QR_CODE'];
     vm$ = this.store.vm$;
 
-    constructor(private store: JoinSessionPageStore, private dialog: MatDialog, private sessionService: GameSessionService) {
+    constructor(
+        private store: JoinSessionPageStore,
+        private dialog: MatDialog,
+        private sessionService: GameSessionService,
+        private router: Router,
+    ) {
 
     }
 
@@ -50,9 +56,11 @@ export class JoinSessionPageComponent {
     joinSession(sessionId: string) {
         const dialogRef = this.dialog.open(PlayerNameRequestDialog);
 
-        dialogRef.afterClosed().subscribe(result => {
+        dialogRef.afterClosed().subscribe(async result => {
             if (!result) return;
-            this.sessionService.joinSession(sessionId, result);
+            const gameSessionToken = await this.sessionService.joinSession(sessionId, result);
+            sessionStorage.setItem('gameSessionToken', gameSessionToken);
+            this.router.navigate(['/', 'create-session']);
         });
     }
 }
