@@ -1,66 +1,67 @@
-import {Inject, Injectable} from '@angular/core';
+import {Injectable} from '@angular/core';
 import {ComponentStore} from '@ngrx/component-store';
-import {ActivatedRoute} from '@angular/router';
-import {APP_URL} from '../../app.config';
-import {filter, map, Observable, switchMap, tap} from 'rxjs';
+import {filter, Observable, switchMap, tap} from 'rxjs';
 import {isDefined} from './is.defined';
-import {SessionService} from '../../services/game-session/session.service';
-import {SessionId} from '../../services/game-session/SessionId';
+import {GameSessionService} from '../../services/game-session/gameSessionService';
+import {IconListService} from '../../services/icon-list/icon-list.service';
+import {fromPromise} from 'rxjs/internal/observable/innerFrom';
+import {GameSession, Team} from '../../services/game-session/gameSession';
 
 export interface CreateSessionPageViewModel {
-    joinUrl: string | undefined;
+    playerCount: number;
+    sessionId: string | undefined;
+    teams: Team[]
 }
 
 interface CreateSessionPageState {
-    sessionId: SessionId | undefined;
-    joinUrl: string | undefined;
+    session: GameSession | undefined;
+    sessionId: string | undefined;
+}
+
+function totalPlayerCount(teams: Team[] | undefined): number {
+    if (!teams) {
+        return 0;
+    }
+    return teams.reduce((acc, team) => acc + team.players.length, 0);
 }
 
 @Injectable()
 export class CreateSessionPageStore extends ComponentStore<CreateSessionPageState> {
-
     constructor(
-        private readonly activatedRoute: ActivatedRoute,
-        @Inject(APP_URL) private readonly appUrl: string,
-        private readonly sessionService: SessionService
+        private readonly sessionService: GameSessionService,
     ) {
-        super({joinUrl: undefined, sessionId: undefined});
+        super({sessionId: undefined, session: undefined});
     }
 
     //// SELECTORS ////
-    vm$: Observable<CreateSessionPageViewModel> = this.select((state) => {
-        return {
-            joinUrl: state.joinUrl,
-        };
-    });
 
-    sessionId$ = this.select((state) => state.sessionId);
+    private sessionId$ = this.select((state) => state.session?.id);
+    private playerCount$ = this.select((state) => totalPlayerCount(state.session?.teams));
+
+    private teams$ = this.select((state) => state.session?.teams ?? []);
+    private session$ = this.select((state) => state.session);
+
+    vm$: Observable<CreateSessionPageViewModel> = this.select(
+        {
+            sessionId: this.sessionId$,
+            playerCount: this.playerCount$,
+            teams: this.teams$,
+        }, {debounce: true});
 
     //// UPDATERS ////
-    private readonly setSessionId = this.updater((state, sessionId: SessionId) => {
+    private readonly setSession = this.updater((state, session: GameSession): CreateSessionPageState => {
         return {
             ...state,
-            joinUrl: `${this.appUrl}/join-session/${sessionId.value}`,
-            sessionId
+            session,
         };
     });
     //// EFFECTS ////
 
-    private readonly setSessionIdFromQueryParams = this.effect(() =>
-
-        this.activatedRoute.params.pipe(
-            filter((params) => params['sessionId'] !== undefined),
-            map((params) => params['sessionId']),
-            tap((sessionId) => this.setSessionId(new SessionId(sessionId as string)))
-        ));
-
-    private readonly onSessionUpdated = this.effect(() =>
-        this.sessionId$.pipe(
-            filter(isDefined),
-            switchMap((sessionId) => this.sessionService.onSessionUpdated(sessionId)),
-            tap(console.log)
-        )
+    public readonly fetchSession = this.effect(() =>
+        fromPromise(this.sessionService.openSession())
+            .pipe(
+                tap((session) => this.setSession(session)),
+            )
     );
-
 }
 

@@ -1,0 +1,28 @@
+<ng-container *ngIf="vm$ |async as vm">
+
+    <div *ngIf="vm.playerCount < 4">
+        A minimum of 4 people are required to play the game.
+    </div>
+    <div *ngIf="vm.playerCount > 4 && vm.playerCount % 2 !==0">
+        The number of players should be even.
+    </div>
+    <div>
+        Share this QR code with your friends to join you in this game session.
+    </div>
+    <div class="qr-container">
+        <qrcode value="{{ vm.sessionId}}"></qrcode>
+        <div>
+            GameSessionId: {{ vm.sessionId |json }}
+        </div>
+    </div>
+    <div *ngFor="let team of vm.teams">
+        <div>
+            <h3>Team</h3>
+            <div *ngFor="let player of team.players; trackBy: trackByPlayerId ">
+                <div>
+                    <span>{{ player.name }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</ng-container>

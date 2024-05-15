@@ -1,0 +1,11 @@
+<div *ngIf="vm$ |async as vm">
+    <div>
+        <mat-label>Player Name</mat-label>
+        <input type="text" [formControl]="playerName">
+    </div>
+    <div>
+        <button [disabled]="!vm.name" (click)="createSession()">
+            Create Session
+        </button>
+    </div>
+</div>

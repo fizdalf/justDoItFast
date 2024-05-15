@@ -1,30 +1,24 @@
 import {SessionEvent} from './session.event';
 import {SessionEventType} from './session-event.type';
-import {Icon} from '../icon';
-import {SessionId} from '../SessionId';
 
 export class SessionCreatedEvent implements SessionEvent {
     type: SessionEventType = 'session.created';
 
-    constructor(public sessionId: SessionId, public hostIcon: Icon) {
+    constructor(public sessionId: string, public hostName: string) {
     }
 
     toPrimitives(): object {
         return {
             type: this.type,
-            sessionId: this.sessionId.value,
-            hostIcon: this.hostIcon.name,
-            hostIconUrl: this.hostIcon.url
+            sessionId: this.sessionId,
+            hostName: this.hostName,
         };
     }
 
     static fromPrimitives(primitives: any): SessionEvent {
         return new SessionCreatedEvent(
-            new SessionId(primitives['sessionId']),
-            {
-                name: primitives['hostIcon'],
-                url: primitives['hostIconUrl']
-            }
+            primitives['sessionId'],
+            primitives['hostName'],
         );
     }
 

@@ -1,0 +1,23 @@
+<ng-container *ngIf="vm$ | async as vm">
+
+    <div *ngIf="vm.availableIcons; else scanCode">
+        <org-select-icon [availableIcons]="vm.availableIcons"
+                         (iconSelected)="setSelectedIcon($event)"></org-select-icon>
+    </div>
+    <ng-template #scanCode>
+        <h3>
+            Please scan the QR code to join the game
+        </h3>
+        <zxing-scanner style="width: 50%"
+                       (scanSuccess)="setSessionId($event)"
+                       [formats]="scanFormats"
+        ></zxing-scanner>
+        <input placeholder="Paste session Id" #sessionIdInput>
+        <button (click)="setSessionId(sessionIdInput.value)" [disabled]="!sessionIdInput.value">Use Pasted sessionId
+        </button>
+    </ng-template>
+</ng-container>
+
+
+
+

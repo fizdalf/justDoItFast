@@ -1,1 +1,1 @@
-export declare type SessionEventType = 'session.joined' | 'session.created';
+export declare type SessionEventType = 'session.joined' | 'session.created' | 'session.left';

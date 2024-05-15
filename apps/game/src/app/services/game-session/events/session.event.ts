@@ -1,8 +1,7 @@
 import {SessionEventType} from './session-event.type';
-import {SessionId} from '../SessionId';
 
 export abstract class SessionEvent {
-    protected constructor(public type: SessionEventType, public sessionId: SessionId) {
+    protected constructor(public type: SessionEventType, public sessionId: string) {
         this.type = type;
         this.sessionId = sessionId;
     }
