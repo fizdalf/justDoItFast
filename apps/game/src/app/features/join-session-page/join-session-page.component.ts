@@ -49,10 +49,6 @@ export class JoinSessionPageComponent {
         this.store.loadSession(sessionId);
     }
 
-    setSelectedIcon($event: any) {
-        // this.store.setSelectedIcon($event);
-    }
-
     joinSession(sessionId: string) {
         const dialogRef = this.dialog.open(PlayerNameRequestDialog);
 
