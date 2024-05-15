@@ -6,6 +6,7 @@ import {IconListService} from './services/icon-list/icon-list.service';
 import {IdentityService} from './services/identity-service/identity.service';
 import {SessionStorageIdentityService} from './services/identity-service/session-storage-identity.service';
 import {io} from 'socket.io-client';
+import {environment} from '../environments/environment';
 
 
 @Component({
@@ -34,17 +35,12 @@ export class AppComponent {
 
     constructor() {
 
-        const socket = io('http://localhost:3000');
+        const socket = io(environment.socketUrl);
 
 
 
         socket.on('connect', () => {
             console.log('connected');
-
-            socket.emit('events', {test: 'test'});
-            socket.emit('identity', 0, (response: any) =>
-                console.log('Identity:', response),
-            );
 
         });
 
