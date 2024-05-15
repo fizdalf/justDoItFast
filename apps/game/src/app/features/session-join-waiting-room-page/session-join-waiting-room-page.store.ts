@@ -4,7 +4,6 @@ import {GameSessionService} from '../../services/game-session/gameSessionService
 import {ActivatedRoute} from '@angular/router';
 
 import {tap, withLatestFrom} from 'rxjs';
-import {IdentityService} from '../../services/identity-service/identity.service';
 import {GameSession} from '../../services/game-session/gameSession';
 
 
@@ -19,7 +18,6 @@ export class SessionJoinWaitingRoomPageStore extends ComponentStore<SessionJoinW
     constructor(
         private readonly activatedRoute: ActivatedRoute,
         private readonly sessionService: GameSessionService,
-        private readonly identityService: IdentityService
     ) {
         super({
             session: undefined,

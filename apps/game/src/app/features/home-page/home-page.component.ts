@@ -1,7 +1,7 @@
 import {Component} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {RouterLink} from '@angular/router';
-import {IdentityService} from '../../services/identity-service/identity.service';
+
 
 @Component({
     selector: 'org-home-page',
@@ -11,8 +11,8 @@ import {IdentityService} from '../../services/identity-service/identity.service'
     styleUrl: './home-page.component.scss',
 })
 export class HomePageComponent {
-    constructor(private readonly identityService: IdentityService) {
-        this.identityService.clearIdentity();
+    constructor() {
+
     }
 
 }
