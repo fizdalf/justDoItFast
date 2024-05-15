@@ -4,7 +4,8 @@ import {GameSessionService} from '../../services/game-session/gameSessionService
 import {combineLatestWith, filter, Observable, switchMap, tap} from 'rxjs';
 import {Router} from '@angular/router';
 import {isDefined} from '../create-session-page/is.defined';
-import {GameSessionPreview} from '../../services/game-session/gameSession';
+
+import {GameSessionPreview} from '@org/core/game-session/dto/gameSessionPreview';
 
 
 interface JoinSessionPageState {

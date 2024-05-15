@@ -2,8 +2,9 @@ import {firstValueFrom, Observable} from 'rxjs';
 import {GameSessionService} from './gameSessionService';
 import {HttpClient} from '@angular/common/http';
 import {Injectable} from '@angular/core';
-import {GameSession, GameSessionPreview} from './gameSession';
+import {GameSession} from './gameSession';
 import {WebsocketService} from '../websocket/websocket.service';
+import {GameSessionPreview} from '@org/core/game-session/dto/gameSessionPreview';
 
 
 @Injectable()
