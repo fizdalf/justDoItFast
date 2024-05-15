@@ -13,12 +13,16 @@ import {GetCurrentSessionQueryHandler} from './application/get-current-session/g
 import {CurrentGameSessionGetter} from './domain/service/CurrentGameSessionGetter';
 import {CurrentGameSessionMysqlGetter} from './infrastructure/persistence/CurrentGameSessionMysqlGetter';
 import {GameSessionSocketGateway} from './infrastructure/websocket/game-session-socket-gateway';
+import {
+    GetGameSessionPreviewQueryHandler
+} from './application/get-game-session-preview/get-game-session-preview.query-handler';
 
 const commandHandlers = [
     CreateGameSessionCommandHandler,
 ];
 const queryHandlers = [
     GetCurrentSessionQueryHandler,
+    GetGameSessionPreviewQueryHandler,
 ];
 
 @Module({
