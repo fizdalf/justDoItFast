@@ -1,6 +1,8 @@
 import {Module} from "@nestjs/common";
 import {CreateGameSessionCommandHandler} from './application/create-game-session/create-game-session.command-handler';
-import {CreateGameSessionController} from './infrastructure/http/controller/create-game-session.controller';
+import {
+    CreateGameSessionController
+} from './infrastructure/http/controller/create-game-session/create-game-session.controller';
 import {CqrsModule} from '@nestjs/cqrs';
 import {GameSessionSqlRepository} from './infrastructure/persistence/repository/game-session-sql.repository';
 import {GameSessionRepository} from './domain/repositories/game-session.repository';
