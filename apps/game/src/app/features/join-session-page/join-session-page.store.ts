@@ -30,7 +30,7 @@ export class JoinSessionPageStore extends ComponentStore<JoinSessionPageState> {
     }
 
     //// Selectors ////
-    public readonly vm$ = this.select((state) => {
+    public readonly vm$ = this.select(() => {
         return {
             availableIcons: [],
         };
@@ -54,7 +54,7 @@ export class JoinSessionPageStore extends ComponentStore<JoinSessionPageState> {
     //// Effects ////
     public readonly loadSession = this.effect<string>((sessionId$: Observable<string>) => {
         return sessionId$.pipe(
-            switchMap((sessionId) => this.sessionService.openSession()),
+            switchMap(() => this.sessionService.openSession()),
             tap((session) => this.setSession(session))
         );
     });

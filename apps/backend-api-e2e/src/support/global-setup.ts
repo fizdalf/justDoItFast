@@ -1,4 +1,5 @@
 /* eslint-disable */
+// noinspection JSUnusedLocalSymbols
 var __TEARDOWN_MESSAGE__: string;
 
 module.exports = async function () {

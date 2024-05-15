@@ -1,4 +1,4 @@
-import {UUID, uuidv7} from 'uuidv7';
+import {UUID} from 'uuidv7';
 import {ValueObject} from '@org/core/shared/domain/ValueObject';
 
 

@@ -10,12 +10,12 @@ export class GameSessionGuard implements CanActivate {
     }
 
     async canActivate(context: ExecutionContext) {
+        const request = context.switchToHttp().getRequest();
+        const {authorization}: any = request.headers;
+        if (!authorization || authorization.trim() === '') {
+            throw new UnauthorizedException('Please provide token');
+        }
         try {
-            const request = context.switchToHttp().getRequest();
-            const {authorization}: any = request.headers;
-            if (!authorization || authorization.trim() === '') {
-                throw new UnauthorizedException('Please provide token');
-            }
             const authToken = authorization.replace(/bearer/gim, '').trim();
 
             const resp = await this.authService.validateToken(authToken);

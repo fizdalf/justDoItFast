@@ -1,9 +1,7 @@
 import {Injectable} from '@angular/core';
 import {ComponentStore} from '@ngrx/component-store';
-import {filter, Observable, switchMap, tap} from 'rxjs';
-import {isDefined} from './is.defined';
+import {Observable, tap} from 'rxjs';
 import {GameSessionService} from '../../services/game-session/gameSessionService';
-import {IconListService} from '../../services/icon-list/icon-list.service';
 import {fromPromise} from 'rxjs/internal/observable/innerFrom';
 import {GameSession, Team} from '../../services/game-session/gameSession';
 
@@ -37,9 +35,7 @@ export class CreateSessionPageStore extends ComponentStore<CreateSessionPageStat
 
     private sessionId$ = this.select((state) => state.session?.id);
     private playerCount$ = this.select((state) => totalPlayerCount(state.session?.teams));
-
     private teams$ = this.select((state) => state.session?.teams ?? []);
-    private session$ = this.select((state) => state.session);
 
     vm$: Observable<CreateSessionPageViewModel> = this.select(
         {
