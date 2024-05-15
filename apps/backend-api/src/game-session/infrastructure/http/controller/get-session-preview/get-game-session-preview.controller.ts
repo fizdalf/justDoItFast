@@ -1,4 +1,4 @@
-import {Controller, Get, Query} from '@nestjs/common';
+import {Controller, Get, Param} from '@nestjs/common';
 import {QueryBus} from '@nestjs/cqrs';
 import {GetGameSessionPreviewQuery} from '../../../../domain/query/get-game-session-preview.query';
 
@@ -9,7 +9,7 @@ export class GetGameSessionPreviewController {
     }
 
     @Get()
-    async createGameSession(@Query('sessionId') sessionId: string) {
+    async createGameSession(@Param('sessionId') sessionId: string) {
 
         return await this.queryBus.execute(new GetGameSessionPreviewQuery(sessionId));
     }
