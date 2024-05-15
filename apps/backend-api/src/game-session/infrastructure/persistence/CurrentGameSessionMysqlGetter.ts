@@ -3,6 +3,7 @@ import {GameSessionRepository} from '../../domain/repositories/game-session.repo
 import {GameSessionId} from '../../domain/valueObjects/GameSessionId';
 import {PlayerId} from '../../domain/valueObjects/PlayerId';
 import {Inject, Injectable} from '@nestjs/common';
+import {GameSession} from '../../domain/aggregateRoots/GameSession';
 
 class PlayerNotInSessionException extends Error {
     constructor(playerId: PlayerId, gameSessionId: GameSessionId) {
@@ -18,9 +19,7 @@ export class CurrentGameSessionMysqlGetter implements CurrentGameSessionGetter {
     async execute(gameSessionId: GameSessionId, playerId: PlayerId): Promise<CurrentGameSession> {
         const gameSession = await this.gameSessionRepository.findOneById(gameSessionId);
 
-        if (!gameSession.teams.some(team => team.players.some(player => player.id.equals(playerId)))) {
-            throw new PlayerNotInSessionException(playerId, gameSessionId);
-        }
+        this.verifyPlayerInSession(gameSession, playerId, gameSessionId);
 
         return {
             id: gameSession.id.value,
@@ -38,4 +37,10 @@ export class CurrentGameSessionMysqlGetter implements CurrentGameSessionGetter {
 
     }
 
+    private verifyPlayerInSession(gameSession: GameSession, playerId: PlayerId, gameSessionId: GameSessionId) {
+
+        if (!gameSession.isPlayerInSession(playerId)) {
+            throw new PlayerNotInSessionException(playerId, gameSessionId);
+        }
+    }
 }

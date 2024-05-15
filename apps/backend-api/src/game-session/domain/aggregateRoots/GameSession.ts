@@ -86,4 +86,8 @@ export class GameSession extends AggregateRoot {
             team.removePlayer(playerId)
         });
     }
+
+    isPlayerInSession(playerId: PlayerId): boolean {
+        return this.teams.some(team => team.players.some(player => player.id.equals(playerId)));
+    }
 }
