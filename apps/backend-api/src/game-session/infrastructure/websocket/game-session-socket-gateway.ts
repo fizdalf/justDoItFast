@@ -8,6 +8,8 @@ import {
 } from '@nestjs/websockets';
 import {Server, Socket} from 'socket.io';
 import {Injectable} from '@nestjs/common';
+import {GameSessionToken} from '../../domain/valueObjects/GameSessionToken';
+import {AuthenticationService} from '../authentication/AuthenticationService';
 
 
 @WebSocketGateway({cors: {origin: '*'}})
@@ -15,7 +17,7 @@ import {Injectable} from '@nestjs/common';
 export class GameSessionSocketGateway implements OnGatewayInit {
     @WebSocketServer() server: Server;
 
-    constructor() {
+    constructor(private authService: AuthenticationService) {
     }
 
     afterInit(server: Server) {
@@ -23,8 +25,20 @@ export class GameSessionSocketGateway implements OnGatewayInit {
     }
 
     @SubscribeMessage('login')
-    async handleEvent(@MessageBody() data: string, @ConnectedSocket() client: Socket): Promise<string> {
-        console.log('login', data);
+    async handleEvent(@MessageBody() authToken: string, @ConnectedSocket() client: Socket): Promise<string> {
+        const resp = await this.authService.validateToken(authToken);
+        const token = new GameSessionToken({
+            gameSessionId: resp.gameSessionId,
+            playerName: resp.playerName,
+            playerId: resp.playerId,
+            isHost: resp.isHost
+        })
+        console.log('gameSessionId', token.gameSessionId);
+
+        client.join(token.gameSessionId);
+
+        this.server.to(token.gameSessionId).emit('room-event', {someData: token.gameSessionId});
+
         return 'ok';
     }
 
