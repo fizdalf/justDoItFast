@@ -32,18 +32,19 @@ export class GameSession extends AggregateRoot {
     }
 
 
-    private getNextTeam() {
+    addPlayer(player: Player) {
+        const team = this.findTeamWithFewestPlayers();
+        team.addPlayer(player);
+        this.apply(new GameSessionPlayerJoinedEvent(this.id.value, player.id.value, player.name.value));
+    }
+
+    private findTeamWithFewestPlayers() {
         return this.teams.reduce((acc, team) => {
             if (!acc || team.players.length < acc.players.length) {
                 return team;
             }
             return acc;
         });
-    }
-
-    addPlayer(player: Player) {
-        const team = this.getNextTeam();
-        team.addPlayer(player);
     }
 
     totalPlayerCount() {
