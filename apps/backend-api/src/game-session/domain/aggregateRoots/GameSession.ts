@@ -90,4 +90,8 @@ export class GameSession extends AggregateRoot {
     isPlayerInSession(playerId: PlayerId): boolean {
         return this.teams.some(team => team.players.some(player => player.id.equals(playerId)));
     }
+
+    hostPlayerName() {
+        return this.teams.find(team => team.players.some(player => player.id.equals(this.host)))?.players.find(player => player.id.equals(this.host))?.name;
+    }
 }
