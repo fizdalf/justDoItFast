@@ -22,9 +22,11 @@ import {
     GetGameSessionPreviewController
 } from './infrastructure/http/controller/get-session-preview/get-game-session-preview.controller';
 import {JoinSessionController} from './infrastructure/http/controller/join-session/join-session.controller';
+import {JoinGameSessionCommandHandler} from './application/join-game-session/join-game-session.command-handler';
 
 const commandHandlers = [
     CreateGameSessionCommandHandler,
+    JoinGameSessionCommandHandler,
 ];
 const queryHandlers = [
     GetCurrentSessionQueryHandler,
@@ -54,7 +56,7 @@ const queryHandlers = [
             provide: CurrentGameSessionGetter,
             useClass: CurrentGameSessionMysqlGetter
         },
-        GameSessionSocketGateway
+        GameSessionSocketGateway,
     ]
 })
 export class GameSessionModule {
