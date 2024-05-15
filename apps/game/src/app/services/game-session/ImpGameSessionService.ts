@@ -40,8 +40,12 @@ export class ImpGameSessionService implements GameSessionService {
         return rehydrateGameSession(response);
     }
 
-    joinSession(sessionId: string, playerName: string): Promise<void> {
-        throw new Error('Method not implemented.');
+    async joinSession(sessionId: string, playerName: string): Promise<string> {
+        const response = await firstValueFrom(this.client.post<{
+            success: boolean,
+            token: string
+        }>(`/api/game-session/${sessionId}/join`, {playerName}));
+        return response.token;
     }
 
     leaveSession(id: string, playerId: string): Promise<void> {

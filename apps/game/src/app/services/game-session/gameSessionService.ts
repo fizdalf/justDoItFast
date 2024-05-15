@@ -13,7 +13,7 @@ export interface GameSessionService {
 
     openSession(): Promise<GameSession>;
 
-    joinSession(sessionId: string, playerName: string): Promise<void>;
+    joinSession(sessionId: string, playerName: string): Promise<string>;
 
     leaveSession(id: string, playerId: string): Promise<void>;
 
