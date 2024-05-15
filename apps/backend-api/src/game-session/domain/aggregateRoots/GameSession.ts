@@ -5,6 +5,7 @@ import {Team} from '../entities/Team';
 import {Player} from '../entities/Player';
 import {AggregateRoot} from '@nestjs/cqrs';
 import {GameSessionCreatedDomainEvent} from '../events/game-session-created.event';
+import {GameSessionPlayerJoinedEvent} from '../events/game-session-player-joined.event';
 
 export interface GameSessionParams {
     id: GameSessionId;
