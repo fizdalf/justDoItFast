@@ -1,13 +1,14 @@
-
 import {firstValueFrom, Observable} from 'rxjs';
 import {GameSessionService} from './gameSessionService';
 import {HttpClient} from '@angular/common/http';
 import {Injectable} from '@angular/core';
-import {GameSession} from './gameSession';
+import {GameSession, GameSessionPreview} from './gameSession';
+import {WebsocketService} from '../websocket/websocket.service';
+
 
 @Injectable()
 export class ImpGameSessionService implements GameSessionService {
-    constructor(private client: HttpClient) {
+    constructor(private client: HttpClient, private socketService: WebsocketService) {
         this.client.get('/api').subscribe((response) => {
             console.log(response);
         });
@@ -34,10 +35,11 @@ export class ImpGameSessionService implements GameSessionService {
             })
         );
 
+        await this.socketService.emit('login', sessionStorage.getItem('gameSessionToken'));
         return rehydrateGameSession(response);
     }
 
-    joinSession(sessionId: string, playerName:string): Promise<void> {
+    joinSession(sessionId: string, playerName: string): Promise<void> {
         throw new Error('Method not implemented.');
     }
 
@@ -45,8 +47,13 @@ export class ImpGameSessionService implements GameSessionService {
         throw new Error('Method not implemented.');
     }
 
+    async getSessionPreview(sessionId: string): Promise<GameSessionPreview> {
+        return await firstValueFrom(this.client.get<GameSessionPreview>(`/api/game-session-preview/${sessionId}`));
+    }
+
 
 }
+
 
 function rehydrateGameSession(data: any): GameSession {
     return {

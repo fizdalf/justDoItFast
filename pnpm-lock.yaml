@@ -66,8 +66,8 @@ importers:
         specifier: ^17.1.0
         version: 17.1.0(@angular/core@17.0.4)(rxjs@7.8.1)
       '@zxing/ngx-scanner':
-        specifier: ^17.0.0
-        version: 17.0.0(@angular/common@17.0.4)(@angular/core@17.0.4)(@angular/forms@17.0.4)(@zxing/browser@0.1.4)(@zxing/library@0.20.0)(rxjs@7.8.1)
+        specifier: ^17.0.3
+        version: 17.0.3(@angular/common@17.0.4)(@angular/core@17.0.4)(@angular/forms@17.0.4)(@zxing/browser@0.1.4)(@zxing/library@0.20.0)(rxjs@7.8.1)
       axios:
         specifier: ^1.0.0
         version: 1.6.2
@@ -6544,8 +6544,8 @@ packages:
       '@zxing/text-encoding': 0.9.0
     dev: false
 
-  /@zxing/ngx-scanner@17.0.0(@angular/common@17.0.4)(@angular/core@17.0.4)(@angular/forms@17.0.4)(@zxing/browser@0.1.4)(@zxing/library@0.20.0)(rxjs@7.8.1):
-    resolution: {integrity: sha512-q3aW/F1Zo+2YJILNYIiYmdCQc2IMc5/c/62vbcU6Z6u0eq+ZwsNSdRneUSl1XYwyqwskgHAWWjgThL2dD1GWjg==}
+  /@zxing/ngx-scanner@17.0.3(@angular/common@17.0.4)(@angular/core@17.0.4)(@angular/forms@17.0.4)(@zxing/browser@0.1.4)(@zxing/library@0.20.0)(rxjs@7.8.1):
+    resolution: {integrity: sha512-N7bYYsOD7braYGlg21EBnkNwh7CIAeIEZiVtiqo5fqzBpdjE12XvTBiBkgprRLCE2UyX5cTHSy7hyLNg5eW5rA==}
     peerDependencies:
       '@angular/common': ^11.2.11 || ^12.0.4 || ^13.0.0 || ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
       '@angular/core': ^11.2.11 || ^12.0.4 || ^13.0.0 || ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0

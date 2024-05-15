@@ -71,7 +71,7 @@
     "@nestjs/platform-socket.io": "^10.3.3",
     "@nestjs/websockets": "^10.3.3",
     "@ngrx/component-store": "^17.1.0",
-    "@zxing/ngx-scanner": "^17.0.0",
+    "@zxing/ngx-scanner": "^17.0.3",
     "axios": "^1.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",

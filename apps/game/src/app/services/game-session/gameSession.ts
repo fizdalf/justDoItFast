@@ -15,3 +15,13 @@ export interface GameSession {
     createdAt: Date;
     updatedAt: Date;
 }
+
+export interface GameSessionPreview {
+    id: string;
+    hostName: string;
+    teams: {
+        players: {
+            name: string;
+        }[]
+    }[];
+}

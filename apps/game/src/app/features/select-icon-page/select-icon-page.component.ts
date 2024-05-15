@@ -11,6 +11,7 @@ import {HttpClientModule} from '@angular/common/http';
 import {FormControl, ReactiveFormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {WebsocketService} from '../../services/websocket/websocket.service';
 
 export interface SelectIconPageViewModel {
     name: string | undefined;
@@ -32,7 +33,8 @@ export interface SelectIconPageViewModel {
         {
             provide: GameSessionService,
             useClass: ImpGameSessionService
-        }
+        },
+        WebsocketService
     ],
     styleUrl: './select-icon-page.component.scss',
 })

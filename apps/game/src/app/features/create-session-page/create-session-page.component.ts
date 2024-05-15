@@ -8,6 +8,7 @@ import {ImpGameSessionService} from '../../services/game-session/ImpGameSessionS
 import {GameSessionService} from '../../services/game-session/gameSessionService';
 import {Player} from '../../services/game-session/gameSession';
 import {HttpClientModule} from '@angular/common/http';
+import {WebsocketService} from '../../services/websocket/websocket.service';
 
 
 export function runInZone<T>(zone: NgZone): OperatorFunction<T, T> {
@@ -39,7 +40,8 @@ export function runInZone<T>(zone: NgZone): OperatorFunction<T, T> {
         {
             provide: GameSessionService,
             useClass: ImpGameSessionService
-        }
+        },
+        WebsocketService
     ],
     changeDetection: ChangeDetectionStrategy.Default
 })

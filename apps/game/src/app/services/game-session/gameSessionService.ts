@@ -1,6 +1,6 @@
 import {Observable} from 'rxjs';
 import {InjectionToken} from '@angular/core';
-import {GameSession} from './gameSession';
+import {GameSession, GameSessionPreview} from './gameSession';
 
 
 export const GameSessionService = new InjectionToken('GameSessionService');
@@ -15,4 +15,6 @@ export interface GameSessionService {
     joinSession(sessionId: string, playerName: string): Promise<void>;
 
     leaveSession(id: string, playerId: string): Promise<void>;
+
+    getSessionPreview(sessionId: string): Promise<GameSessionPreview>;
 }
