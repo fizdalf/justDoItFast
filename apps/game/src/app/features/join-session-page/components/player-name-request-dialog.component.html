@@ -1,0 +1,12 @@
+<h2 mat-dialog-title>What's going to be your player name?</h2>
+<mat-dialog-content>
+
+    <mat-form-field>
+        <mat-label>Player Name</mat-label>
+        <input [(ngModel)]="playerName" matInput>
+    </mat-form-field>
+</mat-dialog-content>
+<mat-dialog-actions>
+    <button (click)="onNoClick()" mat-button>Cancel</button>
+    <button [disabled]="!playerName" [mat-dialog-close]="playerName" cdkFocusInitial mat-button>Ok</button>
+</mat-dialog-actions>
