@@ -21,9 +21,7 @@ export class GetGameSessionPreviewQueryHandler implements IQueryHandler<GetGameS
             id: gameSession.id.value,
             hostPlayerName: gameSession.hostPlayerName().value,
             teams: gameSession.teams.map(team => ({
-                id: team.id.value,
                 players: team.players.map(player => ({
-                    id: player.id.value,
                     name: player.name.value,
                 })),
             }))
