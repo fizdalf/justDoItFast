@@ -1,4 +1,4 @@
-import {Controller, Get, Req, UseGuards} from '@nestjs/common';
+import {Controller, ForbiddenException, Get, Req, UseGuards} from '@nestjs/common';
 import {QueryBus} from '@nestjs/cqrs';
 import {GameSessionGuard} from '../../guards/GameSessionGuard';
 import {GameSessionToken} from '../../../../domain/valueObjects/GameSessionToken';
@@ -14,8 +14,12 @@ export class GetCurrentSessionController {
     @UseGuards(GameSessionGuard)
     @Get()
     async getCurrentGameSession(@Req() req: { decodedData: GameSessionToken }) {
-        return await this.queryBus.execute(new GetCurrentSessionQuery(req.decodedData.gameSessionId, req.decodedData.playerId));
+        try {
 
+            return await this.queryBus.execute(new GetCurrentSessionQuery(req.decodedData.gameSessionId, req.decodedData.playerId));
+        } catch (PlayerNotInGameSessionException) {
+            throw new ForbiddenException('Player not in game session');
+        }
     }
 }
 

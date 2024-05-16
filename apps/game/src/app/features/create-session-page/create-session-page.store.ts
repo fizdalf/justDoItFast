@@ -12,6 +12,10 @@ import {
     LoginWebsocketEvent,
     LoginWebsocketEventPayload
 } from '@org/core/game-session/websocket-events/LoginWebsocketEvent';
+import {
+    PlayerLeftGameSessionEvent,
+    PlayerLeftGameSessionEventPayload
+} from '@org/core/game-session/websocket-events/PlayerLeftGameSessionEvent';
 
 export interface CreateSessionPageViewModel {
     playerCount: number;
@@ -33,6 +37,8 @@ function totalPlayerCount(teams: Team[] | undefined): number {
 
 @Injectable()
 export class CreateSessionPageStore extends ComponentStore<CreateSessionPageState> {
+
+
     private readonly logInWebSocket = this.effect((trigger$) =>
         combineLatest([
             trigger$,
@@ -43,9 +49,12 @@ export class CreateSessionPageStore extends ComponentStore<CreateSessionPageStat
                 startWith(undefined),
             )
         ]).pipe(
-            tap(() => {
+            tap(async () => {
                 console.log('trying to login in websocket');
-                this.websocketService.emit<LoginWebsocketEventPayload>(LoginWebsocketEvent.eventName(), {token: sessionStorage.getItem('gameSessionToken') ?? ''});
+                const response = await this.websocketService.emitWithAcknowledge<LoginWebsocketEventPayload, 'error' | 'ok'>(LoginWebsocketEvent.eventName(), {token: sessionStorage.getItem('gameSessionToken') ?? ''});
+                if (response === 'error') {
+                    sessionStorage.removeItem('gameSessionToken');
+                }
             })
         )
     );
@@ -80,10 +89,15 @@ export class CreateSessionPageStore extends ComponentStore<CreateSessionPageStat
             }),
         )
     );
-    private readonly onSessionJoin = this.effect(() => {
-            return this.websocketService.on<PlayerJoinedGameSessionEventPayload>(PlayerJoinedGameSessionEvent.eventName())
+    private readonly listenSessionChanges = this.effect(() => {
+            return combineLatest(
+                [
+                    this.websocketService.on<PlayerJoinedGameSessionEventPayload>(PlayerJoinedGameSessionEvent.eventName()),
+                    this.websocketService.on<PlayerLeftGameSessionEventPayload>(PlayerLeftGameSessionEvent.eventName())
+                ]
+            )
                 .pipe(
-                    tap(({playerName}) => this.fetchSession())
+                    tap(() => this.fetchSession())
                 );
         }
     );

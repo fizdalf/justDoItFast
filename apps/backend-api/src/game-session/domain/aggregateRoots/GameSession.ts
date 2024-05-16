@@ -7,6 +7,9 @@ import {AggregateRoot} from '@nestjs/cqrs';
 import {GameSessionCreatedDomainEvent} from '../events/game-session-created.event';
 import {GameSessionPlayerJoinedEvent} from '../events/game-session-player-joined.event';
 import {GameSessionPlayerLeftEvent} from '../events/game-session-player-left.event';
+import {GameSessionEmptiedEvent} from '../events/game-session-emptied.event';
+import {GameSessionPlayerContactRegisteredEvent} from '../events/game-session-player-contact-registered.event';
+import {GameSessionHostChangedEvent} from '../events/game-session-host-changed-event';
 
 export interface GameSessionParams {
     id: GameSessionId;
@@ -19,38 +22,27 @@ export interface GameSessionParams {
 export class GameSession extends AggregateRoot {
     readonly id: GameSessionId;
     readonly teams: Team[];
-    readonly host: PlayerId;
-    readonly createdAt: Date;
-    readonly updatedAt: Date;
-
     constructor({id, teams, host, createdAt, updatedAt}: GameSessionParams) {
         super();
         this.id = id;
         this.teams = teams;
-        this.host = host;
+        this._host = host;
         this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
+        this._updatedAt = updatedAt;
 
     }
+    readonly createdAt: Date;
 
+    private _host: PlayerId;
 
-    addPlayer(player: Player) {
-        const team = this.findTeamWithFewestPlayers();
-        team.addPlayer(player);
-        this.apply(new GameSessionPlayerJoinedEvent(this.id.value, player.id.value, player.name.value));
+    get host(): PlayerId {
+        return this._host;
     }
 
-    private findTeamWithFewestPlayers() {
-        return this.teams.reduce((acc, team) => {
-            if (!acc || team.players.length < acc.players.length) {
-                return team;
-            }
-            return acc;
-        });
-    }
+    private _updatedAt: Date;
 
-    totalPlayerCount() {
-        return this.teams.reduce((acc, team) => acc + team.players.length, 0);
+    get updatedAt(): Date {
+        return this._updatedAt;
     }
 
     static create(host: Player, sessionId: GameSessionId): GameSession {
@@ -78,30 +70,118 @@ export class GameSession extends AggregateRoot {
                 updatedAt: new Date()
             }
         );
-        instance.apply(new GameSessionCreatedDomainEvent(instance.id.value, instance.host.value));
+        instance.apply(new GameSessionCreatedDomainEvent(instance.id.value, instance._host.value));
         return instance;
     }
 
-    removePlayer(playerId: PlayerId) {
-        this.teams.forEach(team => {
-            team.removePlayer(playerId)
+    addPlayer(player: Player) {
+        const team = this.findTeamWithFewestPlayers();
+        team.addPlayer(player);
+        this.apply(new GameSessionPlayerJoinedEvent(this.id.value, player.id.value, player.name.value));
+        this._updatedAt = new Date();
+    }
+
+    totalPlayerCount() {
+        return this.teams.reduce((acc, team) => acc + team.players.length, 0);
+    }
+
+    removePlayer(playerId: PlayerId): boolean {
+        return this.teams.some(team => {
+            return team.removePlayer(playerId)
         });
     }
 
     isPlayerInSession(playerId: PlayerId): boolean {
-        return this.teams.some(team => team.players.some(player => player.id.equals(playerId)));
+        return this.teams.some(team => team.isPlayerInTeam(playerId));
     }
 
     hostPlayerName() {
-        return this.teams.find(team => team.players.some(player => player.id.equals(this.host)))?.players.find(player => player.id.equals(this.host))?.name;
+        return this.teams.find(team => team.players.some(player => player.id.equals(this._host)))?.players.find(player => player.id.equals(this._host))?.name;
     }
 
     leave(playerId: PlayerId) {
-        if(!this.isPlayerInSession(playerId)) {
+        const isPlayerRemoved = this.removePlayer(playerId);
+        if (!isPlayerRemoved) {
+            return;
+        }
+        this.apply(new GameSessionPlayerLeftEvent(this.id.value, playerId.value));
+        this._updatedAt = new Date();
+    }
+
+    removeIdlePlayers() {
+
+        const removedPlayers = [];
+
+        for (let i = 0; i < this.teams.length; i++) {
+            const team = this.teams[i];
+            const removedPlayersFromTeam = team.removeIdlePlayers();
+            removedPlayers.push(...removedPlayersFromTeam);
+        }
+
+        if (removedPlayers.length === 0) {
             return;
         }
 
-        this.removePlayer(playerId);
-        this.apply(new GameSessionPlayerLeftEvent(this.id.value, playerId.value));
+        if (removedPlayers.findIndex(player => player.id.equals(this._host)) !== -1 && this.totalPlayerCount() > 0) {
+            const newHost = this.teams.reduce((acc: PlayerId | undefined, team) => {
+                if (!acc || team.players.length > 0) {
+                    return team.players[0].id;
+                }
+                return acc;
+            }, undefined);
+            if (newHost) {
+                this._host = newHost;
+                this.apply(new GameSessionHostChangedEvent(this.id.value, newHost.value));
+            }
+        }
+
+        this.rebalanceTeams();
+
+        removedPlayers.forEach(player => {
+            this.apply(new GameSessionPlayerLeftEvent(this.id.value, player.id.value));
+        });
+
+
+        if (this.totalPlayerCount() === 0) {
+            this.apply(new GameSessionEmptiedEvent(this.id.value));
+        }
+        this._updatedAt = new Date();
+    }
+
+    registerPlayerContact(playerId: PlayerId) {
+        const isPlayerRegistered = this.teams.some(team => {
+            return team.registerPlayerContact(playerId);
+        });
+        if (!isPlayerRegistered) {
+            return;
+        }
+
+        this.apply(new GameSessionPlayerContactRegisteredEvent(this.id.value, playerId.value));
+        this._updatedAt = new Date();
+    }
+
+    private findTeamWithFewestPlayers() {
+        return this.teams.reduce((acc, team) => {
+            if (!acc || team.players.length < acc.players.length) {
+                return team;
+            }
+            return acc;
+        });
+    }
+
+    private rebalanceTeams() {
+        const sortedTeams = this.teams.sort((a, b) => a.players.length - b.players.length);
+        const playerCountDifference = sortedTeams[1].players.length - sortedTeams[0].players.length;
+
+        if (playerCountDifference <= 1) {
+            return;
+        }
+
+        const playersToMove = Math.floor(playerCountDifference / 2);
+
+        for (let i = 0; i < playersToMove; i++) {
+            const playerToMove = sortedTeams[1].players.pop();
+            sortedTeams[0].players.push(playerToMove);
+        }
     }
 }

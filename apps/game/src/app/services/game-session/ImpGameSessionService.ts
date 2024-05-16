@@ -5,14 +5,21 @@ import {Injectable} from '@angular/core';
 import {GameSession} from './gameSession';
 import {WebsocketService} from '../websocket/websocket.service';
 import {GameSessionPreview} from '@org/core/game-session/dto/gameSessionPreview';
+import {
+    PingWebsocketEvent,
+    PingWebsocketEventPayload
+} from '@org/core/game-session/websocket-events/PingWebsocketEvent';
 
 
 @Injectable()
 export class ImpGameSessionService implements GameSessionService {
     constructor(private client: HttpClient, private socketService: WebsocketService) {
-        this.client.get('/api').subscribe((response) => {
-            console.log(response);
-        });
+        setInterval(() => {
+            const token = sessionStorage.getItem('gameSessionToken');
+            if (token) {
+                this.socketService.emit<PingWebsocketEventPayload>(PingWebsocketEvent.eventName(), {token});
+            }
+        }, 1000 * 30)
     }
 
     async createSession(playerName: string): Promise<string> {

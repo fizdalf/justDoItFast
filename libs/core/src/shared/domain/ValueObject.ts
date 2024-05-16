@@ -1,13 +1,17 @@
-export class ValueObject<T> {
-    public readonly value: T;
+export abstract class ValueObject<T> {
+    protected readonly _value: T;
 
     constructor(value: T) {
-        this.value = value;
+        this._value = value;
+    }
+
+    get value(): T {
+        return this._value;
     }
 
     equals(other: any): boolean {
         if (other instanceof ValueObject) {
-            return this.value === other.value;
+            return this._value === other._value;
         }
         return false;
     }

@@ -1,8 +1,16 @@
-import {CanActivateFn} from '@angular/router';
+import {CanActivateFn, Router} from '@angular/router';
+import {inject} from '@angular/core';
 
 
 export function sessionConnectedGuard(): CanActivateFn {
+
     return async () => {
-        return !!sessionStorage.getItem('gameSessionToken');
+        const router = inject(Router);
+        const b = !!sessionStorage.getItem('gameSessionToken');
+
+        if (!b) {
+            await router.navigate(['/']);
+        }
+        return b;
     };
 }

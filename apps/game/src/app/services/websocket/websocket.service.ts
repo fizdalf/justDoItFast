@@ -39,6 +39,15 @@ export class WebsocketService {
         socket.emit(event, data);
     }
 
+    async emitWithAcknowledge<Payload, Response>(event: string, data: Payload): Promise<Response> {
+        const socket = await this.connectedSocket;
+        return new Promise<Response>((resolve, reject) => {
+            socket.emit(event, data, (response: Response) => {
+                resolve(response);
+            });
+        });
+    }
+
     on<Payload>(eventName: string): Observable<Payload> {
         // we can store the listeners so that when socket is disconnected ..and connected again we can reattach the listeners
 

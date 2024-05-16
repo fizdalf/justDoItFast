@@ -1,4 +1,4 @@
-import {Module} from "@nestjs/common";
+import {ConsoleLogger, Module} from "@nestjs/common";
 import {CreateGameSessionCommandHandler} from './application/create-game-session/create-game-session.command-handler';
 import {
     CreateGameSessionController
@@ -23,16 +23,35 @@ import {
 } from './infrastructure/http/controller/get-session-preview/get-game-session-preview.controller';
 import {JoinSessionController} from './infrastructure/http/controller/join-session/join-session.controller';
 import {JoinGameSessionCommandHandler} from './application/join-game-session/join-game-session.command-handler';
-import {OnGameSessionJoinedEventHandler} from './infrastructure/websocket/on-game-session-joined.event-handler';
+import {OnGameSessionJoinedEventHandler} from './domain/event-listeners/on-game-session-joined.event-handler';
 import {LeaveGameSessionCommandHandler} from './application/leave-game-session/leave-game-session.command-handler';
 import {
     DisconnectIdlePlayersFromGameSessionTask
 } from './infrastructure/cron/disconnect-idle-players-from-game-session.task';
+import {
+    RequestIdlePlayersRemovalFromGameSessionsCommandHandler
+} from './application/request-idle-player-removal-from-game-sessions/request-idle-players-removal-from-game-sessions-command.handler';
+import {GameSessionsIdsGetter} from './domain/service/GameSessionsIdsGetter';
+import {GameSessionsIdsMysqlGetter} from './infrastructure/persistence/GameSessionsIdsMysqlGetter';
+import {
+    RegisterPlayerContactCommandHandler
+} from './application/register-player-contact/register-player-contact.command-handler';
+import {
+    OnGameSessionIdlePlayersRemovalRequestedEventListener
+} from './domain/event-listeners/on-game-session-idle-players-removal-requested.event-listener';
+import {
+    RemoveIdlePlayersFromGameSessionCommandHandler
+} from './application/remove-idle-players-from-game-session/remove-idle-players-from-game-session.command-handler';
+import {OnSessionEmptiedEventListener} from './domain/event-listeners/on-session-emptied.event-listener';
+import {OnGameSessionPlayerLeftEventHandler} from './domain/event-listeners/on-game-session-player-left.event-handler';
 
 const commandHandlers = [
     CreateGameSessionCommandHandler,
     JoinGameSessionCommandHandler,
     LeaveGameSessionCommandHandler,
+    RequestIdlePlayersRemovalFromGameSessionsCommandHandler,
+    RegisterPlayerContactCommandHandler,
+    RemoveIdlePlayersFromGameSessionCommandHandler,
 ];
 const queryHandlers = [
     GetCurrentSessionQueryHandler,
@@ -40,6 +59,9 @@ const queryHandlers = [
 ];
 const eventHandlers = [
     OnGameSessionJoinedEventHandler,
+    OnGameSessionIdlePlayersRemovalRequestedEventListener,
+    OnSessionEmptiedEventListener,
+    OnGameSessionPlayerLeftEventHandler,
 ];
 
 const tasks = [
@@ -50,6 +72,7 @@ const tasks = [
     imports: [
         CqrsModule,
         SharedModule,
+
     ],
     controllers: [
         CreateGameSessionController,
@@ -65,13 +88,18 @@ const tasks = [
         AuthenticationService,
         {
             provide: GameSessionRepository,
-            useClass: GameSessionSqlRepository
+            useClass: GameSessionSqlRepository,
         },
         {
             provide: CurrentGameSessionGetter,
-            useClass: CurrentGameSessionMysqlGetter
+            useClass: CurrentGameSessionMysqlGetter,
+        },
+        {
+            provide: GameSessionsIdsGetter,
+            useClass: GameSessionsIdsMysqlGetter,
         },
         GameSessionSocketGateway,
+        ConsoleLogger,
     ]
 })
 export class GameSessionModule {

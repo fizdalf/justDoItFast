@@ -1,4 +1,4 @@
-import {Injectable} from '@nestjs/common';
+import {ConsoleLogger, Injectable} from '@nestjs/common';
 import {Interval} from '@nestjs/schedule';
 import {CommandBus} from '@nestjs/cqrs';
 import {
@@ -8,11 +8,12 @@ import {
 @Injectable()
 export class DisconnectIdlePlayersFromGameSessionTask {
 
-    constructor(private readonly commandBus: CommandBus) {
+    constructor(private readonly commandBus: CommandBus, private readonly logger: ConsoleLogger) {
     }
 
-    @Interval(60000)
+    @Interval(30000)
     async handleCron() {
-        this.commandBus.execute(new RequestIdlePlayersRemovalFromGameSessionsCommand());
+        this.logger.log('Disconnecting idle players from game sessions', 'DisconnectIdlePlayersFromGameSessionTask');
+        await this.commandBus.execute(new RequestIdlePlayersRemovalFromGameSessionsCommand());
     }
 }

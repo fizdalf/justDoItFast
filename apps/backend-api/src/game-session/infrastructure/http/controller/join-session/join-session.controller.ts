@@ -3,8 +3,11 @@ import {IsNotEmpty, IsString} from 'class-validator';
 import {PlayerId} from '../../../../domain/valueObjects/PlayerId';
 import {JoinGameSessionCommand} from '../../../../domain/commands/join-game-session.command';
 import {CommandBus} from '@nestjs/cqrs';
-import {GameSessionToken} from '../../../../domain/valueObjects/GameSessionToken';
-import {JwtService} from '@nestjs/jwt';
+import {AuthenticationService} from '../../../authentication/AuthenticationService';
+import {PlayerName} from '../../../../domain/valueObjects/PlayerName';
+import {PlayerLastContactedAt} from '../../../../domain/valueObjects/playerLastContactedAt';
+import {Player} from '../../../../domain/entities/Player';
+import {GameSessionId} from '../../../../domain/valueObjects/GameSessionId';
 
 export abstract class JoinsSessionRequestParams {
     @IsNotEmpty()
@@ -17,7 +20,7 @@ export class JoinSessionController {
 
     constructor(
         private readonly commandBus: CommandBus,
-        private readonly jwtService: JwtService
+        private readonly authenticationService: AuthenticationService
     ) {
     }
 
@@ -27,16 +30,18 @@ export class JoinSessionController {
 
         await this.commandBus.execute(new JoinGameSessionCommand(sessionId, playerId.value, body.playerName));
 
-        const gameSessionToken = new GameSessionToken({
-            gameSessionId: sessionId,
-            playerName: body.playerName,
-            playerId: playerId.value,
+        const token = this.authenticationService.generateToken({
+            gameSessionId: GameSessionId.fromValue(sessionId),
+            player: new Player({
+                id: playerId,
+                name: PlayerName.fromValue(body.playerName),
+                lastContactedAt: PlayerLastContactedAt.create(new Date())
+            }),
             isHost: false
-        });
-
+        })
         return {
             success: true,
-            token: this.jwtService.sign(gameSessionToken.toPrimitives())
+            token: token
         };
 
     }

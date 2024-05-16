@@ -6,6 +6,7 @@ import {Inject} from '@nestjs/common';
 import {GameSessionId} from '../../domain/valueObjects/GameSessionId';
 import {PlayerId} from '../../domain/valueObjects/PlayerId';
 import {PlayerName} from '../../domain/valueObjects/PlayerName';
+import {PlayerLastContactedAt} from '../../domain/valueObjects/playerLastContactedAt';
 
 
 @CommandHandler(JoinGameSessionCommand)
@@ -21,7 +22,8 @@ export class JoinGameSessionCommandHandler implements ICommandHandler<JoinGameSe
 
         const player = new Player({
             id: PlayerId.fromValue(command.playerId),
-            name: PlayerName.fromValue(command.playerName)
+            name: PlayerName.fromValue(command.playerName),
+            lastContactedAt: PlayerLastContactedAt.create(new Date())
         });
         gameSession.addPlayer(player);
 

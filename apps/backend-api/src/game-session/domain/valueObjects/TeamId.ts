@@ -1,5 +1,4 @@
 import {uuidv7} from 'uuidv7';
-import {ValueObject} from '@org/core/shared/domain/ValueObject';
 import {UuidValueObject} from '@org/core/shared/domain/UuidValueObject';
 
 export class TeamId extends UuidValueObject {
@@ -8,7 +7,7 @@ export class TeamId extends UuidValueObject {
         super(value);
     }
 
-    static fromValue(value: string): ValueObject<string> {
+    static fromValue(value: string): TeamId {
         return new TeamId(value);
     }
 

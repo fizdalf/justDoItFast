@@ -1,6 +1,5 @@
 import {CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException} from '@nestjs/common';
 import {AuthenticationService} from '../../authentication/AuthenticationService';
-import {GameSessionToken} from '../../../domain/valueObjects/GameSessionToken';
 
 
 @Injectable()
@@ -17,14 +16,7 @@ export class GameSessionGuard implements CanActivate {
         }
         try {
             const authToken = authorization.replace(/bearer/gim, '').trim();
-
-            const resp = await this.authService.validateToken(authToken);
-            request.decodedData = new GameSessionToken({
-                gameSessionId: resp.gameSessionId,
-                playerName: resp.playerName,
-                playerId: resp.playerId,
-                isHost: resp.isHost
-            })
+            request.decodedData = await this.authService.validateToken(authToken);
             return true;
         } catch (e) {
             throw new ForbiddenException('Invalid token');

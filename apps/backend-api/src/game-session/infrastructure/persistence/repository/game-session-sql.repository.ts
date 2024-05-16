@@ -9,6 +9,8 @@ import {PlayerId} from '../../../domain/valueObjects/PlayerId';
 import {Player} from '../../../domain/entities/Player';
 import {PlayerName} from '../../../domain/valueObjects/PlayerName';
 import {Team} from '../../../domain/entities/Team';
+import {PlayerLastContactedAt} from '../../../domain/valueObjects/playerLastContactedAt';
+import {TeamId} from '../../../domain/valueObjects/TeamId';
 
 export interface GameSessionRow extends RowDataPacket {
     id: string;
@@ -31,7 +33,7 @@ export class GameSessionSqlRepository implements GameSessionRepository {
 
     async findOneById(id: GameSessionId): Promise<GameSession> {
 
-        const [rows, fields] = await this.pool.query<GameSessionRow[]>('select * from game_session where id = ?', [
+        const [rows] = await this.pool.query<GameSessionRow[]>('select * from game_session where id = ?', [
             id.value,
         ]);
         if (rows.length == 0) {
@@ -79,16 +81,22 @@ export class GameSessionSqlRepository implements GameSessionRepository {
                     gameSession.id.value,
                 ]);
 
-                for (const player of team.players) {
-                    await connection.execute('delete from team_player where player_id = ? and team_id = ?', [
-                        player.id.value,
-                        team.id.value,
-                    ]);
+                await connection.execute('delete from team_player where team_id = ?', [
+                    team.id.value,
+                ]);
 
-                    await connection.execute('INSERT INTO team_player (player_id, team_id, name) VALUES (?, ?, ?)', [
-                        player.id.value,
+                for (const player of team.players) {
+                    const playerData = player as unknown as {
+                        _id: PlayerId,
+                        _name: PlayerName,
+                        _lastContactedAt: PlayerLastContactedAt
+                    }
+
+                    await connection.execute('INSERT INTO team_player (player_id, team_id, name, last_contacted_at) VALUES (?, ?, ?, ?)', [
+                        playerData._id.value,
                         team.id.value,
-                        player.name.value,
+                        playerData._name.value,
+                        playerData._lastContactedAt.value,
                     ]);
 
                 }
@@ -109,7 +117,7 @@ export class GameSessionSqlRepository implements GameSessionRepository {
 
         for (const row of rows) {
             const team = new Team(
-                PlayerId.fromValue(row.id),
+                TeamId.fromValue(row.id),
                 await this.getPlayers(row.id),
             );
             teams.push(team);
@@ -130,6 +138,7 @@ export class GameSessionSqlRepository implements GameSessionRepository {
                 {
                     id: PlayerId.fromValue(row.player_id),
                     name: PlayerName.fromValue(row.name),
+                    lastContactedAt: PlayerLastContactedAt.create(row.last_contacted_at),
                 },
             );
             players.push(player);

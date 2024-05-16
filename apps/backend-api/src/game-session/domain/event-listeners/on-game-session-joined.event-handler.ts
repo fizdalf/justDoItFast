@@ -1,6 +1,6 @@
-import {GameSessionPlayerJoinedEvent} from '../../domain/events/game-session-player-joined.event';
+import {GameSessionPlayerJoinedEvent} from '../events/game-session-player-joined.event';
 import {EventsHandler, IEventHandler} from '@nestjs/cqrs';
-import {GameSessionSocketGateway} from './game-session-socket-gateway';
+import {GameSessionSocketGateway} from '../../infrastructure/websocket/game-session-socket-gateway';
 
 @EventsHandler(GameSessionPlayerJoinedEvent)
 export class OnGameSessionJoinedEventHandler implements IEventHandler<GameSessionPlayerJoinedEvent> {
@@ -8,7 +8,6 @@ export class OnGameSessionJoinedEventHandler implements IEventHandler<GameSessio
     }
 
     async handle(event: GameSessionPlayerJoinedEvent): Promise<void> {
-        console.log('should inform about player joined', event);
         await this.gameSessionSocketGateway.informPlayerJoined(event.gameSessionId, event.playerName);
     }
 

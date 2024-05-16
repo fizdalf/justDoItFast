@@ -6,8 +6,8 @@ import {GameSessionId} from '../../../../domain/valueObjects/GameSessionId';
 import {PlayerId} from '../../../../domain/valueObjects/PlayerId';
 import {Player} from '../../../../domain/entities/Player';
 import {PlayerName} from '../../../../domain/valueObjects/PlayerName';
-import {GameSessionToken} from '../../../../domain/valueObjects/GameSessionToken';
-import {JwtService} from '@nestjs/jwt';
+import {PlayerLastContactedAt} from '../../../../domain/valueObjects/playerLastContactedAt';
+import {AuthenticationService} from '../../../authentication/AuthenticationService';
 
 export abstract class CreateGameSessionRequestParams {
     @IsNotEmpty()
@@ -17,28 +17,36 @@ export abstract class CreateGameSessionRequestParams {
 @Controller('game-session')
 export class CreateGameSessionController {
 
-    constructor(private readonly commandBus: CommandBus, private readonly jwtService: JwtService) {
+    constructor(
+        private readonly commandBus: CommandBus,
+        private readonly authenticationService: AuthenticationService
+    ) {
     }
 
     @Post()
     async createGameSession(@Body() body: CreateGameSessionRequestParams) {
 
         const gameSessionId = GameSessionId.random();
-        const hostPlayerId = PlayerId.random();
-
-        const host = new Player({id: hostPlayerId, name: PlayerName.fromValue(body.hostPlayerName)});
+        const player = new Player({
+            id: PlayerId.random(),
+            name: PlayerName.fromValue(body.hostPlayerName),
+            lastContactedAt: PlayerLastContactedAt.create(new Date())
+        });
         await this.commandBus.execute(
             new CreateGameSession({
                 gameSessionId,
-                host
+                host: player
             })
         );
 
-        const gameSessionToken = GameSessionToken.fromDomain({gameSessionId, player: host, isHost: true});
-
         return {
             success: true,
-            token: this.jwtService.sign(gameSessionToken.toPrimitives())
+            token: this.authenticationService.generateToken({
+                gameSessionId: gameSessionId,
+                player,
+                isHost: true
+
+            })
         };
     }
 }

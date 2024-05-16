@@ -17,7 +17,38 @@ export class Team {
 
     };
 
-    removePlayer(playerId: PlayerId) {
+    removePlayer(playerId: PlayerId): boolean {
+        if (!this.isPlayerInTeam(playerId)) {
+            return false;
+        }
         this.players = this.players.filter(player => player.id.value !== playerId.value);
+        return true;
+    }
+
+    isPlayerInTeam(playerId: PlayerId): boolean {
+        return this.players.some(player => player.id.value === playerId.value);
+    }
+
+    removeIdlePlayers() {
+        const removedPlayers: Player[] = [];
+        for (let i = 0; i < this.players.length; i++) {
+            const player = this.players[i];
+
+            if (player.isIdle(1000 * 60 * 2, new Date())) {
+                removedPlayers.push(player);
+                this.players.splice(i, 1);
+                i--;
+            }
+        }
+        return removedPlayers;
+    }
+
+    registerPlayerContact(playerId: PlayerId) {
+        const player = this.players.find(player => player.id.value === playerId.value);
+        if (!player) {
+            return false;
+        }
+        player.registerContact();
+        return true;
     }
 }
