@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {ComponentStore} from '@ngrx/component-store';
-import {combineLatest, Observable, startWith, switchMap, tap} from 'rxjs';
+import {combineLatest, merge, Observable, startWith, switchMap, tap} from 'rxjs';
 import {GameSessionService} from '../../services/game-session/gameSessionService';
 import {GameSession, Team} from '../../services/game-session/gameSession';
 import {WebsocketService} from '../../services/websocket/websocket.service';
@@ -42,15 +42,9 @@ export class CreateSessionPageStore extends ComponentStore<CreateSessionPageStat
     private readonly logInWebSocket = this.effect((trigger$) =>
         combineLatest([
             trigger$,
-            this.websocketService.on('connect').pipe(
-                tap(() => {
-                    console.log('connected again?')
-                }),
-                startWith(undefined),
-            )
+            this.websocketService.on('connect').pipe(startWith(undefined))
         ]).pipe(
             tap(async () => {
-                console.log('trying to login in websocket');
                 const response = await this.websocketService.emitWithAcknowledge<LoginWebsocketEventPayload, 'error' | 'ok'>(LoginWebsocketEvent.eventName(), {token: sessionStorage.getItem('gameSessionToken') ?? ''});
                 if (response === 'error') {
                     sessionStorage.removeItem('gameSessionToken');
@@ -82,6 +76,7 @@ export class CreateSessionPageStore extends ComponentStore<CreateSessionPageStat
     //// EFFECTS ////
     public readonly fetchSession = this.effect((trigger$) =>
         trigger$.pipe(
+            startWith(null),
             switchMap(() => this.sessionService.openSession()),
             tap((session) => {
                 this.logInWebSocket();
@@ -90,11 +85,9 @@ export class CreateSessionPageStore extends ComponentStore<CreateSessionPageStat
         )
     );
     private readonly listenSessionChanges = this.effect(() => {
-            return combineLatest(
-                [
-                    this.websocketService.on<PlayerJoinedGameSessionEventPayload>(PlayerJoinedGameSessionEvent.eventName()),
-                    this.websocketService.on<PlayerLeftGameSessionEventPayload>(PlayerLeftGameSessionEvent.eventName())
-                ]
+            return merge(
+                this.websocketService.on<PlayerJoinedGameSessionEventPayload>(PlayerJoinedGameSessionEvent.eventName()),
+                this.websocketService.on<PlayerLeftGameSessionEventPayload>(PlayerLeftGameSessionEvent.eventName())
             )
                 .pipe(
                     tap(() => this.fetchSession())

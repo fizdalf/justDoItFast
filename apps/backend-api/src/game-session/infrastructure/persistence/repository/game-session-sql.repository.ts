@@ -31,6 +31,22 @@ export class GameSessionSqlRepository implements GameSessionRepository {
 
     }
 
+    async remove(id: GameSessionId): Promise<void> {
+        await this.pool.beginTransaction();
+        try {
+            await this.pool.execute(
+                'delete game_session, team, team_player from game_session join team on team.session_id = game_session.id join team_player on team_player.teamId = team.id  where game_session.id = ?',
+                [
+                    id.value,
+                ]
+            );
+        } catch (error) {
+            await this.pool.rollback();
+            throw error;
+        }
+        await this.pool.commit();
+    }
+
     async findOneById(id: GameSessionId): Promise<GameSession> {
 
         const [rows] = await this.pool.query<GameSessionRow[]>('select * from game_session where id = ?', [
@@ -55,15 +71,14 @@ export class GameSessionSqlRepository implements GameSessionRepository {
     }
 
     async save(gameSession: GameSession): Promise<void> {
-        const connection = this.pool;
-        await connection.beginTransaction();
+        await this.pool.beginTransaction();
 
         try {
-            await connection.execute('delete from game_session where id = ?', [
+            await this.pool.execute('delete from game_session where id = ?', [
                 gameSession.id.value,
             ]);
 
-            await connection.execute('INSERT INTO game_session (id, host_id, created_at, updated_at) VALUES (?, ?, ?, ?)', [
+            await this.pool.execute('INSERT INTO game_session (id, host_id, created_at, updated_at) VALUES (?, ?, ?, ?)', [
                 gameSession.id.value,
                 gameSession.host.value,
                 (<any>gameSession).createdAt,
@@ -71,17 +86,17 @@ export class GameSessionSqlRepository implements GameSessionRepository {
             ]);
 
             for (const team of gameSession.teams) {
-                await connection.execute('delete from team where id = ?', [
+                await this.pool.execute('delete from team where id = ?', [
                     team.id.value,
                 ]);
 
 
-                await connection.execute('INSERT INTO team (id, game_session_id) VALUES (?, ?)', [
+                await this.pool.execute('INSERT INTO team (id, game_session_id) VALUES (?, ?)', [
                     team.id.value,
                     gameSession.id.value,
                 ]);
 
-                await connection.execute('delete from team_player where team_id = ?', [
+                await this.pool.execute('delete from team_player where team_id = ?', [
                     team.id.value,
                 ]);
 
@@ -92,7 +107,7 @@ export class GameSessionSqlRepository implements GameSessionRepository {
                         _lastContactedAt: PlayerLastContactedAt
                     }
 
-                    await connection.execute('INSERT INTO team_player (player_id, team_id, name, last_contacted_at) VALUES (?, ?, ?, ?)', [
+                    await this.pool.execute('INSERT INTO team_player (player_id, team_id, name, last_contacted_at) VALUES (?, ?, ?, ?)', [
                         playerData._id.value,
                         team.id.value,
                         playerData._name.value,
@@ -102,10 +117,10 @@ export class GameSessionSqlRepository implements GameSessionRepository {
                 }
             }
         } catch (error) {
-            await connection.rollback();
+            await this.pool.rollback();
             throw error;
         }
-        await connection.commit();
+        await this.pool.commit();
     }
 
     private async getTeams(id: GameSessionId) {

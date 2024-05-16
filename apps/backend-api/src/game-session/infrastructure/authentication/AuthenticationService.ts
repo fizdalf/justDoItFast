@@ -20,7 +20,7 @@ export class AuthenticationService {
             gameSessionId: param.gameSessionId.value,
             playerName: param.player.name.value,
             playerId: param.player.id.value
-        }, {expiresIn: '1h'});
+        }, {expiresIn: '10d'});
     }
 
     refreshToken(decodedToken: GameSessionToken) {
@@ -29,6 +29,6 @@ export class AuthenticationService {
             gameSessionId: decodedToken.gameSessionId,
             playerName: decodedToken.playerName,
             playerId: decodedToken.playerId
-        }, {expiresIn: '1h'});
+        }, {expiresIn: '10d'});
     }
 }

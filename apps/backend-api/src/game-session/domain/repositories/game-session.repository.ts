@@ -5,5 +5,8 @@ export const GameSessionRepository = Symbol('GameSessionRepository');
 
 export interface GameSessionRepository {
     save(gameSession: GameSession): Promise<void>
+
     findOneById(id: GameSessionId): Promise<GameSession>
+
+    remove(id: GameSessionId): Promise<void>;
 }

@@ -59,6 +59,7 @@ export class GameSessionSocketGateway {
     }
 
     async informPlayerLeft(gameSessionId: string, playerName: any) {
+        console.log('informing player left', playerName, gameSessionId);
         const event = new PlayerLeftGameSessionEvent(playerName);
         this.server.to(gameSessionId).emit(PlayerLeftGameSessionEvent.eventName(), event.payload());
     }

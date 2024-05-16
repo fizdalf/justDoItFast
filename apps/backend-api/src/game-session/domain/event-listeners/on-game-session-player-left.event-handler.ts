@@ -1,7 +1,8 @@
 import {GameSessionPlayerLeftEvent} from '../events/game-session-player-left.event';
-import {IEventHandler} from '@nestjs/cqrs';
+import {EventsHandler, IEventHandler} from '@nestjs/cqrs';
 import {GameSessionSocketGateway} from '../../infrastructure/websocket/game-session-socket-gateway';
 
+@EventsHandler(GameSessionPlayerLeftEvent)
 export class OnGameSessionPlayerLeftEventHandler implements IEventHandler<GameSessionPlayerLeftEvent> {
     constructor(private gameSessionSocketGateway: GameSessionSocketGateway) {
     }

@@ -1,87 +1,49 @@
 import {io, Socket} from 'socket.io-client';
 import {environment} from '../../../environments/environment';
 import {DefaultEventsMap} from 'socket.io/dist/typed-events';
-import {Observable, switchMap} from 'rxjs';
-import {fromPromise} from 'rxjs/internal/observable/innerFrom';
+import {Observable, share} from 'rxjs';
 
 export class WebsocketService {
-    private listeners: { eventName: string, listener: (data: any) => void }[] = [];
-    connectedSocket: Promise<Socket<DefaultEventsMap, DefaultEventsMap>>
+
+    private socket: Socket<DefaultEventsMap, DefaultEventsMap>;
+    private socket$: Observable<Socket<DefaultEventsMap, DefaultEventsMap>>;
 
     constructor() {
-        const socket: Socket<DefaultEventsMap, DefaultEventsMap> = io(environment.socketUrl);
+        this.socket = io(environment.socketUrl);
 
-
-        this.connectedSocket = new Promise((resolve, reject) => {
-            socket.on('connect', () => {
-                resolve(socket);
+        this.socket$ = new Observable<Socket<DefaultEventsMap, DefaultEventsMap>>(subscriber => {
+            this.socket.on('connect', () => {
+                console.log('socket connected');
+                subscriber.next(this.socket);
             });
-        });
-
-        // socket.on('connect', () => {
-        //     console.log('connected');
-        //
-        // });
-        //
-        // socket.on('events', function (data) {
-        //     console.log('event', data);
-        // });
-        // socket.on('exception', function (data) {
-        //     console.log('event', data);
-        // });
-        // socket.on('disconnect', function () {
-        //     console.log('Disconnected');
-        // });
+            return () => {
+                this.socket.disconnect();
+            };
+        }).pipe(share()); // Share the connection between multiple subscribers
     }
 
-    async emit<Payload>(event: string, data: Payload) {
-        const socket = await this.connectedSocket;
-        socket.emit(event, data);
+    emit<Payload>(event: string, data: Payload) {
+        this.socket.emit(event, data);
     }
 
     async emitWithAcknowledge<Payload, Response>(event: string, data: Payload): Promise<Response> {
-        const socket = await this.connectedSocket;
         return new Promise<Response>((resolve, reject) => {
-            socket.emit(event, data, (response: Response) => {
+            this.socket.emit(event, data, (response: Response) => {
                 resolve(response);
             });
         });
     }
 
     on<Payload>(eventName: string): Observable<Payload> {
-        // we can store the listeners so that when socket is disconnected ..and connected again we can reattach the listeners
+        return new Observable<Payload>(subscriber => {
+            const listener = (data: Payload) => {
+                subscriber.next(data);
+            };
+            this.socket.on(eventName, listener);
 
-
-        return fromPromise(this.connectedSocket)
-            .pipe(
-                switchMap(socket => {
-                        return new Observable<any>(subscriber => {
-                            const listener = (data: Payload) => {
-                                subscriber.next(data);
-                            };
-                            socket.on(eventName, listener);
-
-                            // socket.on('disconnect', () => {
-                            //     console.log(`on ${eventName} disconnected`);
-                            //     subscriber.complete();
-                            // })
-                            return () => {
-                                socket.off(eventName, listener);
-                            };
-                        })
-                    }
-                )
-            );
-
-
-    }
-
-    private attachListeners(socket: Socket) {
-        this.listeners.forEach(({eventName, listener}) => {
-            socket.on(eventName, listener);
-        });
-        socket.on('connect', () => {
-            this.attachListeners(socket);
+            return () => {
+                this.socket.off(eventName, listener);
+            };
         });
     }
 }

@@ -54,6 +54,5 @@ export class CreateSessionPageComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        this.store.fetchSession();
     }
 }
