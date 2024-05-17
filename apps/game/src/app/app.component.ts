@@ -2,6 +2,7 @@ import {Component} from '@angular/core';
 import {RouterModule} from '@angular/router';
 import {HomePageComponent} from './features/home-page/home-page.component';
 import {ZXingScannerModule} from '@zxing/ngx-scanner';
+import {HttpClientModule} from '@angular/common/http';
 
 
 @Component({
@@ -9,7 +10,8 @@ import {ZXingScannerModule} from '@zxing/ngx-scanner';
     imports: [
         RouterModule,
         HomePageComponent,
-        ZXingScannerModule
+        ZXingScannerModule,
+        HttpClientModule
     ],
     selector: 'org-root',
     templateUrl: './app.component.html',

@@ -105,8 +105,9 @@ export class CreateSessionPageStore extends ComponentStore<CreateSessionPageStat
         super({sessionId: undefined, session: undefined});
     }
 
-    leaveGame() {
-        this.sessionService.leaveSession();
+    async leaveGame() {
+        await this.sessionService.leaveSession();
+        sessionStorage.removeItem('gameSessionToken');
     }
 }
 

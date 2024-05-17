@@ -7,7 +7,7 @@ import {Router} from '@angular/router';
 import {GameSessionService} from '../../services/game-session/gameSessionService';
 import {MatInputModule} from '@angular/material/input';
 import {ImpGameSessionService} from '../../services/game-session/ImpGameSessionService';
-import {HttpClientModule} from '@angular/common/http';
+
 import {FormControl, ReactiveFormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
@@ -24,7 +24,6 @@ export interface SelectIconPageViewModel {
         CommonModule,
         SelectIconComponent,
         MatInputModule,
-        HttpClientModule,
         ReactiveFormsModule,
         MatButtonModule,
     ],

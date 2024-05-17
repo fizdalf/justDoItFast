@@ -5,7 +5,6 @@ import {SelectIconComponent} from '../select-icon-page/components/select-icon/se
 import {JoinSessionPageStore} from './join-session-page.store';
 import {GameSessionService} from '../../services/game-session/gameSessionService';
 import {ImpGameSessionService} from '../../services/game-session/ImpGameSessionService';
-import {HttpClientModule} from '@angular/common/http';
 import {WebsocketService} from '../../services/websocket/websocket.service';
 import {MatDialog} from '@angular/material/dialog';
 import {PlayerNameRequestDialog} from './components/player-name-request-dialog.component';
@@ -18,7 +17,6 @@ import {Router} from '@angular/router';
         CommonModule,
         ZXingScannerModule,
         SelectIconComponent,
-        HttpClientModule,
     ],
     templateUrl: './join-session-page.component.html',
     styleUrl: './join-session-page.component.scss',

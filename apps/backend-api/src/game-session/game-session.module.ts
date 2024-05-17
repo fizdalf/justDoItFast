@@ -45,6 +45,9 @@ import {
 import {OnSessionEmptiedEventListener} from './domain/event-listeners/on-session-emptied.event-listener';
 import {OnGameSessionPlayerLeftEventHandler} from './domain/event-listeners/on-game-session-player-left.event-handler';
 import {RemoveSessionCommandHandler} from './application/remove-session/remove-session.command-handler';
+import {
+    LeaveGameSessionController
+} from './infrastructure/http/controller/leave-game-session/leave-game-session-controller';
 
 const commandHandlers = [
     CreateGameSessionCommandHandler,
@@ -80,6 +83,7 @@ const tasks = [
         GetCurrentSessionController,
         GetGameSessionPreviewController,
         JoinSessionController,
+        LeaveGameSessionController,
     ],
     providers: [
         ...commandHandlers,

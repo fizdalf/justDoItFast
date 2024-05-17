@@ -7,7 +7,6 @@ import {Observable, OperatorFunction} from 'rxjs';
 import {ImpGameSessionService} from '../../services/game-session/ImpGameSessionService';
 import {GameSessionService} from '../../services/game-session/gameSessionService';
 import {Player} from '../../services/game-session/gameSession';
-import {HttpClientModule} from '@angular/common/http';
 import {WebsocketService} from '../../services/websocket/websocket.service';
 import {
     MatCard,
@@ -18,7 +17,7 @@ import {
     MatCardTitle
 } from '@angular/material/card';
 import {MatIcon} from '@angular/material/icon';
-import {RouterLink} from '@angular/router';
+import {Router, RouterLink} from '@angular/router';
 import {MatButton} from '@angular/material/button';
 
 
@@ -42,7 +41,6 @@ export function runInZone<T>(zone: NgZone): OperatorFunction<T, T> {
         CommonModule,
         QrcodeComponent,
         NgOptimizedImage,
-        HttpClientModule,
         MatCard,
         MatCardTitle,
         MatCardContent,
@@ -69,7 +67,10 @@ export class CreateSessionPageComponent implements OnInit {
     vm$: Observable<CreateSessionPageViewModel>;
     trackByPlayerId: TrackByFunction<Player> = (index, player) => player.id;
 
-    constructor(private readonly store: CreateSessionPageStore, private ngZone: NgZone) {
+    constructor(
+        private readonly store: CreateSessionPageStore, ngZone: NgZone,
+        private readonly router: Router
+    ) {
         this.vm$ = this.store.vm$.pipe(runInZone(ngZone),);
     }
 
@@ -81,5 +82,6 @@ export class CreateSessionPageComponent implements OnInit {
 
     leaveGame() {
         this.store.leaveGame();
+        this.router.navigate(['/']);
     }
 }

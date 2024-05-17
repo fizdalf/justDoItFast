@@ -54,7 +54,15 @@ export class ImpGameSessionService implements GameSessionService {
     }
 
     async leaveSession(): Promise<void> {
-        await firstValueFrom(this.client.post('/api/game-session/leave', {}));
+        await firstValueFrom(this.client.post(
+            '/api/game-session/leave',
+            {},
+            {
+                headers: {
+                    Authorization: `Bearer ${sessionStorage.getItem('gameSessionToken')}`
+                }
+            }
+        ));
     }
 
     async getSessionPreview(sessionId: string): Promise<GameSessionPreview> {
