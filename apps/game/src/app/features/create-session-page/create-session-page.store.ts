@@ -17,7 +17,14 @@ import {
     PlayerLeftGameSessionEventPayload
 } from '@org/core/game-session/websocket-events/PlayerLeftGameSessionEvent';
 
+export interface Seat {
+    id: string;
+    playerName: string,
+    teamIdx: number;
+}
+
 export interface CreateSessionPageViewModel {
+    seats: Seat[];
     canStartGame: boolean;
     playerCount: number;
     sessionId: string | undefined;
@@ -59,6 +66,23 @@ export class CreateSessionPageStore extends ComponentStore<CreateSessionPageStat
     private teams$ = this.select((state) => state.session?.teams ?? []);
     private isHost$ = this.select((state) => state.session?.isHost ?? false);
     private canStartGame$ = this.select((state) => state.session?.teams?.length === 2 && state.session?.teams[0].players.length === state.session?.teams[1].players.length);
+    private seats$ = this.select(
+        this.canStartGame$,
+        this.teams$,
+        (canStartGame, teams) => {
+            if (!canStartGame) {
+                return [];
+            }
+            const seats: Seat[] = [];
+            for (let i = 0; i < teams[0].players.length; i++) {
+                const playerTeam1 = teams[0].players[i];
+                const playerTeam2 = teams[1].players[i];
+                seats.push({playerName: playerTeam1.name, teamIdx: 0, id: playerTeam1.id});
+                seats.push({playerName: playerTeam2.name, teamIdx: 1, id: playerTeam2.id});
+            }
+            return seats;
+        }
+    );
     vm$: Observable<CreateSessionPageViewModel> = this.select(
         {
             sessionId: this.sessionId$,
@@ -66,6 +90,7 @@ export class CreateSessionPageStore extends ComponentStore<CreateSessionPageStat
             teams: this.teams$,
             isHost: this.isHost$,
             canStartGame: this.canStartGame$,
+            seats: this.seats$,
         }, {debounce: true});
 
     //// UPDATERS ////

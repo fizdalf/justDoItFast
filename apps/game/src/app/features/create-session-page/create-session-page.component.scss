@@ -18,11 +18,30 @@
 
 .team-card {
   margin: 10px 0;
-  box-shadow: 0 2px 1px -1px rgba(0,0,0,0.2), 0 1px 1px 0 rgba(0,0,0,0.14), 0 1px 3px 0 rgba(0,0,0,0.12);
+  box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14), 0 1px 3px 0 rgba(0, 0, 0, 0.12);
 }
 
 .warning-card {
-  background-color: #e3f2fd;    // Light blue color
-  color: #000;                  // Black text
-  margin: 10px 0;               // Space out the cards
+  background-color: #e3f2fd; // Light blue color
+  color: #000; // Black text
+  margin: 10px 0; // Space out the cards
+}
+
+.seats-card-seat-positioning {
+  display: flex;
+  justify-content: space-around;
+}
+
+.seats-card-seat {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+
+.team1 {
+  color: #3f51b5;
+}
+
+.team2 {
+  color: #f44336;
 }

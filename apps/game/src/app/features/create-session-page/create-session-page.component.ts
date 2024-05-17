@@ -1,7 +1,7 @@
 import {ChangeDetectionStrategy, Component, NgZone, OnInit, TrackByFunction} from '@angular/core';
 import {CommonModule, NgOptimizedImage} from '@angular/common';
 import {QrcodeComponent} from 'qrcode-angular';
-import {CreateSessionPageStore, CreateSessionPageViewModel} from './create-session-page.store';
+import {CreateSessionPageStore, CreateSessionPageViewModel, Seat} from './create-session-page.store';
 import {Observable, OperatorFunction} from 'rxjs';
 
 import {ImpGameSessionService} from '../../services/game-session/ImpGameSessionService';
@@ -32,6 +32,10 @@ export function runInZone<T>(zone: NgZone): OperatorFunction<T, T> {
         });
 
     }
+}
+
+interface Identifiable {
+    id: string;
 }
 
 @Component({
@@ -66,6 +70,7 @@ export function runInZone<T>(zone: NgZone): OperatorFunction<T, T> {
 export class CreateSessionPageComponent implements OnInit {
     vm$: Observable<CreateSessionPageViewModel>;
     trackByPlayerId: TrackByFunction<Player> = (index, player) => player.id;
+    trackBySeat: TrackByFunction<Seat> = (index, item) => item.id;
 
     constructor(
         private readonly store: CreateSessionPageStore, ngZone: NgZone,
