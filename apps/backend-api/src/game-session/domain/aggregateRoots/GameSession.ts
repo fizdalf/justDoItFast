@@ -22,6 +22,7 @@ export interface GameSessionParams {
 export class GameSession extends AggregateRoot {
     readonly id: GameSessionId;
     readonly teams: Team[];
+
     constructor({id, teams, host, createdAt, updatedAt}: GameSessionParams) {
         super();
         this.id = id;
@@ -31,6 +32,7 @@ export class GameSession extends AggregateRoot {
         this._updatedAt = updatedAt;
 
     }
+
     readonly createdAt: Date;
 
     private _host: PlayerId;
@@ -77,8 +79,7 @@ export class GameSession extends AggregateRoot {
     addPlayer(player: Player) {
         const team = this.findTeamWithFewestPlayers();
         team.addPlayer(player);
-        this.apply(new GameSessionPlayerJoinedEvent(this.id.value, player.id.value, player.name.value));
-        this._updatedAt = new Date();
+        this.apply(new GameSessionPlayerJoinedEvent(this.id.value, player.id.value, player.name.value, team.id.value));
     }
 
     totalPlayerCount() {
@@ -148,7 +149,7 @@ export class GameSession extends AggregateRoot {
         this._updatedAt = new Date();
     }
 
-    registerPlayerContact(playerId: PlayerId) {
+    registerPlayerContact(playerId: PlayerId, lastContactedAt: Date) {
         const isPlayerRegistered = this.teams.some(team => {
             return team.registerPlayerContact(playerId);
         });
@@ -156,7 +157,12 @@ export class GameSession extends AggregateRoot {
             return;
         }
 
-        this.apply(new GameSessionPlayerContactRegisteredEvent(this.id.value, playerId.value));
+        this.apply(new GameSessionPlayerContactRegisteredEvent(
+                playerId.value,
+                this.id.value,
+                lastContactedAt.toISOString()
+            )
+        );
         this._updatedAt = new Date();
     }
 

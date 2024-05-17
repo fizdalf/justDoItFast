@@ -1,4 +1,4 @@
-import {CommandHandler, EventBus, ICommandHandler, IEventBus,} from '@nestjs/cqrs';
+import {CommandHandler, ICommandHandler,} from '@nestjs/cqrs';
 import {JoinGameSessionCommand} from '../../domain/commands/join-game-session.command';
 import {GameSessionRepository} from '../../domain/repositories/game-session.repository';
 import {Player} from '../../domain/entities/Player';
@@ -12,9 +12,7 @@ import {PlayerLastContactedAt} from '../../domain/valueObjects/playerLastContact
 @CommandHandler(JoinGameSessionCommand)
 export class JoinGameSessionCommandHandler implements ICommandHandler<JoinGameSessionCommand> {
     constructor(
-        @Inject(GameSessionRepository) private readonly gameSessionRepository: GameSessionRepository,
-        @Inject(EventBus) private eventBus: IEventBus
-    ) {
+        @Inject(GameSessionRepository) private readonly gameSessionRepository: GameSessionRepository    ) {
     }
 
     async execute(command: JoinGameSessionCommand) {
@@ -28,6 +26,5 @@ export class JoinGameSessionCommandHandler implements ICommandHandler<JoinGameSe
         gameSession.addPlayer(player);
 
         await this.gameSessionRepository.save(gameSession);
-        this.eventBus.publishAll(gameSession.getUncommittedEvents());
     }
 }

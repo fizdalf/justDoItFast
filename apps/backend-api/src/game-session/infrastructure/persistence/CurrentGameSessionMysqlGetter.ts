@@ -24,6 +24,7 @@ export class CurrentGameSessionMysqlGetter implements CurrentGameSessionGetter {
         return {
             id: gameSession.id.value,
             host: gameSession.host.value,
+            isHost: gameSession.host.equals(playerId),
             createdAt: gameSession.createdAt,
             updatedAt: gameSession.updatedAt,
             teams: gameSession.teams.map(team => ({

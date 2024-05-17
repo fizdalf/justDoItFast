@@ -17,10 +17,7 @@ export class LeaveGameSessionCommandHandler implements ICommandHandler<LeaveGame
 
     async execute(command: LeaveGameSessionCommand): Promise<void> {
         const gameSession = await this.gameSessionRepository.findOneById(GameSessionId.fromValue(command.gameSessionId));
-
         gameSession.leave(PlayerId.fromValue(command.playerId));
-
         await this.gameSessionRepository.save(gameSession);
-        this.eventBus.publishAll(gameSession.getUncommittedEvents());
     }
 }

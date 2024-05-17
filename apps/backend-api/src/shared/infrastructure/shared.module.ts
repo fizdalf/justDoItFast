@@ -2,6 +2,15 @@ import {Module} from "@nestjs/common";
 import {ConfigModule, ConfigService} from '@nestjs/config';
 import {MysqlModule} from 'nest-mysql';
 import {JwtModule} from '@nestjs/jwt';
+import {DateTimeService} from '../domain/date-time.service';
+import {SystemDateDateTimeService} from './date-time.service';
+
+const providers = [
+    {
+        provide: DateTimeService,
+        useClass: SystemDateDateTimeService
+    }
+];
 
 @Module({
     imports: [
@@ -30,11 +39,12 @@ import {JwtModule} from '@nestjs/jwt';
             }),
         })
     ],
-    providers: [],
+    providers: providers,
     exports: [
         ConfigModule,
         JwtModule,
         MysqlModule,
+        ...providers
     ]
 })
 export class SharedModule {

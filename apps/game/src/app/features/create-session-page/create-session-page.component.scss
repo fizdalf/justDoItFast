@@ -1,7 +1,28 @@
-.qr-container{
+.qr-container {
+  padding: 10px;
+}
+
+.session-id {
+  margin-top: 10px;
+}
+
+.player {
   display: flex;
-  justify-content: center;
   align-items: center;
-  margin-top: 20px;
-  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.mat-icon {
+  margin-right: 10px;
+}
+
+.team-card {
+  margin: 10px 0;
+  box-shadow: 0 2px 1px -1px rgba(0,0,0,0.2), 0 1px 1px 0 rgba(0,0,0,0.14), 0 1px 3px 0 rgba(0,0,0,0.12);
+}
+
+.warning-card {
+  background-color: #e3f2fd;    // Light blue color
+  color: #000;                  // Black text
+  margin: 10px 0;               // Space out the cards
 }

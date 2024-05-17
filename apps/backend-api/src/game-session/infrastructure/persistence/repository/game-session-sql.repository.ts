@@ -2,7 +2,7 @@ import {GameSessionRepository} from '../../../domain/repositories/game-session.r
 
 import {GameSession} from '../../../domain/aggregateRoots/GameSession';
 import {Connection, RowDataPacket} from 'mysql2/promise';
-import {Injectable} from '@nestjs/common';
+import {Inject, Injectable} from '@nestjs/common';
 import {InjectClient} from 'nest-mysql';
 import {GameSessionId} from '../../../domain/valueObjects/GameSessionId';
 import {PlayerId} from '../../../domain/valueObjects/PlayerId';
@@ -11,6 +11,14 @@ import {PlayerName} from '../../../domain/valueObjects/PlayerName';
 import {Team} from '../../../domain/entities/Team';
 import {PlayerLastContactedAt} from '../../../domain/valueObjects/playerLastContactedAt';
 import {TeamId} from '../../../domain/valueObjects/TeamId';
+import {EventBus, IEventBus} from '@nestjs/cqrs';
+import {GameSessionCreatedDomainEvent} from '../../../domain/events/game-session-created.event';
+import {GameSessionPlayerJoinedEvent} from '../../../domain/events/game-session-player-joined.event';
+import {GameSessionPlayerLeftEvent} from '../../../domain/events/game-session-player-left.event';
+import {GameSessionHostChangedEvent} from '../../../domain/events/game-session-host-changed-event';
+import {
+    GameSessionPlayerContactRegisteredEvent
+} from '../../../domain/events/game-session-player-contact-registered.event';
 
 export interface GameSessionRow extends RowDataPacket {
     id: string;
@@ -25,9 +33,22 @@ class GameSessionNotFoundException extends Error {
     }
 }
 
+export class PersistableTeam extends Team {
+    constructor(
+        public readonly id: TeamId,
+        public readonly players: Player[],
+    ) {
+        super(id, players);
+    }
+}
+
 @Injectable()
 export class GameSessionSqlRepository implements GameSessionRepository {
-    constructor(@InjectClient() private readonly pool: Connection) {
+
+    constructor(
+        @InjectClient() private readonly pool: Connection,
+        @Inject(EventBus) private readonly eventBus: IEventBus
+    ) {
 
     }
 
@@ -35,7 +56,7 @@ export class GameSessionSqlRepository implements GameSessionRepository {
         await this.pool.beginTransaction();
         try {
             await this.pool.execute(
-                'delete game_session, team, team_player from game_session join team on team.session_id = game_session.id join team_player on team_player.teamId = team.id  where game_session.id = ?',
+                'delete game_session, team, team_player from game_session left join team on team.game_session_id = game_session.id left join team_player on team_player.team_id = team.id  where game_session.id = ?',
                 [
                     id.value,
                 ]
@@ -70,57 +91,59 @@ export class GameSessionSqlRepository implements GameSessionRepository {
 
     }
 
+
     async save(gameSession: GameSession): Promise<void> {
+
+        const events = gameSession.getUncommittedEvents();
         await this.pool.beginTransaction();
 
         try {
-            await this.pool.execute('delete from game_session where id = ?', [
-                gameSession.id.value,
-            ]);
+            for (const event of events) {
+                switch (event.constructor.name) {
 
-            await this.pool.execute('INSERT INTO game_session (id, host_id, created_at, updated_at) VALUES (?, ?, ?, ?)', [
-                gameSession.id.value,
-                gameSession.host.value,
-                (<any>gameSession).createdAt,
-                (<any>gameSession).createdAt,
-            ]);
-
-            for (const team of gameSession.teams) {
-                await this.pool.execute('delete from team where id = ?', [
-                    team.id.value,
-                ]);
-
-
-                await this.pool.execute('INSERT INTO team (id, game_session_id) VALUES (?, ?)', [
-                    team.id.value,
-                    gameSession.id.value,
-                ]);
-
-                await this.pool.execute('delete from team_player where team_id = ?', [
-                    team.id.value,
-                ]);
-
-                for (const player of team.players) {
-                    const playerData = player as unknown as {
-                        _id: PlayerId,
-                        _name: PlayerName,
-                        _lastContactedAt: PlayerLastContactedAt
-                    }
-
-                    await this.pool.execute('INSERT INTO team_player (player_id, team_id, name, last_contacted_at) VALUES (?, ?, ?, ?)', [
-                        playerData._id.value,
-                        team.id.value,
-                        playerData._name.value,
-                        playerData._lastContactedAt.value,
-                    ]);
-
+                    case GameSessionCreatedDomainEvent.name:
+                        await this.insert(gameSession)
+                        break;
+                    case GameSessionPlayerJoinedEvent.name:
+                        const playerJoinedEvent = event as GameSessionPlayerJoinedEvent;
+                        await this.pool.execute('INSERT INTO team_player (player_id, team_id, name, last_contacted_at) VALUES (?, ?, ?, ?)', [
+                            playerJoinedEvent.playerId,
+                            playerJoinedEvent.teamId,
+                            playerJoinedEvent.playerName,
+                            new Date(),
+                        ]);
+                        break;
+                    case GameSessionPlayerLeftEvent.name:
+                        const playerLeftEvent = event as GameSessionPlayerLeftEvent;
+                        await this.pool.execute('delete from team_player where player_id = ?', [
+                            playerLeftEvent.playerId,
+                        ]);
+                        break;
+                    case GameSessionHostChangedEvent.name:
+                        const hostChangedEvent = event as GameSessionHostChangedEvent;
+                        await this.pool.execute('update game_session set host_id = ? where id = ?', [
+                            hostChangedEvent.newHostId,
+                            hostChangedEvent.gameSessionId,
+                        ]);
+                        break;
+                    case GameSessionPlayerContactRegisteredEvent.name:
+                        const playerContactRegisteredEvent = event as GameSessionPlayerContactRegisteredEvent;
+                        await this.pool.execute('update team_player set last_contacted_at = ? where player_id = ?', [
+                            new Date(playerContactRegisteredEvent.lastContactedAt),
+                            playerContactRegisteredEvent.playerId,
+                        ]);
+                        break;
                 }
+
             }
         } catch (error) {
             await this.pool.rollback();
             throw error;
         }
         await this.pool.commit();
+
+        this.eventBus.publishAll(events);
+
     }
 
     private async getTeams(id: GameSessionId) {
@@ -160,5 +183,39 @@ export class GameSessionSqlRepository implements GameSessionRepository {
         }
 
         return players;
+    }
+
+    private async insert(gameSession: GameSession) {
+
+        await this.pool.execute('INSERT INTO game_session (id, host_id, created_at, updated_at) VALUES (?, ?, ?, ?)',
+            [
+                gameSession.id.value,
+                gameSession.host.value,
+                gameSession.createdAt,
+                gameSession.updatedAt,
+            ]
+        );
+        for (const team of gameSession.teams) {
+            await this.pool.execute('INSERT INTO team (id, game_session_id) VALUES (?, ?)', [
+                team.id.value,
+                gameSession.id.value,
+            ]);
+
+            for (const player of team.players) {
+                const playerData = player as unknown as {
+                    _id: PlayerId,
+                    _name: PlayerName,
+                    _lastContactedAt: PlayerLastContactedAt
+                }
+
+                await this.pool.execute('INSERT INTO team_player (player_id, team_id, name, last_contacted_at) VALUES (?, ?, ?, ?)', [
+                    playerData._id.value,
+                    team.id.value,
+                    playerData._name.value,
+                    playerData._lastContactedAt.value,
+                ]);
+
+            }
+        }
     }
 }

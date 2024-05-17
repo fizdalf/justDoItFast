@@ -6,6 +6,7 @@ export const CurrentGameSessionGetter = Symbol('CurrentGameSessionGetter');
 export interface CurrentGameSession {
     id: string;
     host: string;
+    isHost: boolean;
     createdAt: Date;
     updatedAt: Date;
     teams: {

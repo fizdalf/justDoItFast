@@ -1,12 +1,13 @@
-import {EventsHandler} from '@nestjs/cqrs';
+import {CommandBus, EventsHandler} from '@nestjs/cqrs';
 import {GameSessionEmptiedEvent} from '../events/game-session-emptied.event';
+import {RemoveSessionCommand} from '../commands/remove-session.command';
 
 @EventsHandler(GameSessionEmptiedEvent)
 export class OnSessionEmptiedEventListener {
-    constructor() {
+    constructor(private readonly commandBus: CommandBus) {
     }
 
     async handle(event: GameSessionEmptiedEvent): Promise<void> {
-        console.log(`Game session ${event.gameSessionId} emptied`);
+        await this.commandBus.execute(new RemoveSessionCommand(event.gameSessionId));
     }
 }

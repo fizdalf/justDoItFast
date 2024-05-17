@@ -44,6 +44,7 @@ import {
 } from './application/remove-idle-players-from-game-session/remove-idle-players-from-game-session.command-handler';
 import {OnSessionEmptiedEventListener} from './domain/event-listeners/on-session-emptied.event-listener';
 import {OnGameSessionPlayerLeftEventHandler} from './domain/event-listeners/on-game-session-player-left.event-handler';
+import {RemoveSessionCommandHandler} from './application/remove-session/remove-session.command-handler';
 
 const commandHandlers = [
     CreateGameSessionCommandHandler,
@@ -52,6 +53,7 @@ const commandHandlers = [
     RequestIdlePlayersRemovalFromGameSessionsCommandHandler,
     RegisterPlayerContactCommandHandler,
     RemoveIdlePlayersFromGameSessionCommandHandler,
+    RemoveSessionCommandHandler,
 ];
 const queryHandlers = [
     GetCurrentSessionQueryHandler,
@@ -72,7 +74,6 @@ const tasks = [
     imports: [
         CqrsModule,
         SharedModule,
-
     ],
     controllers: [
         CreateGameSessionController,
