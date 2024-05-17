@@ -76,6 +76,7 @@ function rehydrateGameSession(data: any): GameSession {
             }))
         })),
         host: data.host,
+        isHost: data.isHost,
         createdAt: new Date(data.createdAt),
         updatedAt: new Date(data.updatedAt)
     };

@@ -9,8 +9,17 @@ import {GameSessionService} from '../../services/game-session/gameSessionService
 import {Player} from '../../services/game-session/gameSession';
 import {HttpClientModule} from '@angular/common/http';
 import {WebsocketService} from '../../services/websocket/websocket.service';
-import {MatCard, MatCardContent, MatCardHeader, MatCardSubtitle, MatCardTitle} from '@angular/material/card';
+import {
+    MatCard,
+    MatCardActions,
+    MatCardContent,
+    MatCardHeader,
+    MatCardSubtitle,
+    MatCardTitle
+} from '@angular/material/card';
 import {MatIcon} from '@angular/material/icon';
+import {RouterLink} from '@angular/router';
+import {MatButton} from '@angular/material/button';
 
 
 export function runInZone<T>(zone: NgZone): OperatorFunction<T, T> {
@@ -40,6 +49,9 @@ export function runInZone<T>(zone: NgZone): OperatorFunction<T, T> {
         MatIcon,
         MatCardHeader,
         MatCardSubtitle,
+        RouterLink,
+        MatCardActions,
+        MatButton,
     ],
     templateUrl: './create-session-page.component.html',
     styleUrl: './create-session-page.component.scss',
@@ -62,5 +74,12 @@ export class CreateSessionPageComponent implements OnInit {
     }
 
     ngOnInit(): void {
+    }
+
+    startGame() {
+    }
+
+    leaveGame() {
+
     }
 }

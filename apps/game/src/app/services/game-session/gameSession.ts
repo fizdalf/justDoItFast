@@ -12,6 +12,7 @@ export interface GameSession {
     id: string;
     teams: Team[];
     host: string;
+    isHost: boolean;
     createdAt: Date;
     updatedAt: Date;
 }

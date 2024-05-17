@@ -18,9 +18,11 @@ import {
 } from '@org/core/game-session/websocket-events/PlayerLeftGameSessionEvent';
 
 export interface CreateSessionPageViewModel {
+    canStartGame: boolean;
     playerCount: number;
     sessionId: string | undefined;
-    teams: Team[]
+    teams: Team[],
+    isHost: boolean;
 }
 
 interface CreateSessionPageState {
@@ -58,12 +60,16 @@ export class CreateSessionPageStore extends ComponentStore<CreateSessionPageStat
     private sessionId$ = this.select((state) => state.session?.id);
     private playerCount$ = this.select((state) => totalPlayerCount(state.session?.teams));
     private teams$ = this.select((state) => state.session?.teams ?? []);
+    private isHost$ = this.select((state) => state.session?.isHost ?? false);
+    private canStartGame$ = this.select((state) => state.session?.teams?.length === 2 && state.session?.teams[0].players.length === state.session?.teams[1].players.length);
 
     vm$: Observable<CreateSessionPageViewModel> = this.select(
         {
             sessionId: this.sessionId$,
             playerCount: this.playerCount$,
             teams: this.teams$,
+            isHost: this.isHost$,
+            canStartGame: this.canStartGame$,
         }, {debounce: true});
 
     //// UPDATERS ////
