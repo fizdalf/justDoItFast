@@ -41,7 +41,7 @@ export class SessionJoinWaitingRoomPageStore extends ComponentStore<SessionJoinW
                 if (!session || !identity) {
                     return;
                 }
-                this.sessionService.leaveSession(session.id, identity);
+                this.sessionService.leaveSession();
             })
         );
     })

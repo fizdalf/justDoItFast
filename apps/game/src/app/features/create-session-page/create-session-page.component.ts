@@ -80,6 +80,6 @@ export class CreateSessionPageComponent implements OnInit {
     }
 
     leaveGame() {
-
+        this.store.leaveGame();
     }
 }

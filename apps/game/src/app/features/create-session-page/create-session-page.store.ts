@@ -39,8 +39,6 @@ function totalPlayerCount(teams: Team[] | undefined): number {
 
 @Injectable()
 export class CreateSessionPageStore extends ComponentStore<CreateSessionPageState> {
-
-
     private readonly logInWebSocket = this.effect((trigger$) =>
         combineLatest([
             trigger$,
@@ -56,13 +54,11 @@ export class CreateSessionPageStore extends ComponentStore<CreateSessionPageStat
     );
 
     //// SELECTORS ////
-
     private sessionId$ = this.select((state) => state.session?.id);
     private playerCount$ = this.select((state) => totalPlayerCount(state.session?.teams));
     private teams$ = this.select((state) => state.session?.teams ?? []);
     private isHost$ = this.select((state) => state.session?.isHost ?? false);
     private canStartGame$ = this.select((state) => state.session?.teams?.length === 2 && state.session?.teams[0].players.length === state.session?.teams[1].players.length);
-
     vm$: Observable<CreateSessionPageViewModel> = this.select(
         {
             sessionId: this.sessionId$,
@@ -79,6 +75,7 @@ export class CreateSessionPageStore extends ComponentStore<CreateSessionPageStat
             session,
         };
     });
+
     //// EFFECTS ////
     public readonly fetchSession = this.effect((trigger$) =>
         trigger$.pipe(
@@ -106,6 +103,10 @@ export class CreateSessionPageStore extends ComponentStore<CreateSessionPageStat
         private readonly websocketService: WebsocketService,
     ) {
         super({sessionId: undefined, session: undefined});
+    }
+
+    leaveGame() {
+        this.sessionService.leaveSession();
     }
 }
 

@@ -53,8 +53,8 @@ export class ImpGameSessionService implements GameSessionService {
         return response.token;
     }
 
-    leaveSession(id: string, playerId: string): Promise<void> {
-        throw new Error('Method not implemented.');
+    async leaveSession(): Promise<void> {
+        await firstValueFrom(this.client.post('/api/game-session/leave', {}));
     }
 
     async getSessionPreview(sessionId: string): Promise<GameSessionPreview> {

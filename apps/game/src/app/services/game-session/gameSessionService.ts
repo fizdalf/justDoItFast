@@ -15,7 +15,7 @@ export interface GameSessionService {
 
     joinSession(sessionId: string, playerName: string): Promise<string>;
 
-    leaveSession(id: string, playerId: string): Promise<void>;
+    leaveSession(): Promise<void>;
 
     getSessionPreview(sessionId: string): Promise<GameSessionPreview>;
 }
