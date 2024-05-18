@@ -11,7 +11,7 @@ import {
     GetCurrentSessionController
 } from './infrastructure/http/controller/get-current-session/get-current-session.controller';
 import {AuthenticationService} from './infrastructure/authentication/AuthenticationService';
-import {GetCurrentSessionQueryHandler} from './application/get-current-session/get-current-session.query-handler';
+import {GetCurrentSessionQueryHandler} from './application/get-current-room/get-current-session.query-handler';
 import {CurrentGameSessionGetter} from './domain/service/CurrentGameSessionGetter';
 import {CurrentGameSessionMysqlGetter} from './infrastructure/persistence/CurrentGameSessionMysqlGetter';
 import {GameSessionSocketGateway} from './infrastructure/websocket/game-session-socket-gateway';
