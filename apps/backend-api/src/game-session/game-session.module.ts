@@ -1,5 +1,5 @@
 import {ConsoleLogger, Module} from "@nestjs/common";
-import {CreateGameSessionCommandHandler} from './application/create-game-session/create-game-session.command-handler';
+import {CreateGameSessionCommandHandler} from './application/create-room/create-game-session.command-handler';
 import {
     CreateGameSessionController
 } from './infrastructure/http/controller/create-game-session/create-game-session.controller';
