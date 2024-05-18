@@ -6,7 +6,7 @@ export function sessionConnectedGuard(): CanActivateFn {
 
     return async () => {
         const router = inject(Router);
-        const b = !!sessionStorage.getItem('gameSessionToken');
+        const b = !!sessionStorage.getItem('roomToken');
 
         if (!b) {
             await router.navigate(['/']);

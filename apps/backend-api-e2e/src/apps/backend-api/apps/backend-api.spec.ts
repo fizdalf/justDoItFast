@@ -10,7 +10,7 @@ describe('GET /api', () => {
 
     it('should return an error when the request is invalid', async () => {
         try {
-            await axios.post(`/api/game-session`, {});
+            await axios.post(`/api/room`, {});
         } catch (error) {
             expect(error.response.status).toBe(400);
             expect(error.response.data).toEqual({
@@ -18,7 +18,7 @@ describe('GET /api', () => {
                 message: [
                     'playerId should not be empty',
                     'playerIcon should not be empty',
-                    'gameSessionId should not be empty'
+                    'roomId should not be empty'
                 ],
                 error: 'Bad Request'
             });

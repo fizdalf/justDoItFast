@@ -8,20 +8,16 @@ export const appRoutes: Route[] = [
     },
     {
         path: 'select-icon',
-        loadComponent: () => import('./features/select-icon-page/select-icon-page.component').then((m) => m.SelectIconPageComponent),
+        loadComponent: () => import('./features/create-room-page/create-room-page.component').then((m) => m.CreateRoomPageComponent),
     },
     {
-        path: 'create-session',
+        path: 'create-room',
         canActivate: [sessionConnectedGuard()],
-        loadComponent: () => import('./features/create-session-page/create-session-page.component').then((m) => m.CreateSessionPageComponent),
+        loadComponent: () => import('./features/room/room-page.component').then((m) => m.RoomPageComponent),
     },
     {
-        path: 'join-session',
-        loadComponent: () => import('./features/join-session-page/join-session-page.component').then((m) => m.JoinSessionPageComponent),
-    },
-    {
-        path: 'session-join-waiting-room/:sessionId',
-        loadComponent: () => import('./features/session-join-waiting-room-page/session-join-waiting-room-page.component').then((m) => m.SessionJoinWaitingRoomPageComponent),
+        path: 'join-room',
+        loadComponent: () => import('./features/join-room-page/join-room-page.component').then((m) => m.JoinRoomPageComponent),
     },
     {
         path: '**',

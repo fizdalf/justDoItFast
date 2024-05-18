@@ -1,12 +1,12 @@
 import {Module} from '@nestjs/common';
 import {AppController} from './app.controller';
 import {AppService} from './app.service';
-import {GameSessionModule} from '../game-session/game-session.module';
+import {RoomModule} from '../room/room.module';
 import {ScheduleModule} from '@nestjs/schedule';
 
 @Module({
     imports: [
-        GameSessionModule,
+        RoomModule,
         ScheduleModule.forRoot(),
     ],
     controllers: [AppController],
