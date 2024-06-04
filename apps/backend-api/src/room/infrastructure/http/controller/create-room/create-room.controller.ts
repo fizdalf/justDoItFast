@@ -3,10 +3,8 @@ import {IsNotEmpty} from 'class-validator';
 import {CommandBus} from '@nestjs/cqrs';
 import {CreateRoom} from '../../../../domain/commands/create-room.command';
 import {RoomId} from '../../../../domain/valueObjects/RoomId';
-import {PlayerId} from '../../../../domain/valueObjects/PlayerId';
-import {Player} from '../../../../domain/entities/Player';
-import {PlayerName} from '../../../../domain/valueObjects/PlayerName';
-import {PlayerLastContactedAt} from '../../../../domain/valueObjects/playerLastContactedAt';
+import {UserId} from '../../../../domain/valueObjects/UserId';
+import {UserName} from '../../../../domain/valueObjects/UserName';
 import {AuthenticationService} from '../../../authentication/AuthenticationService';
 
 export abstract class CreateRoomRequestParams {
@@ -27,15 +25,13 @@ export class CreateRoomController {
     async createRoom(@Body() body: CreateRoomRequestParams) {
 
         const roomId = RoomId.random();
-        const player = new Player({
-            id: PlayerId.random(),
-            name: PlayerName.fromValue(body.hostPlayerName),
-            lastContactedAt: PlayerLastContactedAt.create(new Date())
-        });
+        const userId = UserId.random();
+
         await this.commandBus.execute(
             new CreateRoom({
                 roomId: roomId,
-                host: player
+                userId: userId,
+                userName: UserName.fromValue(body.hostPlayerName)
             })
         );
 
@@ -43,9 +39,9 @@ export class CreateRoomController {
             success: true,
             token: this.authenticationService.generateToken({
                 roomId: roomId,
-                player,
-                isHost: true
-
+                isHost: true,
+                userName: body.hostPlayerName,
+                userId: userId.value
             })
         };
     }

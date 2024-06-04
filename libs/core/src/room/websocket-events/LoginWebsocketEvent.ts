@@ -4,6 +4,10 @@ export interface LoginWebsocketEventPayload {
     token: string
 }
 
+export interface LoginWebsocketEventAcknowledge {
+    type: 'error' | 'ok';
+}
+
 export class LoginWebsocketEvent extends WebsocketEvent<LoginWebsocketEventPayload> {
     protected static override _eventName = 'login';
 
@@ -14,5 +18,9 @@ export class LoginWebsocketEvent extends WebsocketEvent<LoginWebsocketEventPaylo
 
     payload(): LoginWebsocketEventPayload {
         return {token: this.token};
+    }
+
+    acknowledge(): LoginWebsocketEventAcknowledge {
+        return {type: 'ok'};
     }
 }

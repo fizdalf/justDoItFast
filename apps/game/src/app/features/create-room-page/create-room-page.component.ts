@@ -11,7 +11,7 @@ import {ImpRoomService} from '../../services/room/imp-room.service';
 import {FormControl, ReactiveFormsModule} from '@angular/forms';
 import {MatButtonModule} from '@angular/material/button';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
-import {WebsocketService} from '../../services/websocket/websocket.service';
+import {AuthenticationService} from '../../services/authentication/authentication.service';
 
 export interface SelectIconPageViewModel {
     name: string | undefined;
@@ -32,7 +32,6 @@ export interface SelectIconPageViewModel {
             provide: RoomService,
             useClass: ImpRoomService
         },
-        WebsocketService
     ],
     styleUrl: './create-room-page.component.scss',
 })
@@ -42,6 +41,7 @@ export class CreateRoomPageComponent implements OnInit {
         private router: Router,
         @Inject(RoomService) private sessionService: RoomService,
         @Inject(DestroyRef) private destroy$: DestroyRef,
+        private authenticationService: AuthenticationService,
     ) {
     }
 
@@ -62,7 +62,7 @@ export class CreateRoomPageComponent implements OnInit {
 
     async createSession() {
         const roomToken = await this.sessionService.createRoom(this.playerName.value);
-        sessionStorage.setItem('roomToken', roomToken);
+        this.authenticationService.login(roomToken);
         this.router.navigate(['/', 'create-session']);
     }
 }

@@ -4,10 +4,10 @@ import {Room} from '../../domain/aggregateRoots/Room';
 import {RoomId} from '../../domain/valueObjects/RoomId';
 import {Team} from '../../domain/entities/Team';
 import {TeamId} from '../../domain/valueObjects/TeamId';
-import {Player} from '../../domain/entities/Player';
-import {PlayerId} from '../../domain/valueObjects/PlayerId';
-import {PlayerName} from '../../domain/valueObjects/PlayerName';
-import {PlayerLastContactedAt} from '../../domain/valueObjects/playerLastContactedAt';
+import {User} from '../../domain/entities/User';
+import {UserId} from '../../domain/valueObjects/UserId';
+import {UserName} from '../../domain/valueObjects/UserName';
+import {UserLastContactedAt} from '../../domain/valueObjects/userLastContactedAt';
 
 
 describe('JoinRoomCommandHandler', () => {
@@ -37,20 +37,20 @@ describe('JoinRoomCommandHandler', () => {
 
     it('should make the given user join the room', async () => {
         const roomId = RoomId.random();
-        const hostPlayerId = PlayerId.random();
+        const hostPlayerId = UserId.random();
         const room: Room = new Room({
             id: roomId,
             teams: [
-                new Team(TeamId.random(), [
-                    new Player({id: hostPlayerId, name: PlayerName.fromValue('player1'), lastContactedAt: new PlayerLastContactedAt(new Date())}),
-                ])
+                new Team({id : TeamId.random(), members : [
+                    new User({id: hostPlayerId, name: UserName.fromValue('player1'), lastContactedAt: new UserLastContactedAt(new Date())}),
+                ]})
             ],
             host: hostPlayerId,
             createdAt: new Date(),
             updatedAt: new Date()
         });
 
-        const newPlayerId = PlayerId.random();
+        const newPlayerId = UserId.random();
 
         roomRepoMock.findOneById = jest.fn().mockResolvedValue(room);
         const command = {

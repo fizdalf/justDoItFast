@@ -9,6 +9,7 @@ import {WebsocketService} from '../../services/websocket/websocket.service';
 import {MatDialog} from '@angular/material/dialog';
 import {PlayerNameRequestDialog} from './components/player-name-request-dialog.component';
 import {Router} from '@angular/router';
+import {AuthenticationService} from '../../services/authentication/authentication.service';
 
 @Component({
     selector: 'org-join-room-page',
@@ -38,6 +39,7 @@ export class JoinRoomPageComponent {
         private dialog: MatDialog,
         private sessionService: RoomService,
         private router: Router,
+        private authenticationService: AuthenticationService,
     ) {
 
     }
@@ -52,7 +54,7 @@ export class JoinRoomPageComponent {
         dialogRef.afterClosed().subscribe(async result => {
             if (!result) return;
             const roomToken = await this.sessionService.joinRoom(sessionId, result);
-            sessionStorage.setItem('roomToken', roomToken);
+            this.authenticationService.login(roomToken);
             this.router.navigate(['/', 'create-session']);
         });
     }

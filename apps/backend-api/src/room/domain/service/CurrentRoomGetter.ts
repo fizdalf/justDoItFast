@@ -1,5 +1,5 @@
 import {RoomId} from '../valueObjects/RoomId';
-import {PlayerId} from '../valueObjects/PlayerId';
+import {UserId} from '../valueObjects/UserId';
 
 export const CurrentRoomGetter = Symbol('CurrentRoomGetter');
 
@@ -9,6 +9,7 @@ export interface CurrentRoom {
     isHost: boolean;
     createdAt: Date;
     updatedAt: Date;
+    gameSessionId: string|null;
     teams: {
         id: string;
         players: {
@@ -19,5 +20,5 @@ export interface CurrentRoom {
 }
 
 export interface CurrentRoomGetter {
-    execute(roomId: RoomId, playerId: PlayerId): Promise<CurrentRoom>;
+    execute(roomId: RoomId, playerId: UserId): Promise<CurrentRoom>;
 }

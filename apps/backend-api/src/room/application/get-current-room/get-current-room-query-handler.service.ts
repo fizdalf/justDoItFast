@@ -1,7 +1,7 @@
 import {IQueryHandler, QueryHandler} from '@nestjs/cqrs';
 import {GetCurrentRoomQuery} from '../../domain/query/get-current-room.query';
 import {RoomId} from '../../domain/valueObjects/RoomId';
-import {PlayerId} from '../../domain/valueObjects/PlayerId';
+import {UserId} from '../../domain/valueObjects/UserId';
 import {CurrentRoomGetter} from '../../domain/service/CurrentRoomGetter';
 import {Inject, Injectable} from '@nestjs/common';
 
@@ -14,6 +14,6 @@ export class GetCurrentRoomQueryHandler implements IQueryHandler<GetCurrentRoomQ
 
     async execute(query: GetCurrentRoomQuery) {
 
-        return this.currentSessionGetter.execute(RoomId.fromValue(query.roomId), PlayerId.fromValue(query.playerId));
+        return this.currentSessionGetter.execute(RoomId.fromValue(query.roomId), UserId.fromValue(query.playerId));
     }
 }

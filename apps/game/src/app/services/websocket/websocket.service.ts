@@ -1,25 +1,15 @@
 import {io, Socket} from 'socket.io-client';
 import {environment} from '../../../environments/environment';
 import {DefaultEventsMap} from 'socket.io/dist/typed-events';
-import {Observable, share} from 'rxjs';
+import {Observable} from 'rxjs';
 
 export class WebsocketService {
 
     private socket: Socket<DefaultEventsMap, DefaultEventsMap>;
-    private socket$: Observable<Socket<DefaultEventsMap, DefaultEventsMap>>;
 
     constructor() {
         this.socket = io(environment.socketUrl);
 
-        this.socket$ = new Observable<Socket<DefaultEventsMap, DefaultEventsMap>>(subscriber => {
-            this.socket.on('connect', () => {
-                console.log('socket connected');
-                subscriber.next(this.socket);
-            });
-            return () => {
-                this.socket.disconnect();
-            };
-        }).pipe(share()); // Share the connection between multiple subscribers
     }
 
     emit<Payload>(event: string, data: Payload) {
@@ -36,8 +26,21 @@ export class WebsocketService {
 
     on<Payload>(eventName: string): Observable<Payload> {
         return new Observable<Payload>(subscriber => {
-            const listener = (data: Payload) => {
+            const listener = (data: Payload, ack: any) => {
                 subscriber.next(data);
+            };
+            this.socket.on(eventName, listener);
+
+            return () => {
+                this.socket.off(eventName, listener);
+            };
+        });
+    }
+
+    onWithAcknowledge<Payload, Response>(eventName: string): Observable<[Payload, (response: Response) => void]> {
+        return new Observable<[Payload, (response: Response) => void]>(subscriber => {
+            const listener = (data: Payload, ack: (response: Response) => void) => {
+                subscriber.next([data, ack]);
             };
             this.socket.on(eventName, listener);
 

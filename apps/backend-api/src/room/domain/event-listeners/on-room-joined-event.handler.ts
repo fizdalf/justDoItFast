@@ -8,6 +8,7 @@ export class OnRoomJoinedEventHandler implements IEventHandler<RoomPlayerJoinedE
     }
 
     async handle(event: RoomPlayerJoinedEvent): Promise<void> {
+
         await this.roomSocketGateway.informPlayerJoined(event.roomId, event.playerName);
     }
 

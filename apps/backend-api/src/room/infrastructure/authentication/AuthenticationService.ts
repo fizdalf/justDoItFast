@@ -2,7 +2,8 @@ import {JwtService} from '@nestjs/jwt';
 import {Injectable} from '@nestjs/common';
 import {RoomToken} from '../../domain/valueObjects/RoomToken';
 import {RoomId} from '../../domain/valueObjects/RoomId';
-import {Player} from '../../domain/entities/Player';
+
+export type GenerateTokenParams = { isHost: boolean; roomId: RoomId; userName: string, userId: string };
 
 @Injectable()
 export class AuthenticationService {
@@ -14,12 +15,12 @@ export class AuthenticationService {
         return this.jwtService.verify<RoomToken>(authToken);
     }
 
-    generateToken(param: { isHost: boolean; roomId: RoomId; player: Player }) {
+    generateToken(param: GenerateTokenParams) {
         return this.jwtService.sign({
             isHost: param.isHost,
             roomId: param.roomId.value,
-            playerName: param.player.name.value,
-            playerId: param.player.id.value
+            playerName: param.userName,
+            playerId: param.userId
         }, {expiresIn: '10d'});
     }
 

@@ -1,18 +1,16 @@
 import {Body, Controller, Param, Post} from '@nestjs/common';
 import {IsNotEmpty, IsString} from 'class-validator';
-import {PlayerId} from '../../../../domain/valueObjects/PlayerId';
+import {UserId} from '../../../../domain/valueObjects/UserId';
 import {JoinRoomCommand} from '../../../../domain/commands/join-room.command';
 import {CommandBus} from '@nestjs/cqrs';
 import {AuthenticationService} from '../../../authentication/AuthenticationService';
-import {PlayerName} from '../../../../domain/valueObjects/PlayerName';
-import {PlayerLastContactedAt} from '../../../../domain/valueObjects/playerLastContactedAt';
-import {Player} from '../../../../domain/entities/Player';
+import {UserName} from '../../../../domain/valueObjects/UserName';
 import {RoomId} from '../../../../domain/valueObjects/RoomId';
 
 export abstract class JoinsSessionRequestParams {
     @IsNotEmpty()
     @IsString()
-    playerName: string;
+    userName: string;
 }
 
 @Controller('room/:id/join')
@@ -25,19 +23,21 @@ export class JoinRoomController {
     }
 
     @Post()
-    async joinSession(@Param('id') sessionId: string, @Body() body: JoinsSessionRequestParams) {
-        const playerId = PlayerId.random();
+    async joinSession(@Param('id') roomId: string, @Body() body: JoinsSessionRequestParams) {
+        const userId = UserId.random();
 
-        await this.commandBus.execute(new JoinRoomCommand(sessionId, playerId.value, body.playerName));
+        await this.commandBus.execute(new JoinRoomCommand(
+                RoomId.fromValue(roomId),
+                userId,
+                UserName.fromValue(body.userName)
+            )
+        );
 
         const token = this.authenticationService.generateToken({
-            roomId: RoomId.fromValue(sessionId),
-            player: new Player({
-                id: playerId,
-                name: PlayerName.fromValue(body.playerName),
-                lastContactedAt: PlayerLastContactedAt.create(new Date())
-            }),
-            isHost: false
+            roomId: RoomId.fromValue(roomId),
+            isHost: false,
+            userName: body.userName,
+            userId: userId.value
         })
         return {
             success: true,

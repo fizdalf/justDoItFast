@@ -36,6 +36,8 @@ import {OnRoomEmptiedEventListener} from './domain/event-listeners/on-room-empti
 import {OnRoomPlayerLeftEventHandler} from './domain/event-listeners/on-room-player-left-event.handler';
 import {RemoveRoomCommandHandler} from './application/remove-room/remove-room-command.handler';
 import {LeaveRoomController} from './infrastructure/http/controller/leave-room/leave-room-controller';
+import {RoomPreviewService} from "./domain/service/RoomPreviewService";
+import {RoomPreviewSqlService} from "./infrastructure/persistence/room-preview.sql.service";
 
 const commandHandlers = [
     CreateRoomCommandHandler,
@@ -90,6 +92,10 @@ const tasks = [
         {
             provide: RoomsIdsGetter,
             useClass: RoomsIdsMysqlGetter,
+        },
+        {
+            provide: RoomPreviewService,
+            useClass: RoomPreviewSqlService,
         },
         RoomSocketGateway,
         ConsoleLogger,

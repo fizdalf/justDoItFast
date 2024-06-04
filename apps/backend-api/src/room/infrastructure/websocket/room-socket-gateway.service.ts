@@ -1,9 +1,20 @@
-import {ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer} from '@nestjs/websockets';
+import {
+    ConnectedSocket,
+    MessageBody,
+    OnGatewayInit,
+    SubscribeMessage,
+    WebSocketGateway,
+    WebSocketServer
+} from '@nestjs/websockets';
 import {Server, Socket} from 'socket.io';
 import {Injectable} from '@nestjs/common';
 import {AuthenticationService} from '../authentication/AuthenticationService';
 import {PlayerJoinedRoomEvent} from '@org/core/room/websocket-events/PlayerJoinedRoomEvent';
-import {LoginWebsocketEvent, LoginWebsocketEventPayload} from '@org/core/room/websocket-events/LoginWebsocketEvent';
+import {
+    LoginWebsocketEvent,
+    LoginWebsocketEventAcknowledge,
+    LoginWebsocketEventPayload
+} from '@org/core/room/websocket-events/LoginWebsocketEvent';
 import {
     PingWebsocketEvent,
     PingWebsocketEventAckPayload,
@@ -12,11 +23,14 @@ import {
 import {CommandBus} from '@nestjs/cqrs';
 import {RegisterPlayerContactCommand} from '../../domain/commands/register-player-contact.command';
 import {PlayerLeftRoomEvent} from '@org/core/room/websocket-events/PlayerLeftRoomEvent';
+import {RequestPingWebsocketEvent} from '@org/core/room/websocket-events/RequestPingWebsocketEvent';
+import {RoomId} from "../../domain/valueObjects/RoomId";
+import {UserId} from "../../domain/valueObjects/UserId";
 
 
 @WebSocketGateway({cors: {origin: '*'}})
 @Injectable()
-export class RoomSocketGateway {
+export class RoomSocketGateway implements OnGatewayInit {
     @WebSocketServer() server: Server;
 
     constructor(
@@ -25,15 +39,24 @@ export class RoomSocketGateway {
     ) {
     }
 
+    async afterInit(server: Server): Promise<any> {
+        setInterval(async () => {
+                server.emit(RequestPingWebsocketEvent.eventName(), {});
+            },
+            1000 * 30
+        );
+    }
+
     @SubscribeMessage(LoginWebsocketEvent.eventName())
-    async handleEvent(@MessageBody() payload: LoginWebsocketEventPayload, @ConnectedSocket() client: Socket): Promise<string> {
+    async handleEvent(@MessageBody() payload: LoginWebsocketEventPayload, @ConnectedSocket() client: Socket): Promise<LoginWebsocketEventAcknowledge> {
         try {
             const resp = await this.authService.validateToken(payload.token);
+            console.log('joining room', resp.roomId);
             client.join(resp.roomId);
-            return 'ok';
+            return {type: 'ok'};
         } catch (e) {
             console.error(e);
-            return 'error';
+            return {type: 'error'};
         }
     }
 
@@ -41,9 +64,8 @@ export class RoomSocketGateway {
     async handlePingEvent(@MessageBody() payload: PingWebsocketEventPayload): Promise<PingWebsocketEventAckPayload> {
         const decodedToken = await this.authService.validateToken(payload.token);
         try {
-            await this.commandBus.execute(new RegisterPlayerContactCommand(decodedToken.playerId, decodedToken.roomId));
+            await this.commandBus.execute(new RegisterPlayerContactCommand(UserId.fromValue(decodedToken.playerId), RoomId.fromValue(decodedToken.roomId)));
         } catch (e) {
-            console.error(e);
             return {status: 'error', message: 'Could not register player contact'};
         }
         const refreshedToken = this.authService.refreshToken(decodedToken);

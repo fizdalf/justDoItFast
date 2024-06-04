@@ -3,20 +3,13 @@ import {RoomService} from './roomService';
 import {HttpClient} from '@angular/common/http';
 import {Injectable} from '@angular/core';
 import {Room} from './room';
-import {WebsocketService} from '../websocket/websocket.service';
 import {RoomPreview} from '@org/core/room/dto/roomPreview';
-import {PingWebsocketEvent, PingWebsocketEventPayload} from '@org/core/room/websocket-events/PingWebsocketEvent';
 
 
 @Injectable()
 export class ImpRoomService implements RoomService {
-    constructor(private client: HttpClient, private socketService: WebsocketService) {
-        setInterval(() => {
-            const token = sessionStorage.getItem('roomToken');
-            if (token) {
-                this.socketService.emit<PingWebsocketEventPayload>(PingWebsocketEvent.eventName(), {token});
-            }
-        }, 1000 * 30)
+    constructor(private client: HttpClient) {
+
     }
 
     async createRoom(playerName: string): Promise<string> {

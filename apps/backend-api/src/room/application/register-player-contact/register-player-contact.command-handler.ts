@@ -3,7 +3,7 @@ import {CommandHandler, ICommandHandler} from '@nestjs/cqrs';
 import {RoomRepository} from '../../domain/repositories/room.repository';
 import {Inject} from '@nestjs/common';
 import {RoomId} from '../../domain/valueObjects/RoomId';
-import {PlayerId} from '../../domain/valueObjects/PlayerId';
+import {UserId} from '../../domain/valueObjects/UserId';
 import {DateTimeService} from '../../../shared/domain/date-time.service';
 
 @CommandHandler(RegisterPlayerContactCommand)
@@ -17,7 +17,7 @@ export class RegisterPlayerContactCommandHandler implements ICommandHandler<Regi
 
     async execute(command: RegisterPlayerContactCommand): Promise<void> {
         const room = await this.roomRepository.findOneById(RoomId.fromValue(command.roomId));
-        room.registerPlayerContact(PlayerId.fromValue(command.playerId), this.dateTimeService.now());
+        room.registerPlayerContact(UserId.fromValue(command.userId), this.dateTimeService.now());
         await this.roomRepository.save(room);
     }
 }

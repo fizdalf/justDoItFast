@@ -1,13 +1,22 @@
 import {RoomId} from '../valueObjects/RoomId';
-import {Player} from '../entities/Player';
 import {Command} from '../../../shared/domain/command';
+import {UserId} from "../valueObjects/UserId";
+import {UserName} from "../valueObjects/UserName";
 
 export interface CreateRoomParams {
     roomId: RoomId;
-    host: Player
+    userId: UserId,
+    userName: UserName
 }
 
 export class CreateRoom implements Command {
-    constructor(public readonly params: CreateRoomParams) {
+    public readonly roomId: RoomId;
+    public readonly userId: UserId;
+    public readonly userName: UserName;
+
+    constructor({roomId, userId, userName}: CreateRoomParams) {
+        this.roomId = roomId;
+        this.userId = userId;
+        this.userName = userName;
     }
 }

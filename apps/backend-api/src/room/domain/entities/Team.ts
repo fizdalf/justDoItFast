@@ -1,54 +1,46 @@
 import {TeamId} from '../valueObjects/TeamId';
-import {PlayerId} from '../valueObjects/PlayerId';
-import {Player} from './Player';
+import {UserId} from '../valueObjects/UserId';
+import {User} from './User';
+
+export interface TeamProps {
+    id: TeamId;
+    members: User[];
+}
 
 export class Team {
-    id: TeamId;
-    players: Player[];
+    protected readonly _id: TeamId;
+    protected _members: User[];
 
-    constructor(id: TeamId, players: Player[]) {
-        this.id = id;
-        this.players = players;
-
+    constructor({id, members}: TeamProps) {
+        this._id = id;
+        this._members = members;
     }
 
-    addPlayer(player: Player): void {
-        this.players.push(player);
+    get memberCount(): number {
+        return this._members.length;
+    }
 
+    get id(): TeamId {
+        return this._id;
+    }
+
+    addMember(player: User): void {
+        this._members.push(player);
     };
 
-    removePlayer(playerId: PlayerId): boolean {
-        if (!this.isPlayerInTeam(playerId)) {
-            return false;
-        }
-        this.players = this.players.filter(player => player.id.value !== playerId.value);
-        return true;
+    removeMember(playerId: UserId): void {
+        this._members = this._members.filter(player => !player.id.equals(playerId));
     }
 
-    isPlayerInTeam(playerId: PlayerId): boolean {
-        return this.players.some(player => player.id.value === playerId.value);
+    isMember(playerId: UserId): boolean {
+        return this._members.some(player => player.id.equals(playerId));
     }
 
-    removeIdlePlayers() {
-        const removedPlayers: Player[] = [];
-        for (let i = 0; i < this.players.length; i++) {
-            const player = this.players[i];
-
-            if (player.isIdle(1000 * 60 * 2, new Date())) {
-                removedPlayers.push(player);
-                this.players.splice(i, 1);
-                i--;
-            }
-        }
-        return removedPlayers;
+    getMember(playerId: UserId) {
+        return this._members.find(player => player.id.equals(playerId));
     }
 
-    registerPlayerContact(playerId: PlayerId) {
-        const player = this.players.find(player => player.id.value === playerId.value);
-        if (!player) {
-            return false;
-        }
-        player.registerContact();
-        return true;
+    removeExtraMembers(idealNumberOfPlayers: number) {
+        return this._members.splice(idealNumberOfPlayers);
     }
 }

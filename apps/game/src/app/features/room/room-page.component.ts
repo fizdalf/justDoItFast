@@ -7,7 +7,6 @@ import {Observable, OperatorFunction} from 'rxjs';
 import {ImpRoomService} from '../../services/room/imp-room.service';
 import {RoomService} from '../../services/room/roomService';
 import {Player} from '../../services/room/room';
-import {WebsocketService} from '../../services/websocket/websocket.service';
 import {
     MatCard,
     MatCardActions,
@@ -63,7 +62,6 @@ interface Identifiable {
             provide: RoomService,
             useClass: ImpRoomService
         },
-        WebsocketService
     ],
     changeDetection: ChangeDetectionStrategy.Default
 })

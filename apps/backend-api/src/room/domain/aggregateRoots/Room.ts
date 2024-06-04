@@ -1,63 +1,116 @@
 import {RoomId} from '../valueObjects/RoomId';
-import {PlayerId} from '../valueObjects/PlayerId';
+import {UserId} from '../valueObjects/UserId';
 import {TeamId} from '../valueObjects/TeamId';
 import {Team} from '../entities/Team';
-import {Player} from '../entities/Player';
+import {User} from '../entities/User';
 import {AggregateRoot} from '@nestjs/cqrs';
-import {RoomCreatedDomainEvent} from '../events/room-created-domain.event';
+import {RoomCreatedEvent} from '../events/room-created.event';
 import {RoomPlayerJoinedEvent} from '../events/room-player-joined.event';
 import {RoomPlayerLeftEvent} from '../events/room-player-left.event';
 import {RoomEmptiedEvent} from '../events/room-emptied.event';
 import {RoomPlayerContactRegisteredEvent} from '../events/room-player-contact-registered.event';
-import {RoomHostChangedEvent} from '../events/room-host-changed-event';
+import {RoomHostChangedEvent} from '../events/room-host-changed.event';
+import {GameSession} from "./GameSession";
+import {GameSessionId} from "../valueObjects/GameSessionId";
+import {WordPackId} from "../valueObjects/WordPackId";
+import {RoomGameSessionCreatedEvent} from "../events/room-game-session-created.event";
+import {Users} from "../entities/Users";
+import {Teams} from "../entities/Teams";
+import {UserName} from "../valueObjects/UserName";
+import {UserLastContactedAt} from "../valueObjects/userLastContactedAt";
 
 export interface RoomParams {
     id: RoomId;
     teams: Team[];
-    host: PlayerId;
+    host: UserId;
     createdAt: Date;
     updatedAt: Date;
+    gameSessionId: GameSessionId | undefined
+}
+
+class OnlyHostCanStartGameException implements Error {
+    message: string;
+    name: string;
+}
+
+
+const idleThresholdMilliseconds = 1000 * 60 * 2;
+
+export interface RoomProps {
+    id: RoomId;
+    teams: Team[];
+    host: UserId;
+    createdAt: Date;
+    updatedAt: Date;
+    gameSessionId: GameSessionId | undefined
 }
 
 export class Room extends AggregateRoot {
-    readonly id: RoomId;
-    readonly teams: Team[];
-    readonly createdAt: Date;
 
-    constructor({id, teams, host, createdAt, updatedAt}: RoomParams) {
+    protected readonly _id: RoomId;
+    protected readonly _teams: Teams;
+    protected readonly _createdAt: Date;
+    protected _updatedAt: Date;
+
+    constructor({id, teams, host, createdAt, updatedAt, gameSessionId}: RoomParams) {
         super();
-        this.id = id;
-        this.teams = teams;
+        this._id = id;
+        this._teams = new Teams(...teams);
         this._host = host;
-        this.createdAt = createdAt;
+        this._createdAt = createdAt;
         this._updatedAt = updatedAt;
+        this._gameSessionId = gameSessionId;
 
     }
 
-    private _host: PlayerId;
+    protected _gameSessionId: GameSessionId | undefined;
 
-    get host(): PlayerId {
+    get gameSessionId(): GameSessionId | undefined {
+        return this._gameSessionId;
+    }
+
+    protected _host: UserId;
+
+    get host(): UserId {
         return this._host;
     }
 
-    private _updatedAt: Date;
+    protected _users: Users;
+
+    get users(): Users {
+        return this._users;
+    }
+
+    get id(): RoomId {
+        return this._id;
+    }
+
+    get teams(): Team[] {
+        return this._teams.toArray();
+    }
+
+    get createdAt(): Date {
+        return this._createdAt;
+    }
 
     get updatedAt(): Date {
         return this._updatedAt;
     }
 
-    static create(host: Player, sessionId: RoomId): Room {
+    static create(sessionId: RoomId, userId: UserId, userName: UserName, date: Date): Room {
+        const host = new User({
+            id: userId,
+            name: userName,
+            lastContactedAt: UserLastContactedAt.create(date)
+        });
         let redTeam = new Team(
-            TeamId.random(),
-            [],
+            {id : TeamId.random(), members : []},
         );
 
-
-        redTeam.addPlayer(host)
+        redTeam.addMember(host)
 
         let blueTeam = new Team(
-            TeamId.random(),
-            [],
+            {id : TeamId.random(), members : []},
         );
         const instance = new Room(
             {
@@ -67,126 +120,107 @@ export class Room extends AggregateRoot {
                     redTeam,
                     blueTeam
                 ],
-                createdAt: new Date(),
-                updatedAt: new Date()
+                createdAt: date,
+                updatedAt: date,
+                gameSessionId: undefined
             }
         );
-        instance.apply(new RoomCreatedDomainEvent(instance.id.value, instance._host.value));
+        instance.apply(new RoomCreatedEvent(instance._id.value, instance._host.value));
         return instance;
     }
 
-    addPlayer(player: Player) {
-        const team = this.findTeamWithFewestPlayers();
-        team.addPlayer(player);
-        this.apply(new RoomPlayerJoinedEvent(this.id.value, player.id.value, player.name.value, team.id.value));
-    }
+    addPlayer(userId: UserId, userName: UserName, date: Date) {
 
-    totalPlayerCount() {
-        return this.teams.reduce((acc, team) => acc + team.players.length, 0);
-    }
-
-    removePlayer(playerId: PlayerId): boolean {
-        return this.teams.some(team => {
-            return team.removePlayer(playerId)
+        const player = new User({
+            id: userId,
+            name: userName,
+            lastContactedAt: UserLastContactedAt.create(date)
         });
+        this._users.addUser(player);
+        const team = this._teams.addMember(player);
+
+        this.apply(new RoomPlayerJoinedEvent(this._id.value, userId.value, userName.value, team.id.value));
     }
 
-    isPlayerInSession(playerId: PlayerId): boolean {
-        return this.teams.some(team => team.isPlayerInTeam(playerId));
+    removePlayer(playerId: UserId): boolean {
+        const player = this._users.findPlayerById(playerId);
+        if (!player) {
+            return false;
+        }
+        this._teams.removePlayer(playerId);
+        return true;
     }
 
-    hostPlayerName() {
-        return this.teams.find(team => team.players.some(player => player.id.equals(this._host)))?.players.find(player => player.id.equals(this._host))?.name;
-    }
-
-    leave(playerId: PlayerId) {
+    leave(playerId: UserId) {
         const isPlayerRemoved = this.removePlayer(playerId);
         if (!isPlayerRemoved) {
             return;
         }
-        this.apply(new RoomPlayerLeftEvent(this.id.value, playerId.value));
+        this.apply(new RoomPlayerLeftEvent(this._id.value, playerId.value));
         this._updatedAt = new Date();
     }
 
-    removeIdlePlayers() {
+    removeIdlePlayers(currentDateTime: Date) {
 
-        const removedPlayers = [];
+        const idleUsers: User[] = this._users.removeIdleUsers(idleThresholdMilliseconds, currentDateTime);
 
-        for (let i = 0; i < this.teams.length; i++) {
-            const team = this.teams[i];
-            const removedPlayersFromTeam = team.removeIdlePlayers();
-            removedPlayers.push(...removedPlayersFromTeam);
-        }
-
-        if (removedPlayers.length === 0) {
+        if (idleUsers.length === 0) {
             return;
         }
 
-        if (removedPlayers.findIndex(player => player.id.equals(this._host)) !== -1 && this.totalPlayerCount() > 0) {
-            const newHost = this.teams.reduce((acc: PlayerId | undefined, team) => {
-                if (!acc || team.players.length > 0) {
-                    return team.players[0].id;
-                }
-                return acc;
-            }, undefined);
+        const idleUserIds = idleUsers.map(user => user.id);
+        this._teams.removeIdleMembersFromTeams(idleUserIds);
+
+        if (idleUsers.findIndex(player => player.id.equals(this._host)) !== -1) {
+            const newHost = this._users[0];
+
             if (newHost) {
-                this._host = newHost;
-                this.apply(new RoomHostChangedEvent(this.id.value, newHost.value));
+                this._host = newHost.id;
+                this.apply(new RoomHostChangedEvent(this._id.value, newHost.id.value));
             }
         }
 
-        this.rebalanceTeams();
-
-        removedPlayers.forEach(player => {
-            this.apply(new RoomPlayerLeftEvent(this.id.value, player.id.value));
+        idleUsers.forEach(player => {
+            this.apply(new RoomPlayerLeftEvent(this._id.value, player.id.value));
         });
 
 
-        if (this.totalPlayerCount() === 0) {
-            this.apply(new RoomEmptiedEvent(this.id.value));
+        if (this._users.size === 0) {
+            this.apply(new RoomEmptiedEvent(this._id.value));
         }
         this._updatedAt = new Date();
     }
 
-    registerPlayerContact(playerId: PlayerId, lastContactedAt: Date) {
-        const isPlayerRegistered = this.teams.some(team => {
-            return team.registerPlayerContact(playerId);
-        });
-        if (!isPlayerRegistered) {
+    registerPlayerContact(playerId: UserId, lastContactedAt: Date) {
+
+        const user = this._users.findPlayerById(playerId);
+        if (!user) {
             return;
         }
+        user.registerContact(lastContactedAt);
 
         this.apply(new RoomPlayerContactRegisteredEvent(
+                this._id.value,
                 playerId.value,
-                this.id.value,
                 lastContactedAt.toISOString()
             )
         );
-        this._updatedAt = new Date();
+        this._updatedAt = lastContactedAt;
     }
 
-    private findTeamWithFewestPlayers() {
-        return this.teams.reduce((acc, team) => {
-            if (!acc || team.players.length < acc.players.length) {
-                return team;
-            }
-            return acc;
-        });
-    }
-
-    private rebalanceTeams() {
-        const sortedTeams = this.teams.sort((a, b) => a.players.length - b.players.length);
-        const playerCountDifference = sortedTeams[1].players.length - sortedTeams[0].players.length;
-
-        if (playerCountDifference <= 1) {
-            return;
+    startGame(creatorId: UserId, playerIds: UserId[], wordPackIds: WordPackId[], id: GameSessionId) {
+        if (!this.host.equals(creatorId)) {
+            throw new OnlyHostCanStartGameException();
         }
 
-        const playersToMove = Math.floor(playerCountDifference / 2);
+        const gameSession = GameSession.create(this._teams, playerIds, wordPackIds, id);
 
-        for (let i = 0; i < playersToMove; i++) {
-            const playerToMove = sortedTeams[1].players.pop();
-            sortedTeams[0].players.push(playerToMove);
-        }
+        this.apply(new RoomGameSessionCreatedEvent(
+            this._id.value,
+            id.value,
+        ));
+
+        this._gameSessionId = id;
+        return gameSession;
     }
 }
