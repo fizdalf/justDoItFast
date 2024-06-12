@@ -46,6 +46,7 @@ export class RoomPageStore extends ComponentStore<CreateSessionPageState> {
     private playerCount$ = this.select((state) => totalPlayerCount(state.room?.teams));
     private teams$ = this.select((state) => state.room?.teams ?? []);
     private isHost$ = this.select((state) => state.room?.isHost ?? false);
+    private canStartGame$ = this.select((state) => state.room !== undefined && state.room.teams[0].players.length >= 2 && state.room.teams[0].players.length === state.room.teams[1].players.length);
     //// EFFECTS ////
     public readonly fetchSession = this.effect((trigger$) =>
         trigger$.pipe(
@@ -88,7 +89,7 @@ export class RoomPageStore extends ComponentStore<CreateSessionPageState> {
             room: session,
         };
     });
-    private canStartGame$ = this.select((state) => state.room !== undefined && state.room.teams[0].players.length >= 2 && state.room.teams[0].players.length === state.room.teams[1].players.length);
+
     private readonly listenSessionChanges = this.effect(() => {
             return merge(
                 this.websocketService.on<PlayerJoinedRoomEventPayload>(PlayerJoinedRoomEvent.eventName()),

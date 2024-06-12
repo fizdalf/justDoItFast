@@ -4,22 +4,20 @@ import {Room} from '../../../domain/aggregateRoots/Room';
 import {Connection, RowDataPacket} from 'mysql2/promise';
 import {Inject, Injectable} from '@nestjs/common';
 import {InjectClient} from 'nest-mysql';
-import {RoomId} from '../../../domain/valueObjects/RoomId';
-import {UserId} from '../../../domain/valueObjects/UserId';
+import {RoomId} from '../../../domain/value-objects/RoomId';
+import {UserId} from '../../../domain/value-objects/UserId';
 import {User} from '../../../domain/entities/User';
-import {UserName} from '../../../domain/valueObjects/UserName';
-import {Team} from '../../../domain/entities/Team';
-import {UserLastContactedAt} from '../../../domain/valueObjects/userLastContactedAt';
-import {TeamId} from '../../../domain/valueObjects/TeamId';
-import {EventBus, IEventBus} from '@nestjs/cqrs';
+import {UserName} from '../../../domain/value-objects/UserName';
+import {UserLastContactedAt} from '../../../domain/value-objects/userLastContactedAt';
+import {EventBus, IEvent, IEventBus} from '@nestjs/cqrs';
 import {RoomCreatedEvent} from '../../../domain/events/room-created.event';
-import {RoomPlayerJoinedEvent} from '../../../domain/events/room-player-joined.event';
-import {RoomPlayerLeftEvent} from '../../../domain/events/room-player-left.event';
+import {RoomUserJoinedEvent} from '../../../domain/events/room-user-joined.event';
+import {RoomUserLeftEvent} from '../../../domain/events/room-user-left.event';
 import {RoomHostChangedEvent} from '../../../domain/events/room-host-changed.event';
-import {RoomPlayerContactRegisteredEvent} from '../../../domain/events/room-player-contact-registered.event';
-import {RoomGameSessionCreatedEvent} from "../../../domain/events/room-game-session-created.event";
-import {GameSessionId} from "../../../domain/valueObjects/GameSessionId";
-import {RoomPersistence, RoomPersistenceData} from "./RoomPersistence";
+import {RoomUserContactRegisteredEvent} from '../../../domain/events/room-user-contact-registered.event';
+import {GameSessionCreatedEvent} from "../../../../game-session/domain/events/game-session-created.event";
+import {Users} from "../../../domain/entities/Users";
+import {DomainEvent} from "../../../../shared/domain/domain-event";
 
 export interface RoomRow extends RowDataPacket {
     id: string;
@@ -48,7 +46,10 @@ export class RoomSqlRepository implements RoomRepository {
         await this.pool.beginTransaction();
         try {
             await this.pool.execute(
-                'delete room, team, team_member from room left join team on team.room_id = room.id left join team_member on team_member.team_id = team.id  where room.id = ?',
+                `delete room, room_user
+                 from room
+                          left join room_user on room_user.room_id = room.id
+                 where room.id = ?`,
                 [
                     id.value,
                 ]
@@ -62,7 +63,7 @@ export class RoomSqlRepository implements RoomRepository {
 
     async findOneById(id: RoomId): Promise<Room> {
 
-        const [rows] = await this.pool.query<RoomRow[]>('select id, host_id, created_at, updated_at, teams, game_session_id from room where id = ?', [
+        const [rows] = await this.pool.query<RoomRow[]>('select id, host_id, created_at, updated_at, game_session_id from room where id = ?', [
             id.value,
         ]);
         if (rows.length == 0) {
@@ -72,15 +73,13 @@ export class RoomSqlRepository implements RoomRepository {
         const roomRawData = rows[0];
 
         const users = await this.getUsers(id);
-        const teams = await this.getTeams(id, users);
 
         return new Room({
             id: RoomId.fromValue(roomRawData.id),
             host: UserId.fromValue(roomRawData.host_id),
             createdAt: roomRawData.created_at,
             updatedAt: roomRawData.updated_at,
-            teams: teams,
-            gameSessionId: roomRawData.game_session_id ? GameSessionId.fromValue(roomRawData.game_session_id) : undefined,
+            users: new Users(users),
         });
 
     }
@@ -88,140 +87,82 @@ export class RoomSqlRepository implements RoomRepository {
 
     async save(room: Room): Promise<void> {
 
+
         const events = room.getUncommittedEvents();
         await this.pool.beginTransaction();
-
-        const persistenceRoom = new RoomPersistence(room).toPersistence();
-
         try {
-            for (const event of events) {
-                switch (event.constructor.name) {
-
-                    case RoomCreatedEvent.name:
-                        await this.insert(persistenceRoom)
-                        break;
-                    case RoomPlayerJoinedEvent.name:
-                        const playerJoinedEvent = event as RoomPlayerJoinedEvent;
-                        await this.pool.execute('INSERT INTO team_member (user_id, team_id) VALUES (?, ?)', [
-                            playerJoinedEvent.playerId,
-                            playerJoinedEvent.teamId,
-                            playerJoinedEvent.playerName,
-                            playerJoinedEvent.dateTimeOccurred,
-                        ]);
-                        break;
-                    case RoomPlayerLeftEvent.name:
-                        const playerLeftEvent = event as RoomPlayerLeftEvent;
-                        await this.pool.execute('delete from team_member where user_id = ?', [
-                            playerLeftEvent.playerId,
-                        ]);
-                        break;
-                    case RoomHostChangedEvent.name:
-                        const hostChangedEvent = event as RoomHostChangedEvent;
-                        await this.pool.execute('update room set host_id = ? where id = ?', [
-                            hostChangedEvent.newHostId,
-                            hostChangedEvent.roomId,
-                        ]);
-                        break;
-                    case RoomPlayerContactRegisteredEvent.name:
-                        const playerContactRegisteredEvent = event as RoomPlayerContactRegisteredEvent;
-                        await this.pool.execute('update room_user set last_contacted_at = ? where id = ?', [
-                            new Date(playerContactRegisteredEvent.lastContactedAt),
-                            playerContactRegisteredEvent.playerId,
-                        ]);
-                        break;
-
-                    case RoomGameSessionCreatedEvent.name:
-                        const gameSessionCreatedEvent = event as RoomGameSessionCreatedEvent;
-                        await this.pool.execute('update room set game_session_id = ? where id = ?', [
-                            gameSessionCreatedEvent.roomId,
-                            gameSessionCreatedEvent.gameSessionId,
-                        ]);
-                }
-
-            }
+            await this.saveEvents(events);
+            await this.pool.commit();
         } catch (error) {
             await this.pool.rollback();
             throw error;
         }
-        await this.pool.commit();
-
         this.eventBus.publishAll(events);
-
     }
 
-    private async getTeams(id: RoomId, users: User[]) {
-        const [rows] = await this.pool.query<RowDataPacket[]>('select * from team where room_id = ?', [
-            id.value,
-        ]);
-
-        const teams = [];
-
-        for (const row of rows) {
-            const teamMembers = await this.getTeamMembers(row.id, users);
-
-            const team = new Team(
-                {id: TeamId.fromValue(row.id), members: teamMembers},
-            );
-            teams.push(team);
-        }
-
-        return teams;
-    }
-
-    private async getTeamMembers(id: any, users: User[]) {
-        const [rows] = await this.pool.query<RowDataPacket[]>('select user_id from team_member where team_id = ?', [
-            id,
-        ]);
-
-        const players = [];
-
-        for (const row of rows) {
-            const user = users.find(user => user.id.value === row.user_id);
-            if (!user) {
-                throw new Error('Could not find user while fetching team members!');
+    private async saveEvents(events: IEvent[]) {
+        for (const event of events) {
+            if (!DomainEvent.isDomainEvent(event)) {
+                continue;
             }
-            players.push(user);
-        }
-
-        return players;
-    }
-
-    private async insert(room: RoomPersistenceData) {
-
-        await this.pool.execute('INSERT INTO room (id, host_id, created_at, updated_at) VALUES (?, ?, ?, ?)',
-            [
-                room.id,
-                room.host,
-                room.createdAt,
-                room.updatedAt,
-            ]
-        );
-
-        for (const team of room.teams) {
-            await this.pool.execute('INSERT INTO team (id, room_id) VALUES (?, ?)', [
-                team.id,
-                room.id,
-            ]);
+            switch (event.eventName) {
+                case RoomCreatedEvent.EVENT_NAME:
+                    const roomCreatedEvent = event as RoomCreatedEvent;
+                    await this.pool.execute('INSERT INTO room (id, host_id, created_at, updated_at) VALUES (?, ?, ?, ?)', [
+                        roomCreatedEvent.aggregateId,
+                        roomCreatedEvent.hostId,
+                        roomCreatedEvent.occurredOn,
+                        roomCreatedEvent.occurredOn,
+                    ]);
 
 
-            for (const userId of team.members) {
-                await this.pool.execute('INSERT INTO team_member (user_id, team_id) VALUES (?, ?)', [
-                    userId,
-                    team.id,
-                ]);
+                    await this.pool.execute('INSERT INTO room_user (id, room_id, name, last_contacted_at) VALUES (?, ?, ?, ?)', [
+                        roomCreatedEvent.hostId,
+                        roomCreatedEvent.aggregateId,
+                        roomCreatedEvent.hostName,
+                        roomCreatedEvent.occurredOn,
+                    ]);
 
+                    break;
+                case RoomUserJoinedEvent.EVENT_NAME:
+                    const playerJoinedEvent = event as RoomUserJoinedEvent;
+                    await this.pool.execute('INSERT INTO room_user (id, room_id, name, last_contacted_at) VALUES (?, ?, ?, ?)', [
+                        playerJoinedEvent.userId,
+                        playerJoinedEvent.aggregateId,
+                        playerJoinedEvent.userName,
+                        playerJoinedEvent.occurredOn,
+                    ]);
+                    break;
+                case RoomUserLeftEvent.EVENT_NAME:
+                    const playerLeftEvent = event as RoomUserLeftEvent;
+                    await this.pool.execute('delete from room_user where id = ?', [
+                        playerLeftEvent.userId,
+                    ]);
+                    break;
+                case RoomHostChangedEvent.EVENT_NAME:
+                    const hostChangedEvent = event as RoomHostChangedEvent;
+                    await this.pool.execute('update room set host_id = ? where id = ?', [
+                        hostChangedEvent.newHostId,
+                        hostChangedEvent.aggregateId,
+                    ]);
+                    break;
+                case RoomUserContactRegisteredEvent.EVENT_NAME:
+                    const playerContactRegisteredEvent = event as RoomUserContactRegisteredEvent;
+                    await this.pool.execute('update room_user set last_contacted_at = ? where id = ?', [
+                        new Date(playerContactRegisteredEvent.lastContactedAt),
+                        playerContactRegisteredEvent.userId,
+                    ]);
+                    break;
+
+                case GameSessionCreatedEvent.EVENT_NAME:
+                    const gameSessionCreatedEvent = event as GameSessionCreatedEvent;
+                    await this.pool.execute('update room set game_session_id = ? where id = ?', [
+                        gameSessionCreatedEvent.aggregateId,
+                        gameSessionCreatedEvent.roomId,
+                    ]);
             }
-        }
 
-        for (const user of room.users) {
-            await this.pool.execute('INSERT INTO room_user (id, room_id, name, last_contacted_at) VALUES (?, ?, ?, ?)', [
-                user.id,
-                room.id,
-                user.name,
-                user.lastContactedAt,
-            ]);
         }
-
     }
 
     private async getUsers(id: RoomId) {

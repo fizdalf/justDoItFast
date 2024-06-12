@@ -4,12 +4,12 @@ import {RoomService} from '../../services/room/roomService';
 import {Observable, switchMap, tap} from 'rxjs';
 import {Router} from '@angular/router';
 
-import {RoomPreview} from '@org/core/room/dto/roomPreview';
+import {RoomPreviewDto} from '@org/core/room/dto/room-preview.dto';
 
 interface JoinRoomPageState {
     roomId: string | undefined;
     playerName: string | undefined;
-    roomPreview: RoomPreview | undefined;
+    roomPreview: RoomPreviewDto | undefined;
 }
 
 @Injectable()
@@ -17,14 +17,14 @@ export class JoinRoomPageStore extends ComponentStore<JoinRoomPageState> {
     private readonly session$ = this.select((state) => state.roomPreview);
 
     //// Selectors ////
-    public readonly vm$: Observable<{ roomPreview: RoomPreview | undefined }> = this.select(
+    public readonly vm$: Observable<{ roomPreview: RoomPreviewDto | undefined }> = this.select(
         this.session$,
-        (roomPreview: RoomPreview | undefined) => {
+        (roomPreview: RoomPreviewDto | undefined) => {
             return {
                 roomPreview: roomPreview,
             };
         });
-    private setSession = this.updater((state, session: RoomPreview) => {
+    private setSession = this.updater((state, session: RoomPreviewDto) => {
         return {
             ...state,
             roomPreview: session,

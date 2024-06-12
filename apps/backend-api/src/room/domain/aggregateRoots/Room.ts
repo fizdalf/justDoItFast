@@ -1,34 +1,27 @@
-import {RoomId} from '../valueObjects/RoomId';
-import {UserId} from '../valueObjects/UserId';
-import {TeamId} from '../valueObjects/TeamId';
-import {Team} from '../entities/Team';
+import {RoomId} from '../value-objects/RoomId';
+import {UserId} from '../value-objects/UserId';
 import {User} from '../entities/User';
 import {AggregateRoot} from '@nestjs/cqrs';
 import {RoomCreatedEvent} from '../events/room-created.event';
-import {RoomPlayerJoinedEvent} from '../events/room-player-joined.event';
-import {RoomPlayerLeftEvent} from '../events/room-player-left.event';
+import {RoomUserJoinedEvent} from '../events/room-user-joined.event';
+import {RoomUserLeftEvent} from '../events/room-user-left.event';
 import {RoomEmptiedEvent} from '../events/room-emptied.event';
-import {RoomPlayerContactRegisteredEvent} from '../events/room-player-contact-registered.event';
+import {RoomUserContactRegisteredEvent} from '../events/room-user-contact-registered.event';
 import {RoomHostChangedEvent} from '../events/room-host-changed.event';
-import {GameSession} from "./GameSession";
-import {GameSessionId} from "../valueObjects/GameSessionId";
-import {WordPackId} from "../valueObjects/WordPackId";
-import {RoomGameSessionCreatedEvent} from "../events/room-game-session-created.event";
 import {Users} from "../entities/Users";
-import {Teams} from "../entities/Teams";
-import {UserName} from "../valueObjects/UserName";
-import {UserLastContactedAt} from "../valueObjects/userLastContactedAt";
+import {UserName} from "../value-objects/UserName";
+import {UserLastContactedAt} from "../value-objects/userLastContactedAt";
+
 
 export interface RoomParams {
     id: RoomId;
-    teams: Team[];
     host: UserId;
     createdAt: Date;
     updatedAt: Date;
-    gameSessionId: GameSessionId | undefined
+    users: Users
 }
 
-class OnlyHostCanStartGameException implements Error {
+export class OnlyHostCanStartGameException implements Error {
     message: string;
     name: string;
 }
@@ -36,191 +29,145 @@ class OnlyHostCanStartGameException implements Error {
 
 const idleThresholdMilliseconds = 1000 * 60 * 2;
 
-export interface RoomProps {
-    id: RoomId;
-    teams: Team[];
-    host: UserId;
-    createdAt: Date;
-    updatedAt: Date;
-    gameSessionId: GameSessionId | undefined
-}
-
 export class Room extends AggregateRoot {
 
-    protected readonly _id: RoomId;
-    protected readonly _teams: Teams;
+    protected _host: UserId;
     protected readonly _createdAt: Date;
     protected _updatedAt: Date;
+    private readonly _id: RoomId;
 
-    constructor({id, teams, host, createdAt, updatedAt, gameSessionId}: RoomParams) {
+    constructor({id, host, createdAt, updatedAt, users}: RoomParams) {
         super();
         this._id = id;
-        this._teams = new Teams(...teams);
         this._host = host;
         this._createdAt = createdAt;
         this._updatedAt = updatedAt;
-        this._gameSessionId = gameSessionId;
+        this._users = users;
 
-    }
-
-    protected _gameSessionId: GameSessionId | undefined;
-
-    get gameSessionId(): GameSessionId | undefined {
-        return this._gameSessionId;
-    }
-
-    protected _host: UserId;
-
-    get host(): UserId {
-        return this._host;
     }
 
     protected _users: Users;
 
-    get users(): Users {
-        return this._users;
+    get users(): User[] {
+        return this._users.toArray();
     }
 
     get id(): RoomId {
         return this._id;
     }
 
-    get teams(): Team[] {
-        return this._teams.toArray();
-    }
-
-    get createdAt(): Date {
-        return this._createdAt;
-    }
-
-    get updatedAt(): Date {
-        return this._updatedAt;
-    }
-
     static create(sessionId: RoomId, userId: UserId, userName: UserName, date: Date): Room {
+
         const host = new User({
             id: userId,
             name: userName,
             lastContactedAt: UserLastContactedAt.create(date)
         });
-        let redTeam = new Team(
-            {id : TeamId.random(), members : []},
-        );
 
-        redTeam.addMember(host)
 
-        let blueTeam = new Team(
-            {id : TeamId.random(), members : []},
-        );
         const instance = new Room(
             {
                 id: sessionId,
                 host: host.id,
-                teams: [
-                    redTeam,
-                    blueTeam
-                ],
                 createdAt: date,
                 updatedAt: date,
-                gameSessionId: undefined
+                users: new Users([host])
             }
         );
-        instance.apply(new RoomCreatedEvent(instance._id.value, instance._host.value));
+        const roomCreatedEvent = new RoomCreatedEvent({
+            aggregateId: sessionId.value,
+            hostId: userId.value,
+            hostName: userName.value,
+            occurredOn: date
+        });
+        instance.apply(roomCreatedEvent);
         return instance;
     }
 
-    addPlayer(userId: UserId, userName: UserName, date: Date) {
+    addUser(userId: UserId, userName: UserName, date: Date) {
 
-        const player = new User({
+        const user = new User({
             id: userId,
             name: userName,
             lastContactedAt: UserLastContactedAt.create(date)
         });
-        this._users.addUser(player);
-        const team = this._teams.addMember(player);
 
-        this.apply(new RoomPlayerJoinedEvent(this._id.value, userId.value, userName.value, team.id.value));
+        this._users.addUser(user);
+        this.apply(new RoomUserJoinedEvent({
+            aggregateId: this._id.value,
+            userId: userId.value,
+            userName: userName.value,
+            occurredOn: date
+        }));
     }
 
-    removePlayer(playerId: UserId): boolean {
-        const player = this._users.findPlayerById(playerId);
-        if (!player) {
-            return false;
-        }
-        this._teams.removePlayer(playerId);
-        return true;
-    }
+    leave(userId: UserId, currentDateTime: Date) {
 
-    leave(playerId: UserId) {
-        const isPlayerRemoved = this.removePlayer(playerId);
-        if (!isPlayerRemoved) {
+        const isUserRemoved = this._users.remove(userId);
+        if (!isUserRemoved) {
             return;
         }
-        this.apply(new RoomPlayerLeftEvent(this._id.value, playerId.value));
-        this._updatedAt = new Date();
+
+        this.apply(new RoomUserLeftEvent(this._id.value, userId.value, currentDateTime));
+        if (this._users.size === 0) {
+            this.apply(new RoomEmptiedEvent(this._id.value, currentDateTime));
+        }
     }
 
-    removeIdlePlayers(currentDateTime: Date) {
+    removeIdleUsers(currentDateTime: Date) {
 
-        const idleUsers: User[] = this._users.removeIdleUsers(idleThresholdMilliseconds, currentDateTime);
+        const idleUsers: User[] = this._users.filter(user => user.isIdle(idleThresholdMilliseconds, currentDateTime));
 
         if (idleUsers.length === 0) {
             return;
         }
 
-        const idleUserIds = idleUsers.map(user => user.id);
-        this._teams.removeIdleMembersFromTeams(idleUserIds);
+        idleUsers.forEach(idleUser => {
+            this.leave(idleUser.id, currentDateTime);
+        });
 
-        if (idleUsers.findIndex(player => player.id.equals(this._host)) !== -1) {
-            const newHost = this._users[0];
+        if (this._users.size === 0) {
+            return;
+        }
+
+        if (idleUsers.findIndex(idleUser => idleUser.id.equals(this._host)) !== -1) {
+            const newHost = this._users.first();
 
             if (newHost) {
                 this._host = newHost.id;
-                this.apply(new RoomHostChangedEvent(this._id.value, newHost.id.value));
+                this.apply(new RoomHostChangedEvent({aggregateId: this._id.value, newHostId: newHost.id.value}));
             }
         }
 
-        idleUsers.forEach(player => {
-            this.apply(new RoomPlayerLeftEvent(this._id.value, player.id.value));
-        });
 
-
-        if (this._users.size === 0) {
-            this.apply(new RoomEmptiedEvent(this._id.value));
-        }
-        this._updatedAt = new Date();
+        this._updatedAt = currentDateTime;
     }
 
-    registerPlayerContact(playerId: UserId, lastContactedAt: Date) {
+    registerUserContact(id: UserId, lastContactedAt: Date) {
 
-        const user = this._users.findPlayerById(playerId);
+        const user = this._users.findUserById(id);
         if (!user) {
             return;
         }
         user.registerContact(lastContactedAt);
 
-        this.apply(new RoomPlayerContactRegisteredEvent(
+        this.apply(new RoomUserContactRegisteredEvent(
                 this._id.value,
-                playerId.value,
+                id.value,
                 lastContactedAt.toISOString()
             )
         );
         this._updatedAt = lastContactedAt;
     }
 
-    startGame(creatorId: UserId, playerIds: UserId[], wordPackIds: WordPackId[], id: GameSessionId) {
-        if (!this.host.equals(creatorId)) {
+    isHost(creator: UserId) {
+        return this._host.equals(creator);
+    }
+
+    processUsers(creator: UserId, processor: (users: User[]) => void) {
+        if (!this.isHost(creator)) {
             throw new OnlyHostCanStartGameException();
         }
-
-        const gameSession = GameSession.create(this._teams, playerIds, wordPackIds, id);
-
-        this.apply(new RoomGameSessionCreatedEvent(
-            this._id.value,
-            id.value,
-        ));
-
-        this._gameSessionId = id;
-        return gameSession;
+        processor(this._users.toArray());
     }
 }

@@ -1,6 +1,6 @@
-import {UserId} from '../valueObjects/UserId';
-import {UserName} from '../valueObjects/UserName';
-import {UserLastContactedAt} from '../valueObjects/userLastContactedAt';
+import {UserId} from '../value-objects/UserId';
+import {UserName} from '../value-objects/UserName';
+import {UserLastContactedAt} from '../value-objects/userLastContactedAt';
 
 export interface UserProps {
     id: UserId;

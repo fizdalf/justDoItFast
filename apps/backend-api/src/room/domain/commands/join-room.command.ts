@@ -1,7 +1,7 @@
 import {ICommand} from '@nestjs/cqrs';
-import {RoomId} from "../valueObjects/RoomId";
-import {UserId} from "../valueObjects/UserId";
-import {UserName} from "../valueObjects/UserName";
+import {RoomId} from "../value-objects/RoomId";
+import {UserId} from "../value-objects/UserId";
+import {UserName} from "../value-objects/UserName";
 
 export class JoinRoomCommand implements ICommand {
     constructor(

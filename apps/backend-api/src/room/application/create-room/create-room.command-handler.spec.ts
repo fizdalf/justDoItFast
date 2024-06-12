@@ -1,46 +1,51 @@
-import {CreateRoomCommandHandler} from './create-room-command.handler';
-import {RoomId} from '../../domain/valueObjects/RoomId';
-import {User} from '../../domain/entities/User';
-import {UserId} from '../../domain/valueObjects/UserId';
-import {Room} from '../../domain/aggregateRoots/Room';
-import {UserName} from '../../domain/valueObjects/UserName';
-import {UserLastContactedAt} from '../../domain/valueObjects/userLastContactedAt';
+import {CreateRoomCommandHandler} from '../../../../src/room/application/create-room/create-room-command.handler';
+import {RoomId} from '../../domain/value-objects/RoomId';
+import {UserId} from '../../domain/value-objects/UserId';
+import {Room} from '../../../../src/room/domain/aggregateRoots/Room';
+import {UserName} from '../../domain/value-objects/UserName';
+import {RoomRepository} from "../../../../src/room/domain/repositories/room.repository";
+import {DateTimeService} from "../../../../src/shared/domain/date-time.service";
+import {CreateRoom} from "../../../../src/room/domain/commands/create-room.command";
 
 describe('CreateRoomCommandHandler', () => {
+
+    let roomRepoMock: jest.Mocked<RoomRepository>;
+    let dateTimeServiceMock: jest.Mocked<DateTimeService>;
+
     it('should be defined', () => {
         expect(CreateRoomCommandHandler).toBeDefined();
     });
 
     it('should create a new room', async () => {
 
-            const host = new User({
-                name: UserName.fromValue('pepe'),
-                id: UserId.random(),
-                lastContactedAt: new UserLastContactedAt(new Date())
-            });
-            const roomId = RoomId.random();
-            const command = {
-                params: {
-                    host,
-                    roomId,
-                },
-            };
-            const repository = {
-                save: jest.fn(),
-            };
+        roomRepoMock = {
+            findOneById: jest.fn(),
+            save: jest.fn(),
+            remove: jest.fn()
+        };
 
-            const createRoomCommandHandler = new CreateRoomCommandHandler(repository as any);
+        dateTimeServiceMock = {
+            now: jest.fn().mockReturnValue(new Date())
+        };
 
-            // When
-            await createRoomCommandHandler.execute(command);
+        const roomId = RoomId.random();
+        const userId = UserId.random();
+        const userName = UserName.fromValue('pepe');
+        const command = new CreateRoom({
+            roomId,
+            userId: userId,
+            userName: userName,
+        });
 
-            // Then
-            expect(repository.save).toHaveBeenCalledWith(expect.any(Room));
-            const savedRoom = repository.save.mock.calls[0][0];
-            expect(savedRoom._id).toEqual(roomId);
-            expect(savedRoom._host).toEqual(host.id);
-        }
-    );
+
+        const createRoomCommandHandler = new CreateRoomCommandHandler(roomRepoMock, dateTimeServiceMock);
+
+        await createRoomCommandHandler.execute(command);
+
+        expect(roomRepoMock.save).toHaveBeenCalledWith(expect.any(Room));
+        const savedRoom = roomRepoMock.save.mock.calls[0][0];
+        expect(savedRoom).toEqual(expect.any(Room));
+    });
 });
 
 

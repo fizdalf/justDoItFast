@@ -1,8 +1,8 @@
 import {ICommand} from "@nestjs/cqrs";
-import {RoomId} from "../valueObjects/RoomId";
-import {UserId} from "../valueObjects/UserId";
-import {WordPackId} from "../valueObjects/WordPackId";
-import {GameSessionId} from "../valueObjects/GameSessionId";
+import {RoomId} from "../value-objects/RoomId";
+import {UserId} from "../value-objects/UserId";
+import {WordPackId} from "../value-objects/WordPackId";
+import {GameSessionId} from "../value-objects/GameSessionId";
 
 interface ConstructorParams {
     roomId: RoomId;

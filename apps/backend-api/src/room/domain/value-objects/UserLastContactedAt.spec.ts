@@ -1,6 +1,6 @@
-import {UserLastContactedAt} from './userLastContactedAt';
+import {UserLastContactedAt} from "./userLastContactedAt";
 
-describe('PlayerLastContactedAt', () => {
+describe('UserLastContactedAt', () => {
     it('should be defined', () => {
         expect(UserLastContactedAt).toBeDefined();
     });
@@ -13,11 +13,11 @@ describe('PlayerLastContactedAt', () => {
     });
 
     it('should register contact', () => {
-        const lastContactedAt = UserLastContactedAt.create(new Date());
+        const lastContactedAt = UserLastContactedAt.create(new Date('2021-01-01 10:30:00'));
 
-        const newLastContactedAt = lastContactedAt.registerContact();
+        const newLastContactedAt = lastContactedAt.registerContact(new Date('2021-01-01 10:31:00'));
 
-        expect(newLastContactedAt.value).not.toBeNull();
+        expect(newLastContactedAt.value).toStrictEqual(new Date('2021-01-01 10:31:00'));
     });
 
     it('should not consider player idle, if last contacted date is less or equals threshold milliseconds ago', () => {

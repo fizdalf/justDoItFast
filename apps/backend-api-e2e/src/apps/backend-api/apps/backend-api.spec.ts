@@ -16,9 +16,9 @@ describe('GET /api', () => {
             expect(error.response.data).toEqual({
                 statusCode: 400,
                 message: [
-                    'playerId should not be empty',
+                    'userId should not be empty',
                     'playerIcon should not be empty',
-                    'roomId should not be empty'
+                    'aggregateId should not be empty'
                 ],
                 error: 'Bad Request'
             });

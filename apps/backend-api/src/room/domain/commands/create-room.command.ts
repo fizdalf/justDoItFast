@@ -1,7 +1,7 @@
-import {RoomId} from '../valueObjects/RoomId';
+import {RoomId} from '../value-objects/RoomId';
 import {Command} from '../../../shared/domain/command';
-import {UserId} from "../valueObjects/UserId";
-import {UserName} from "../valueObjects/UserName";
+import {UserId} from "../value-objects/UserId";
+import {UserName} from "../value-objects/UserName";
 
 export interface CreateRoomParams {
     roomId: RoomId;

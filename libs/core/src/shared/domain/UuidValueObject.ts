@@ -2,9 +2,9 @@ import {UUID, uuidv7} from 'uuidv7';
 import {ValueObject} from '@org/core/shared/domain/ValueObject';
 
 
-export abstract class UuidValueObject extends ValueObject<string> {
+export class UuidValueObject extends ValueObject<string> {
 
-    protected constructor(value: string) {
+    constructor(value: string) {
         super(value);
         this.isValidUuid(value);
     }
@@ -19,5 +19,9 @@ export abstract class UuidValueObject extends ValueObject<string> {
 
     protected static randomUuid(): string {
         return uuidv7();
+    }
+
+    static random() {
+        return new UuidValueObject(this.randomUuid());
     }
 }

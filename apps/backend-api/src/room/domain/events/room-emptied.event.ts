@@ -1,13 +1,34 @@
 import {DomainEvent} from "../../../shared/domain/domain-event";
 
-export class RoomEmptiedEvent implements DomainEvent {
+interface RoomEmptiedEventAttributes {
+}
+
+export class RoomEmptiedEvent extends DomainEvent {
+
+    static EVENT_NAME = 'room.emptied';
+
     constructor(
-        public readonly roomId: string,
-        public readonly dateTimeOccurred: Date = new Date()
+        aggregateId: string,
+        occurredOn?: Date,
+        eventId?: string
     ) {
+        super({eventName: RoomEmptiedEvent.EVENT_NAME, aggregateId, eventId, occurredOn});
     }
 
-    getAggregateId(): string {
-        return this.roomId;
+    static fromPrimitives(params: {
+        aggregateId: string;
+        eventId: string;
+        occurredOn: Date;
+        attributes: RoomEmptiedEventAttributes
+    }): RoomEmptiedEvent {
+        return new RoomEmptiedEvent(
+            params.aggregateId,
+            params.occurredOn,
+            params.eventId,
+        );
+    }
+
+    toPrimitives(): RoomEmptiedEventAttributes {
+        return {};
     }
 }

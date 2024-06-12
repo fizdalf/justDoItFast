@@ -1,5 +1,5 @@
 import {Room} from '../aggregateRoots/Room';
-import {RoomId} from '../valueObjects/RoomId';
+import {RoomId} from '../value-objects/RoomId';
 
 export const RoomRepository = Symbol('RoomRepository');
 

@@ -1,11 +1,11 @@
 import {Body, Controller, Param, Post} from '@nestjs/common';
 import {IsNotEmpty, IsString} from 'class-validator';
-import {UserId} from '../../../../domain/valueObjects/UserId';
+import {UserId} from '../../../../domain/value-objects/UserId';
 import {JoinRoomCommand} from '../../../../domain/commands/join-room.command';
 import {CommandBus} from '@nestjs/cqrs';
 import {AuthenticationService} from '../../../authentication/AuthenticationService';
-import {UserName} from '../../../../domain/valueObjects/UserName';
-import {RoomId} from '../../../../domain/valueObjects/RoomId';
+import {UserName} from '../../../../domain/value-objects/UserName';
+import {RoomId} from '../../../../domain/value-objects/RoomId';
 
 export abstract class JoinsSessionRequestParams {
     @IsNotEmpty()

@@ -1,7 +1,7 @@
-import {User} from './User';
-import {UserId} from '../valueObjects/UserId';
-import {UserName} from '../valueObjects/UserName';
-import {UserLastContactedAt} from '../valueObjects/userLastContactedAt';
+import {User} from '../../../../src/room/domain/entities/User';
+import {UserId} from '../value-objects/UserId';
+import {UserName} from '../value-objects/UserName';
+import {UserLastContactedAt} from '../value-objects/userLastContactedAt';
 
 describe('User', () => {
     it('should be defined', () => {

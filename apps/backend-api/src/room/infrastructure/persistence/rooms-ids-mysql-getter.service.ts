@@ -1,5 +1,5 @@
 import {RoomsIdsGetter} from '../../domain/service/RoomsIdsGetter';
-import {RoomId} from '../../domain/valueObjects/RoomId';
+import {RoomId} from '../../domain/value-objects/RoomId';
 import {Injectable} from '@nestjs/common';
 import {InjectClient} from 'nest-mysql';
 import {Connection, RowDataPacket} from 'mysql2/promise';

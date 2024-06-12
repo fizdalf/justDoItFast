@@ -1,6 +1,6 @@
 import {ICommand} from '@nestjs/cqrs';
-import {RoomId} from "../valueObjects/RoomId";
-import {UserId} from "../valueObjects/UserId";
+import {RoomId} from "../value-objects/RoomId";
+import {UserId} from "../value-objects/UserId";
 
 
 export class LeaveRoomCommand implements ICommand {

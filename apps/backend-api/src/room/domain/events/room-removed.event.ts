@@ -1,13 +1,21 @@
 import {DomainEvent} from "../../../shared/domain/domain-event";
 
-export class RoomRemovedEvent implements DomainEvent {
+export class RoomRemovedEvent extends DomainEvent {
+    static readonly EVENT_NAME = "room.removed";
+
     constructor(
-        public readonly roomId: string,
-        public readonly dateTimeOccurred: Date = new Date()
+        aggregateId: string,
+        occurredOn?: Date,
+        eventId?: string
     ) {
+        super({aggregateId, occurredOn, eventName: RoomRemovedEvent.EVENT_NAME, eventId});
     }
 
-    getAggregateId(): string {
-        return this.roomId;
+    static fromPrimitives({aggregateId, occurredOn, eventId}): RoomRemovedEvent {
+        return new RoomRemovedEvent(aggregateId, occurredOn, eventId);
+    }
+
+    toPrimitives(): any {
+        return {};
     }
 }

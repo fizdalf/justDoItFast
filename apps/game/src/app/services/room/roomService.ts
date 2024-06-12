@@ -1,6 +1,6 @@
 import {InjectionToken} from '@angular/core';
 import {Room} from './room';
-import {RoomPreview} from '@org/core/room/dto/roomPreview';
+import {RoomPreviewDto} from '@org/core/room/dto/room-preview.dto';
 
 
 export const RoomService = new InjectionToken('RoomService');
@@ -14,5 +14,5 @@ export interface RoomService {
 
     leaveRoom(): Promise<void>;
 
-    getRoomPreview(roomId: string): Promise<RoomPreview>;
+    getRoomPreview(roomId: string): Promise<RoomPreviewDto>;
 }

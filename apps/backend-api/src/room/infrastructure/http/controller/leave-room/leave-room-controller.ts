@@ -1,10 +1,10 @@
 import {Controller, Post, Req, UseGuards} from '@nestjs/common';
 import {RoomConnectedGuard} from '../../guards/room-connected-guard.service';
-import {RoomToken} from '../../../../domain/valueObjects/RoomToken';
+import {RoomToken} from '../../../../domain/value-objects/RoomToken';
 import {CommandBus} from '@nestjs/cqrs';
 import {LeaveRoomCommand} from '../../../../domain/commands/leave-room.command';
-import {RoomId} from "../../../../domain/valueObjects/RoomId";
-import {UserId} from "../../../../domain/valueObjects/UserId";
+import {RoomId} from "../../../../domain/value-objects/RoomId";
+import {UserId} from "../../../../domain/value-objects/UserId";
 
 @Controller('room')
 export class LeaveRoomController {

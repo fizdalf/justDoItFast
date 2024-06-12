@@ -10,8 +10,3 @@ services:
       MARIADB_ROOT_PASSWORD: root
     ports:
       - "3307:3306"
-  adminer:
-    image: adminer
-    restart: always
-    ports:
-      - "8081:8080"

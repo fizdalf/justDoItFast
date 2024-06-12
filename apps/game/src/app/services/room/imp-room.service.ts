@@ -3,7 +3,7 @@ import {RoomService} from './roomService';
 import {HttpClient} from '@angular/common/http';
 import {Injectable} from '@angular/core';
 import {Room} from './room';
-import {RoomPreview} from '@org/core/room/dto/roomPreview';
+import {RoomPreviewDto} from '@org/core/room/dto/room-preview.dto';
 
 
 @Injectable()
@@ -52,8 +52,8 @@ export class ImpRoomService implements RoomService {
         ));
     }
 
-    async getRoomPreview(sessionId: string): Promise<RoomPreview> {
-        return await firstValueFrom(this.client.get<RoomPreview>(`/api/room/${sessionId}/preview`));
+    async getRoomPreview(sessionId: string): Promise<RoomPreviewDto> {
+        return await firstValueFrom(this.client.get<RoomPreviewDto>(`/api/room/${sessionId}/preview`));
     }
 
 

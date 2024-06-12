@@ -1,4 +1,4 @@
-import {GameSession} from "../aggregateRoots/GameSession";
+import {GameSession} from "../../../game-session/domain/entities/GameSession";
 
 export const GameSessionRepository = 'GameSessionRepository';
 

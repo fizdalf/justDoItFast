@@ -3,7 +3,7 @@ import {uuidv7} from 'uuidv7';
 
 describe('POST /api/room', () => {
 
-    it('should return an error when playerId is not a UUID', async () => {
+    it('should return an error when userId is not a UUID', async () => {
         try {
             await axios.post(`/api/room`, {
                 playerId: 'not-a-uuid',
@@ -14,13 +14,13 @@ describe('POST /api/room', () => {
             expect(error.response.status).toBe(400);
             expect(error.response.data).toEqual({
                 statusCode: 400,
-                message: ['playerId must be a UUID'],
+                message: ['userId must be a UUID'],
                 error: 'Bad Request'
             });
         }
     });
 
-    it('should return an error when playerId is empty', async () => {
+    it('should return an error when userId is empty', async () => {
         try {
             await axios.post(`/api/room`, {playerIcon: 'icon', roomId: uuidv7()});
         } catch (error) {
@@ -28,15 +28,15 @@ describe('POST /api/room', () => {
             expect(error.response.data).toEqual({
                 statusCode: 400,
                 message: [
-                    'playerId must be a UUID',
-                    'playerId should not be empty'
+                    'userId must be a UUID',
+                    'userId should not be empty'
                 ],
                 error: 'Bad Request'
             });
         }
     });
 
-    it('should return an error when playerId is not a UUID', async () => {
+    it('should return an error when userId is not a UUID', async () => {
         try {
             await axios.post(`/api/room`, {
                 playerId: 'not-a-uuid',
@@ -47,7 +47,7 @@ describe('POST /api/room', () => {
             expect(error.response.status).toBe(400);
             expect(error.response.data).toEqual({
                 statusCode: 400,
-                message: ['playerId must be a UUID'],
+                message: ['userId must be a UUID'],
                 error: 'Bad Request'
             });
         }
@@ -66,7 +66,7 @@ describe('POST /api/room', () => {
         }
     });
 
-    it('should return an error when roomId is empty', async () => {
+    it('should return an error when aggregateId is empty', async () => {
         try {
             await axios.post(`/api/room`, {playerId: uuidv7(), playerIcon: 'icon'});
         } catch (error) {
@@ -74,8 +74,8 @@ describe('POST /api/room', () => {
             expect(error.response.data).toEqual({
                 statusCode: 400,
                 message: [
-                    'roomId must be a UUID',
-                    'roomId should not be empty'
+                    'aggregateId must be a UUID',
+                    'aggregateId should not be empty'
                 ],
                 error: 'Bad Request'
             });
@@ -89,6 +89,6 @@ describe('POST /api/room', () => {
     });
 });
 
-describe('GET /api/room/:roomId', () => {
-    
+describe('GET /api/room/:aggregateId', () => {
+
 });

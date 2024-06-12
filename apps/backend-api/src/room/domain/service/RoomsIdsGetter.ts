@@ -1,4 +1,4 @@
-import {RoomId} from '../valueObjects/RoomId';
+import {RoomId} from '../value-objects/RoomId';
 
 export const RoomsIdsGetter = Symbol('RoomsIdsGetter');
 

@@ -1,7 +1,7 @@
 import {Controller, ForbiddenException, Get, Req, UseGuards} from '@nestjs/common';
 import {QueryBus} from '@nestjs/cqrs';
 import {RoomConnectedGuard} from '../../guards/room-connected-guard.service';
-import {RoomToken} from '../../../../domain/valueObjects/RoomToken';
+import {RoomToken} from '../../../../domain/value-objects/RoomToken';
 import {GetCurrentRoomQuery} from '../../../../domain/query/get-current-room.query';
 
 

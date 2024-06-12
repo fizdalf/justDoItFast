@@ -2,9 +2,9 @@ import {Body, Controller, Post} from '@nestjs/common';
 import {IsNotEmpty} from 'class-validator';
 import {CommandBus} from '@nestjs/cqrs';
 import {CreateRoom} from '../../../../domain/commands/create-room.command';
-import {RoomId} from '../../../../domain/valueObjects/RoomId';
-import {UserId} from '../../../../domain/valueObjects/UserId';
-import {UserName} from '../../../../domain/valueObjects/UserName';
+import {RoomId} from '../../../../domain/value-objects/RoomId';
+import {UserId} from '../../../../domain/value-objects/UserId';
+import {UserName} from '../../../../domain/value-objects/UserName';
 import {AuthenticationService} from '../../../authentication/AuthenticationService';
 
 export abstract class CreateRoomRequestParams {

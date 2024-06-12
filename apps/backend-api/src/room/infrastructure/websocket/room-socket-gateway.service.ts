@@ -24,8 +24,8 @@ import {CommandBus} from '@nestjs/cqrs';
 import {RegisterPlayerContactCommand} from '../../domain/commands/register-player-contact.command';
 import {PlayerLeftRoomEvent} from '@org/core/room/websocket-events/PlayerLeftRoomEvent';
 import {RequestPingWebsocketEvent} from '@org/core/room/websocket-events/RequestPingWebsocketEvent';
-import {RoomId} from "../../domain/valueObjects/RoomId";
-import {UserId} from "../../domain/valueObjects/UserId";
+import {RoomId} from "../../domain/value-objects/RoomId";
+import {UserId} from "../../domain/value-objects/UserId";
 
 
 @WebSocketGateway({cors: {origin: '*'}})

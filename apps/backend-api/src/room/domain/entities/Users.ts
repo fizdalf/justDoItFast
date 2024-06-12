@@ -1,5 +1,5 @@
 import {User} from "./User";
-import {UserId} from "../valueObjects/UserId";
+import {UserId} from "../value-objects/UserId";
 
 export class Users {
     private users = new Map<string, User>();
@@ -12,44 +12,31 @@ export class Users {
         return this.users.size;
     }
 
-    findPlayerById(playerId: UserId) {
-        return this.users.get(playerId.value);
+    findUserById(id: UserId) {
+        return this.users.get(id.value);
     }
 
-    removePlayer(playerId: UserId) {
-        this.users.delete(playerId.value);
+    remove(id: UserId) {
+        return this.users.delete(id.value);
     }
 
-    addUser(player: User) {
-        this.users.set(player.id.value, player);
-    }
-
-    has(playerId: UserId) {
-        return this.users.has(playerId.value);
+    addUser(user: User) {
+        this.users.set(user.id.value, user);
     }
 
     [Symbol.iterator]() {
         return this.users.values();
     }
 
-    removeIdleUsers(idleThresholdMilliseconds: number, currentDateTime: Date) {
-
-        const idleUsers: User[] = [];
-
-        for (const player of this.users.values()) {
-            if (player.isIdle(idleThresholdMilliseconds, currentDateTime)) {
-                idleUsers.push(player);
-            }
-        }
-
-        for (const idleUser of idleUsers) {
-            this.users.delete(idleUser.id.value);
-        }
-
-        return idleUsers;
+    filter(predicate: (user: User) => boolean) {
+        return Array.from(this.users.values()).filter(predicate);
     }
 
     toArray() {
         return Array.from(this.users.values());
+    }
+
+    first(): User {
+        return this.users.values().next().value;
     }
 }
