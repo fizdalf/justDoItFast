@@ -12,7 +12,7 @@ export class RoomEmptiedEvent extends DomainEvent {
         occurredOn?: Date,
         eventId?: string
     ) {
-        super({eventName: RoomEmptiedEvent.EVENT_NAME, aggregateId, eventId, occurredOn});
+        super({aggregateId, eventId, eventName: RoomEmptiedEvent.EVENT_NAME, occurredOn});
     }
 
     static fromPrimitives(params: {

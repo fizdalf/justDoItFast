@@ -8,7 +8,6 @@ import {UserName} from '../../domain/value-objects/UserName';
 import {UserLastContactedAt} from '../../domain/value-objects/userLastContactedAt';
 import {JoinRoomCommand} from "../../../../src/room/domain/commands/join-room.command";
 import {DateTimeService} from "../../../../src/shared/domain/date-time.service";
-import {Users} from "../../../../src/room/domain/entities/Users";
 
 
 describe('JoinRoomCommandHandler', () => {
@@ -54,7 +53,7 @@ describe('JoinRoomCommandHandler', () => {
             host: hostPlayerId,
             createdAt: new Date(),
             updatedAt: new Date(),
-            users: new Users([user])
+            users: [user]
         });
 
         const newPlayerId = UserId.random();

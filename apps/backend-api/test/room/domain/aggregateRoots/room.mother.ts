@@ -1,7 +1,7 @@
 import {RoomId} from "../../../../src/room/domain/value-objects/RoomId";
 import {Room, RoomParams} from "../../../../src/room/domain/aggregateRoots/Room";
 import {UserId} from "../../../../src/room/domain/value-objects/UserId";
-import {UsersMother} from "../value-objects/users.mother";
+import {UserMother} from "../entities/user.mother";
 
 export class RoomMother {
 
@@ -11,7 +11,7 @@ export class RoomMother {
             host: host ?? UserId.random(),
             createdAt: createdAt ?? new Date(),
             updatedAt: updatedAt ?? new Date(),
-            users: users ?? UsersMother.create()
+            users: users ?? UserMother.createMany()
         })
     }
 

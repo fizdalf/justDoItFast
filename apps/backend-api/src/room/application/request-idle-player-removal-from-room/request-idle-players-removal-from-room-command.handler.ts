@@ -14,7 +14,7 @@ export class RequestIdlePlayersRemovalFromRoomCommandHandler implements ICommand
     ) {
     }
 
-    async execute(_command: RequestIdlePlayersRemovalFromRoomCommand): Promise<void> {
+    async execute(): Promise<void> {
         const roomsIds = await this.roomsIdsGetter.getRoomsIds();
 
         roomsIds.forEach(roomId => {

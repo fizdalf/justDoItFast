@@ -18,7 +18,7 @@ export interface RoomParams {
     host: UserId;
     createdAt: Date;
     updatedAt: Date;
-    users: Users
+    users: User[];
 }
 
 export class OnlyHostCanStartGameException implements Error {
@@ -42,7 +42,8 @@ export class Room extends AggregateRoot {
         this._host = host;
         this._createdAt = createdAt;
         this._updatedAt = updatedAt;
-        this._users = users;
+        this._users = new Users(users);
+
 
     }
 
@@ -71,7 +72,7 @@ export class Room extends AggregateRoot {
                 host: host.id,
                 createdAt: date,
                 updatedAt: date,
-                users: new Users([host])
+                users: [host]
             }
         );
         const roomCreatedEvent = new RoomCreatedEvent({
@@ -97,20 +98,26 @@ export class Room extends AggregateRoot {
             aggregateId: this._id.value,
             userId: userId.value,
             userName: userName.value,
-            occurredOn: date
         }));
     }
 
-    leave(userId: UserId, currentDateTime: Date) {
+    leave(userId: UserId) {
 
         const isUserRemoved = this._users.remove(userId);
         if (!isUserRemoved) {
             return;
         }
 
-        this.apply(new RoomUserLeftEvent(this._id.value, userId.value, currentDateTime));
+        this.apply(new RoomUserLeftEvent(this._id.value, userId.value));
         if (this._users.size === 0) {
-            this.apply(new RoomEmptiedEvent(this._id.value, currentDateTime));
+            this.apply(new RoomEmptiedEvent(this._id.value));
+            return;
+        }
+
+        if (userId.equals(this._host)) {
+            const newHost = this._users.first();
+            this._host = newHost.id;
+            this.apply(new RoomHostChangedEvent({aggregateId: this._id.value, newHostId: newHost.id.value}));
         }
     }
 
@@ -123,20 +130,11 @@ export class Room extends AggregateRoot {
         }
 
         idleUsers.forEach(idleUser => {
-            this.leave(idleUser.id, currentDateTime);
+            this.leave(idleUser.id);
         });
 
         if (this._users.size === 0) {
             return;
-        }
-
-        if (idleUsers.findIndex(idleUser => idleUser.id.equals(this._host)) !== -1) {
-            const newHost = this._users.first();
-
-            if (newHost) {
-                this._host = newHost.id;
-                this.apply(new RoomHostChangedEvent({aggregateId: this._id.value, newHostId: newHost.id.value}));
-            }
         }
 
 

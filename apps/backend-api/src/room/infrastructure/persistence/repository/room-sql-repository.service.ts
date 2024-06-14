@@ -16,7 +16,6 @@ import {RoomUserLeftEvent} from '../../../domain/events/room-user-left.event';
 import {RoomHostChangedEvent} from '../../../domain/events/room-host-changed.event';
 import {RoomUserContactRegisteredEvent} from '../../../domain/events/room-user-contact-registered.event';
 import {GameSessionCreatedEvent} from "../../../../game-session/domain/events/game-session-created.event";
-import {Users} from "../../../domain/entities/Users";
 import {DomainEvent} from "../../../../shared/domain/domain-event";
 
 export interface RoomRow extends RowDataPacket {
@@ -79,7 +78,7 @@ export class RoomSqlRepository implements RoomRepository {
             host: UserId.fromValue(roomRawData.host_id),
             createdAt: roomRawData.created_at,
             updatedAt: roomRawData.updated_at,
-            users: new Users(users),
+            users: users,
         });
 
     }
@@ -171,18 +170,14 @@ export class RoomSqlRepository implements RoomRepository {
             id.value,
         ]);
 
-        const users = [];
-
-        for (const row of rows) {
-            const user = new User(
+        return rows.map(row =>
+            new User(
                 {
                     id: UserId.fromValue(row.id),
                     name: UserName.fromValue(row.name),
                     lastContactedAt: UserLastContactedAt.create(row.last_contacted_at),
                 },
-            );
-            users.push(user);
-        }
-        return users;
+            )
+        );
     }
 }

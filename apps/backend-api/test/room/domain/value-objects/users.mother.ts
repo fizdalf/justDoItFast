@@ -5,14 +5,23 @@ import {UserMother} from "../entities/user.mother";
 
 export class UsersMother {
     static create(users?: User[] | undefined): Users {
-        return new Users(users ?? UsersMother.createSomeUsers());
+        if (users == undefined) {
+            return UsersMother.createSomeUsers();
+        }
+
+        return new Users(users);
     }
 
-    private static createSomeUsers() {
+    static with(number: number) {
         const users: User[] = [];
-        for (let i = 0; i < Math.floor(Math.random() * 10 + 1); i++) {
+        for (let i = 0; i < number; i++) {
             users.push(UserMother.create());
         }
-        return users;
+        return new Users(users);
+    }
+
+    private static createSomeUsers(minimum: number = undefined) {
+        const totalUsers = Math.floor(Math.random() * 10) + minimum ?? 1;
+        return this.with(totalUsers);
     }
 }

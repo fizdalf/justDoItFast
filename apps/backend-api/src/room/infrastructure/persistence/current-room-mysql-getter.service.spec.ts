@@ -8,10 +8,6 @@ import {tableIndex} from "../../../shared/infrastructure/persistence/table-index
 import {RoomSqlRepository} from "./repository/room-sql-repository.service";
 import {Room} from "../../domain/aggregateRoots/Room";
 import {UserName} from "../../domain/value-objects/UserName";
-import {RoomMother} from "../../../../test/room/domain/aggregateRoots/room.mother";
-import {Users} from "../../domain/entities/Users";
-import {User} from "../../domain/entities/User";
-import {UserLastContactedAt} from "../../domain/value-objects/userLastContactedAt";
 
 describe('CurrentRoomMysqlGetter', () => {
     let service: CurrentRoomMysqlGetter;
@@ -60,22 +56,9 @@ describe('CurrentRoomMysqlGetter', () => {
         const roomId = RoomId.random();
         const userId = UserId.random();
         const otherUserId = UserId.random();
-        const otherUserName = UserName.fromValue('randomName2');
 
-        const room = RoomMother.create({
-            id: roomId,
-            host: userId,
-            createdAt: new Date('2021-01-01T00:00:00.000Z'),
-            updatedAt: new Date('2021-01-01T00:00:00.000Z'),
-            users: new Users([new User({
-                id: userId,
-                name: UserName.fromValue('randomName'),
-                lastContactedAt: UserLastContactedAt.create(new Date('2021-01-01T00:00:00.000Z'))
-            })])
-        });
-
-        room.addUser(otherUserId, otherUserName, new Date('2021-01-01T00:00:00.000Z'));
-
+        const room = Room.create(roomId, userId, UserName.fromValue('randomName'), new Date('2021-01-01T00:00:00.000Z'));
+        room.addUser(otherUserId, UserName.fromValue('randomName2'), new Date('2021-01-01T00:00:00.000Z'));
         await roomRepository.save(room);
 
         const currentRoom = await service.execute(roomId, userId);

@@ -12,4 +12,17 @@ export class UserMother {
             lastContactedAt: lastContactedAt ?? UserLastContactedAtMother.create()
         });
     }
+
+    static createMany(amount: number = undefined): User[] {
+        const totalUsers = amount ?? Math.floor(Math.random() * 10) + 1;
+        return this.with(totalUsers);
+    }
+
+    private static with(totalUsers: number) {
+        const users: User[] = [];
+        for (let i = 0; i < totalUsers; i++) {
+            users.push(UserMother.create());
+        }
+        return users;
+    }
 }
