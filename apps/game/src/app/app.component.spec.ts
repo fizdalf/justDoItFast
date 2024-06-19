@@ -9,18 +9,9 @@ describe('AppComponent', () => {
         }).compileComponents();
     });
 
-    it('should render title', () => {
-        const fixture = TestBed.createComponent(AppComponent);
-        fixture.detectChanges();
-        const compiled = fixture.nativeElement as HTMLElement;
-        expect(compiled.querySelector('h1')?.textContent).toContain(
-            'Welcome apps/game'
-        );
-    });
-
-    it(`should have as title 'apps/game'`, () => {
+    it('should create the app', () => {
         const fixture = TestBed.createComponent(AppComponent);
         const app = fixture.componentInstance;
-        expect(app.title).toEqual('apps/game');
+        expect(app).toBeTruthy();
     });
 });

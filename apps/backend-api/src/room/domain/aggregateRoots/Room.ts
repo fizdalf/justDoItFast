@@ -158,7 +158,7 @@ export class Room extends AggregateRoot {
         this._updatedAt = lastContactedAt;
     }
 
-    isHost(creator: UserId) {
+    private isHost(creator: UserId) {
         return this._host.equals(creator);
     }
 

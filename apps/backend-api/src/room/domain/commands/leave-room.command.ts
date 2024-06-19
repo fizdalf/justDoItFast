@@ -4,6 +4,6 @@ import {UserId} from "../value-objects/UserId";
 
 
 export class LeaveRoomCommand implements ICommand {
-    constructor(public readonly roomId: RoomId, public readonly playerId: UserId) {
+    constructor(public readonly roomId: RoomId, public readonly userId: UserId) {
     }
 }

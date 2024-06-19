@@ -1,21 +1,26 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { HomePageComponent } from './home-page.component';
+import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {HomePageComponent} from './home-page.component';
+import {provideRouter} from "@angular/router";
 
 describe('HomePageComponent', () => {
-  let component: HomePageComponent;
-  let fixture: ComponentFixture<HomePageComponent>;
+    let component: HomePageComponent;
+    let fixture: ComponentFixture<HomePageComponent>;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [HomePageComponent],
-    }).compileComponents();
+    beforeEach(async () => {
+        await TestBed.configureTestingModule({
 
-    fixture = TestBed.createComponent(HomePageComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
+            imports: [HomePageComponent],
+            providers: [
+                provideRouter([])
+            ]
+        }).compileComponents();
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
+        fixture = TestBed.createComponent(HomePageComponent);
+        component = fixture.componentInstance;
+        fixture.detectChanges();
+    });
+
+    it('should create', () => {
+        expect(component).toBeTruthy();
+    });
 });

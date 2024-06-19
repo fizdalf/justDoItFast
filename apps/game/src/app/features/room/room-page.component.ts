@@ -71,7 +71,8 @@ export class RoomPageComponent implements OnInit {
     trackBySeat: TrackByFunction<Seat> = (index, item) => item.id;
 
     constructor(
-        private readonly store: RoomPageStore, ngZone: NgZone,
+        private readonly store: RoomPageStore,
+        ngZone: NgZone,
         private readonly router: Router
     ) {
         this.vm$ = this.store.vm$.pipe(runInZone(ngZone),);
