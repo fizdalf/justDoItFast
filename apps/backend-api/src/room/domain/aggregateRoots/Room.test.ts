@@ -2,7 +2,6 @@ import {Room,} from './Room';
 import {RoomId} from "../value-objects/RoomId";
 import {UserId} from "../value-objects/UserId";
 import {UserName} from "../value-objects/UserName";
-import {Users} from "../entities/Users";
 import {User} from "../entities/User";
 import {UserLastContactedAt} from "../value-objects/userLastContactedAt";
 import {RoomCreatedEvent} from "../events/room-created.event";
@@ -99,17 +98,10 @@ describe("Room", () => {
 
         let roomParams = {
             id: roomId,
-            teams: [],
             host: userId,
             createdAt: currDate,
             updatedAt: currDate,
-            gameSessionId: undefined,
-            users: new Users([new User({
-                id: userId,
-                name: userName,
-                lastContactedAt: UserLastContactedAt.create(currDate)
-            })]),
-            rawUsers: [new User({
+            users: [new User({
                 id: userId,
                 name: userName,
                 lastContactedAt: UserLastContactedAt.create(currDate)
