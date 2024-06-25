@@ -2,6 +2,7 @@ import {Seat} from "./Seat";
 
 import {Player} from "./Player";
 import {UserId} from "../../../room/domain/value-objects/UserId";
+import {PlayerAlreadyInGameError} from "../exceptions/PlayerAlreadyInGameError";
 
 export class Seats {
     private readonly seats: Seat[];
@@ -14,7 +15,7 @@ export class Seats {
 
     add(player: Player) {
         if (this.players.has(player.id)) {
-            throw new Error('Player already in game');
+            throw new PlayerAlreadyInGameError();
         }
         const seat = new Seat(this.seats.length, player);
         this.seats.push(seat);

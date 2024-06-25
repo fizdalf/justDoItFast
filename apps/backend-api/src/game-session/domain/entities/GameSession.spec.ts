@@ -29,7 +29,6 @@ describe('GameSession', () => {
                 }),
             ],
             createdAt: new Date(),
-            updatedAt: new Date()
         })
         const creator = hostUserId;
         const wordPackIds = [WordPackId.random(), WordPackId.random()];

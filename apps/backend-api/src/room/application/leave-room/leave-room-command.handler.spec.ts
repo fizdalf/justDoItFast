@@ -38,7 +38,6 @@ describe('LeaveRoomCommandHandler', () => {
                     id: ROOM_ID,
                     host: host.id,
                     createdAt: new Date(),
-                    updatedAt: new Date(),
                     users: [
                         host,
                         UserMother.create({id: LEAVER_USER_ID})

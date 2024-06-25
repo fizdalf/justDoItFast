@@ -1,4 +1,4 @@
-import {Room,} from './Room';
+import {OnlyHostCanCreateGameException, Room,} from './Room';
 import {RoomId} from "../value-objects/RoomId";
 import {UserId} from "../value-objects/UserId";
 import {UserName} from "../value-objects/UserName";
@@ -205,7 +205,6 @@ describe("Room", () => {
         const roomId = RoomId.random();
         const userId = UserId.random();
         const newHostId = UserId.random();
-        const date = new Date();
 
         const room = RoomMother.create({
             id: roomId,
@@ -213,11 +212,9 @@ describe("Room", () => {
             users: [
                 UserMother.create({
                     id: userId,
-                    lastContactedAt: UserLastContactedAt.create(date)
                 }),
                 UserMother.create({
                     id: newHostId,
-                    lastContactedAt: UserLastContactedAt.create(date)
                 })
             ]
         });
@@ -267,4 +264,90 @@ describe("Room", () => {
 
     });
 
+    it('should produce no changes when user that is not in room leaves', () => {
+
+        const room = RoomMother.create({
+            users: UserMother.createMany(2)
+        });
+        room.leave(UserId.random());
+
+        const events = room.getUncommittedEvents();
+
+        expect(events).toHaveLength(0);
+
+    });
+
+    it('should produce no changes when someone leaves and the room is already empty', () => {
+
+        const room = RoomMother.create({
+            users: []
+        });
+        room.leave(UserId.random());
+
+        const events = room.getUncommittedEvents();
+
+        expect(events).toHaveLength(0);
+
+    });
+
+    it('should produce no changes when registering user contact for user not in room', () => {
+        const host = UserMother.create();
+        const room = RoomMother.create({
+            id: RoomId.random(),
+            host: host.id,
+            users: [
+                host
+            ]
+        });
+        room.registerUserContact(UserId.random(), new Date());
+
+        const events = room.getUncommittedEvents();
+
+        expect(events).toHaveLength(0);
+    });
+
+    it('should produce no changes when there are no idle users', () => {
+        const host = UserMother.create({lastContactedAt: UserLastContactedAt.create(new Date('2021-01-01T00:30:00.000Z'))});
+        const room = RoomMother.create({
+            host: host.id,
+            users: [
+                host
+            ]
+        });
+        room.removeIdleUsers(new Date('2021-01-01T00:30:00.000Z'));
+
+        const events = room.getUncommittedEvents();
+
+        expect(events).toHaveLength(0);
+    });
+
+    it('should throw OnlyHostCanCreateGameException when creator is not host', () => {
+        const host = UserMother.create();
+        const room = RoomMother.create({
+            host: host.id,
+            users: [
+                host
+            ]
+        });
+
+        expect(
+            () => room.createGame(UserId.random(), () => undefined)
+        ).toThrow(OnlyHostCanCreateGameException);
+    });
+
+    it('should call gameCreator when creating game', () => {
+        const host = UserMother.create();
+        const room = RoomMother.create({
+            id: RoomId.random(),
+            host: host.id,
+            users: [
+                host
+            ]
+        });
+
+        const gameCreator = jest.fn();
+        room.createGame(host.id, gameCreator);
+
+        expect(gameCreator).toHaveBeenCalledWith([host]);
+    });
 });

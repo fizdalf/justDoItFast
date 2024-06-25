@@ -1,11 +1,11 @@
-import {GameSessionRepository} from "../../../domain/repositories/game-session.repository";
+import {GameSessionRepository} from "../../../../room/domain/repositories/game-session.repository";
 import {InjectClient} from "nest-mysql";
 import {Connection} from "mysql2/promise";
-import {GameSession} from "../../../../game-session/domain/entities/GameSession";
+import {GameSession} from "../../../domain/entities/GameSession";
 import {EventBus, IEventBus} from "@nestjs/cqrs";
 import {Inject} from "@nestjs/common";
 import {DomainEvent} from "../../../../shared/domain/domain-event";
-import {GameSessionCreatedEvent} from "../../../../game-session/domain/events/game-session-created.event";
+import {GameSessionCreatedEvent} from "../../../domain/events/game-session-created.event";
 
 export class GameSessionSqlRepository implements GameSessionRepository {
     constructor(
@@ -51,8 +51,8 @@ export class GameSessionSqlRepository implements GameSessionRepository {
                         break;
                     }
                 }
+                this.eventBus.publish(event);
             }
-
         } catch (error) {
             await this.pool.rollback();
             throw error;

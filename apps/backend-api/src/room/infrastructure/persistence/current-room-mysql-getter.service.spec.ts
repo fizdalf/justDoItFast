@@ -5,7 +5,7 @@ import {UserId} from '../../domain/value-objects/UserId';
 import {Connection, createConnection} from 'mysql2/promise';
 import {ConfigModule, ConfigService} from "@nestjs/config";
 import {tableIndex} from "../../../shared/infrastructure/persistence/table-index";
-import {RoomSqlRepository} from "./repository/room-sql-repository.service";
+import {RoomMysqlRepository} from "./repository/room-mysql.repository";
 import {Room} from "../../domain/aggregateRoots/Room";
 import {UserName} from "../../domain/value-objects/UserName";
 
@@ -50,7 +50,7 @@ describe('CurrentRoomMysqlGetter', () => {
     });
 
     it('should return current room for valid room id and user id', async () => {
-        const roomRepository = new RoomSqlRepository(connection, {publish: jest.fn(), publishAll: jest.fn()});
+        const roomRepository = new RoomMysqlRepository(connection, {publish: jest.fn(), publishAll: jest.fn()});
 
 
         const roomId = RoomId.random();
@@ -83,7 +83,7 @@ describe('CurrentRoomMysqlGetter', () => {
     });
 
     it('should return current room for a user that is not the host', async () => {
-        const roomRepository = new RoomSqlRepository(connection, {publish: jest.fn(), publishAll: jest.fn()});
+        const roomRepository = new RoomMysqlRepository(connection, {publish: jest.fn(), publishAll: jest.fn()});
 
         const roomId = RoomId.random();
         const userId = UserId.random();

@@ -2,11 +2,11 @@ import {ConsoleLogger, Module} from "@nestjs/common";
 import {CreateRoomCommandHandler} from './application/create-room/create-room-command.handler';
 import {CreateRoomController} from './infrastructure/http/controller/create-room/create-room.controller';
 import {CqrsModule} from '@nestjs/cqrs';
-import {RoomSqlRepository} from './infrastructure/persistence/repository/room-sql-repository.service';
+import {RoomMysqlRepository} from './infrastructure/persistence/repository/room-mysql.repository';
 import {RoomRepository} from './domain/repositories/room.repository';
 import {SharedModule} from '../shared/infrastructure/shared.module';
 import {GetCurrentRoomController} from './infrastructure/http/controller/get-current-room/get-current-room.controller';
-import {AuthenticationService} from './infrastructure/authentication/AuthenticationService';
+import {AuthenticationService} from './infrastructure/authentication/authentication.service';
 import {GetCurrentRoomQueryHandler} from './application/get-current-room/get-current-room-query-handler.service';
 import {CurrentRoomGetter} from './domain/service/CurrentRoomGetter';
 import {CurrentRoomMysqlGetter} from './infrastructure/persistence/current-room-mysql-getter.service';
@@ -83,7 +83,7 @@ const tasks = [
         AuthenticationService,
         {
             provide: RoomRepository,
-            useClass: RoomSqlRepository,
+            useClass: RoomMysqlRepository,
         },
         {
             provide: CurrentRoomGetter,

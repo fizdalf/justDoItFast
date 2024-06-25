@@ -17,11 +17,10 @@ export interface RoomParams {
     id: RoomId;
     host: UserId;
     createdAt: Date;
-    updatedAt: Date;
     users: User[];
 }
 
-export class OnlyHostCanStartGameException implements Error {
+export class OnlyHostCanCreateGameException implements Error {
     message: string;
     name: string;
 }
@@ -33,25 +32,19 @@ export class Room extends AggregateRoot {
 
     protected _host: UserId;
     protected readonly _createdAt: Date;
-    protected _updatedAt: Date;
     private readonly _id: RoomId;
 
-    constructor({id, host, createdAt, updatedAt, users}: RoomParams) {
+    constructor({id, host, createdAt, users}: RoomParams) {
         super();
         this._id = id;
         this._host = host;
         this._createdAt = createdAt;
-        this._updatedAt = updatedAt;
         this._users = new Users(users);
 
 
     }
 
     protected _users: Users;
-
-    get users(): User[] {
-        return this._users.toArray();
-    }
 
     get id(): RoomId {
         return this._id;
@@ -71,7 +64,6 @@ export class Room extends AggregateRoot {
                 id: sessionId,
                 host: host.id,
                 createdAt: date,
-                updatedAt: date,
                 users: [host]
             }
         );
@@ -132,13 +124,6 @@ export class Room extends AggregateRoot {
         idleUsers.forEach(idleUser => {
             this.leave(idleUser.id);
         });
-
-        if (this._users.size === 0) {
-            return;
-        }
-
-
-        this._updatedAt = currentDateTime;
     }
 
     registerUserContact(id: UserId, lastContactedAt: Date) {
@@ -155,17 +140,16 @@ export class Room extends AggregateRoot {
                 lastContactedAt.toISOString()
             )
         );
-        this._updatedAt = lastContactedAt;
     }
 
     private isHost(creator: UserId) {
         return this._host.equals(creator);
     }
 
-    processUsers(creator: UserId, processor: (users: User[]) => void) {
+    createGame(creator: UserId, gameCreator: (users: User[]) => void) {
         if (!this.isHost(creator)) {
-            throw new OnlyHostCanStartGameException();
+            throw new OnlyHostCanCreateGameException();
         }
-        processor(this._users.toArray());
+        gameCreator(this._users.toArray());
     }
 }

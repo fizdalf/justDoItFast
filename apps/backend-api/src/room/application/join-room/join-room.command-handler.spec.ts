@@ -52,7 +52,6 @@ describe('JoinRoomCommandHandler', () => {
             id: roomId,
             host: hostPlayerId,
             createdAt: new Date(),
-            updatedAt: new Date(),
             users: [user]
         });
 

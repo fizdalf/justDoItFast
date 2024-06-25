@@ -30,7 +30,7 @@ export class GameSession extends AggregateRoot {
 
         const seats = new Seats();
 
-        room.processUsers(creator, (users) => {
+        room.createGame(creator, (users) => {
             users.forEach(user => seats.add(new Player(user.id, user.name.value)))
         })
 

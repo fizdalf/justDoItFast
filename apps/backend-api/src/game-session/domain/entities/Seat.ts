@@ -5,14 +5,4 @@ export class Seat {
                 readonly player: Player,
     ) {
     }
-
-    toPrimitives() {
-        return {
-            index: this.index,
-            player: {
-                id: this.player.id.value,
-                name: this.player.name,
-            }
-        };
-    }
 }

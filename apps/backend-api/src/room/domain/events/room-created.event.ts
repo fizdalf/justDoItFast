@@ -18,9 +18,6 @@ export class RoomCreatedEvent extends DomainEvent {
 
     readonly hostId: string;
     readonly hostName: string;
-    readonly hostTeamId: string;
-    readonly otherTeamId: string;
-
     constructor(
         {aggregateId, hostId, hostName, occurredOn, eventId}: ConstructorParams
     ) {

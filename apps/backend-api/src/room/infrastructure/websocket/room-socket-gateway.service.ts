@@ -8,7 +8,7 @@ import {
 } from '@nestjs/websockets';
 import {Server, Socket} from 'socket.io';
 import {Injectable} from '@nestjs/common';
-import {AuthenticationService} from '../authentication/AuthenticationService';
+import {AuthenticationService} from '../authentication/authentication.service';
 import {PlayerJoinedRoomEvent} from '@org/core/room/websocket-events/PlayerJoinedRoomEvent';
 import {
     LoginWebsocketEvent,

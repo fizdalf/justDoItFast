@@ -4,7 +4,7 @@ import {CreateRoom} from '../../../../domain/commands/create-room.command';
 import {RoomId} from '../../../../domain/value-objects/RoomId';
 import {UserId} from '../../../../domain/value-objects/UserId';
 import {UserName} from '../../../../domain/value-objects/UserName';
-import {AuthenticationService} from '../../../authentication/AuthenticationService';
+import {AuthenticationService} from '../../../authentication/authentication.service';
 
 
 describe('CreateRoomController', () => {

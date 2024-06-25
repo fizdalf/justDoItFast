@@ -5,12 +5,11 @@ import {UserMother} from "../entities/user.mother";
 
 export class RoomMother {
 
-    static create({id, host, createdAt, updatedAt, users}: Partial<RoomParams> = {}): Room {
+    static create({id, host, createdAt, users}: Partial<RoomParams> = {}): Room {
         return new Room({
             id: id ?? RoomId.random(),
             host: host ?? UserId.random(),
             createdAt: createdAt ?? new Date(),
-            updatedAt: updatedAt ?? new Date(),
             users: users ?? UserMother.createMany()
         })
     }

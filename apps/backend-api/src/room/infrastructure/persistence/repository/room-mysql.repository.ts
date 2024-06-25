@@ -32,7 +32,7 @@ class RoomNotFoundException extends Error {
 }
 
 @Injectable()
-export class RoomSqlRepository implements RoomRepository {
+export class RoomMysqlRepository implements RoomRepository {
 
     constructor(
         @InjectClient() private readonly pool: Connection,
@@ -77,7 +77,6 @@ export class RoomSqlRepository implements RoomRepository {
             id: RoomId.fromValue(roomRawData.id),
             host: UserId.fromValue(roomRawData.host_id),
             createdAt: roomRawData.created_at,
-            updatedAt: roomRawData.updated_at,
             users: users,
         });
 
