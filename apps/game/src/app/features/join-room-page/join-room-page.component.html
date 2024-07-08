@@ -5,13 +5,12 @@
         </h3>
         <div class="session-details">
             <h4>Host: {{ vm.roomPreview.hostPlayerName }}</h4>
-            <div *ngFor="let team of vm.roomPreview.teams; index as i" class="team-info">
-                <div class="team-name">Team {{ i + 1 }}</div>
+            <div *ngFor="let player of vm.roomPreview.players; index as i" class="team-info">
+
                 <div class="team-players">
                     <h5>Players:</h5>
-                    <div *ngFor="let player of team.players" class="player-name">
-                        {{ player.name }}
-                    </div>
+
+                    {{ player }}
                 </div>
             </div>
         </div>
@@ -27,7 +26,9 @@
                            style="width: 50%"
             ></zxing-scanner>
             <input #sessionIdInput class="session-id-input" placeholder="Paste room Id">
-            <button (click)="setSessionId(sessionIdInput.value)" [disabled]="!sessionIdInput.value" class="paste-id-button">Use Pasted aggregateId</button>
+            <button (click)="setSessionId(sessionIdInput.value)" [disabled]="!sessionIdInput.value"
+                    class="paste-id-button">Use Pasted aggregateId
+            </button>
         </div>
     </ng-template>
 </ng-container>

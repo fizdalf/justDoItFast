@@ -20,28 +20,28 @@
         </mat-card-content>
     </mat-card>
 
-    <mat-card *ngFor="let team of vm.teams;index as i" class="team-card">
-        <mat-card-header>
-            <mat-card-title>Team</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-            <div *ngFor="let player of team.players; trackBy: trackByPlayerId " class="player">
-                <mat-icon [ngClass]="{team1: i === 0, team2: i === 1}">person</mat-icon>
-                <span>{{ player.name }}</span>
-            </div>
-        </mat-card-content>
-    </mat-card>
-    <mat-card class="seats-card">
-        <mat-card-header>
-            <mat-card-title>Please seat following the order depicted</mat-card-title>
-        </mat-card-header>
-        <mat-card-content class="seats-card-seat-positioning">
-            <div *ngFor="let player of vm.seats; trackBy: trackBySeat" class="seats-card-seat">
-                <span>{{ player.playerName }}</span>
-                <mat-icon [ngClass]="{team1: player.teamIdx === 0, team2: player.teamIdx === 1}">person</mat-icon>
-            </div>
-        </mat-card-content>
-    </mat-card>
+<!--    <mat-card *ngFor="let team of vm.teams;index as i" class="team-card">-->
+<!--        <mat-card-header>-->
+<!--            <mat-card-title>Team</mat-card-title>-->
+<!--        </mat-card-header>-->
+<!--        <mat-card-content>-->
+<!--            <div *ngFor="let player of team.players; trackBy: trackByPlayerId " class="player">-->
+<!--                <mat-icon [ngClass]="{team1: i === 0, team2: i === 1}">person</mat-icon>-->
+<!--                <span>{{ player.name }}</span>-->
+<!--            </div>-->
+<!--        </mat-card-content>-->
+<!--    </mat-card>-->
+<!--    <mat-card class="seats-card">-->
+<!--        <mat-card-header>-->
+<!--            <mat-card-title>Please seat following the order depicted</mat-card-title>-->
+<!--        </mat-card-header>-->
+<!--        <mat-card-content class="seats-card-seat-positioning">-->
+<!--            <div *ngFor="let player of vm.seats; trackBy: trackBySeat" class="seats-card-seat">-->
+<!--                <span>{{ player.playerName }}</span>-->
+<!--                <mat-icon [ngClass]="{team1: player.teamIdx === 0, team2: player.teamIdx === 1}">person</mat-icon>-->
+<!--            </div>-->
+<!--        </mat-card-content>-->
+<!--    </mat-card>-->
     <mat-card *ngIf="vm.isHost; else guestActions">
         <mat-card-actions>
             <button (click)="startGame()" [disabled]="!vm.canStartGame" color="primary" mat-raised-button>Start Game

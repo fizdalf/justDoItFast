@@ -1,6 +1,6 @@
 import {InjectionToken} from '@angular/core';
-import {Room} from './room';
 import {RoomPreviewDto} from '@org/core/room/dto/room-preview.dto';
+import {CurrentRoomDto} from "@org/core/room/dto/current-room.dto";
 
 
 export const RoomService = new InjectionToken('RoomService');
@@ -8,7 +8,7 @@ export const RoomService = new InjectionToken('RoomService');
 export interface RoomService {
     createRoom(playerName: string): Promise<string>;
 
-    openRoom(): Promise<Room>;
+    openRoom(): Promise<CurrentRoomDto>;
 
     joinRoom(roomId: string, playerName: string): Promise<string>;
 

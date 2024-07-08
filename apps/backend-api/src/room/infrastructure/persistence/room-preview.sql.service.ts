@@ -40,7 +40,7 @@ export class RoomPreviewSqlService implements RoomPreviewService {
         return {
             id: row['id'],
             hostPlayerName: row['name'],
-            players: JSON.parse(row['players'])
+            players: JSON.parse(row['users'])
         }
     }
 }

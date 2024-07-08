@@ -4,6 +4,7 @@ import {HttpClient} from '@angular/common/http';
 import {Injectable} from '@angular/core';
 import {Room} from './room';
 import {RoomPreviewDto} from '@org/core/room/dto/room-preview.dto';
+import {CurrentRoomDto} from "@org/core/room/dto/current-room.dto";
 
 
 @Injectable()
@@ -21,15 +22,15 @@ export class ImpRoomService implements RoomService {
     }
 
 
-    async openRoom(): Promise<Room> {
+    async openRoom(): Promise<CurrentRoomDto> {
         const response = await firstValueFrom(
-            this.client.get('/api/room', {
+            this.client.get<CurrentRoomDto>('/api/room', {
                 headers: {
                     Authorization: `Bearer ${sessionStorage.getItem('roomToken')}`
                 }
             })
         );
-        return rehydrateRoom(response);
+        return response;
     }
 
     async joinRoom(sessionId: string, playerName: string): Promise<string> {

@@ -52,7 +52,6 @@ describe('CurrentRoomMysqlGetter', () => {
     it('should return current room for valid room id and user id', async () => {
         const roomRepository = new RoomMysqlRepository(connection, {publish: jest.fn(), publishAll: jest.fn()});
 
-
         const roomId = RoomId.random();
         const userId = UserId.random();
         const otherUserId = UserId.random();

@@ -85,17 +85,18 @@ export class RoomMysqlRepository implements RoomRepository {
 
     async save(room: Room): Promise<void> {
 
-
+        room.publishAll = this.eventBus.publishAll
         const events = room.getUncommittedEvents();
         await this.pool.beginTransaction();
         try {
             await this.saveEvents(events);
             await this.pool.commit();
+            room.commit();
         } catch (error) {
             await this.pool.rollback();
             throw error;
         }
-        this.eventBus.publishAll(events);
+
     }
 
     private async saveEvents(events: IEvent[]) {

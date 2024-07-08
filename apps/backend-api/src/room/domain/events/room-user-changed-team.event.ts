@@ -13,7 +13,7 @@ interface ConstructorParams {
 }
 
 export class RoomUserChangedTeamEvent extends DomainEvent {
-    static readonly EVENT_NAME: string = "room.user-changed-team";
+    static readonly EVENT_NAME: string = "room.user-changed-player";
 
     public readonly userId: string;
 
