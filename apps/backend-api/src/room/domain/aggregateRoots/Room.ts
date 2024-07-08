@@ -30,9 +30,14 @@ const idleThresholdMilliseconds = 1000 * 60 * 2;
 
 export class Room extends AggregateRoot {
 
-    protected _host: UserId;
-    protected readonly _createdAt: Date;
+    private readonly _createdAt: Date;
+
+    private _host: UserId;
     private readonly _id: RoomId;
+
+    get host(): UserId {
+        return this._host;
+    }
 
     constructor({id, host, createdAt, users}: RoomParams) {
         super();
@@ -44,10 +49,14 @@ export class Room extends AggregateRoot {
 
     }
 
-    protected _users: Users;
-
     get id(): RoomId {
         return this._id;
+    }
+
+    protected _users: Users;
+
+    get users(): User[] {
+        return this._users.toArray();
     }
 
     static create(sessionId: RoomId, userId: UserId, userName: UserName, date: Date): Room {
@@ -90,6 +99,7 @@ export class Room extends AggregateRoot {
             aggregateId: this._id.value,
             userId: userId.value,
             userName: userName.value,
+            occurredOn: date
         }));
     }
 

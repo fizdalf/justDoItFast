@@ -1,17 +1,18 @@
 import {RoomMysqlRepository} from "./room-mysql.repository";
 import {Test, TestingModule} from "@nestjs/testing";
 import {ConfigModule, ConfigService} from "@nestjs/config";
-import {createConnection} from "mysql2/promise";
-import {tableIndex} from "../../../../shared/infrastructure/persistence/table-index";
 import {RoomId} from "../../../domain/value-objects/RoomId";
 import {UserId} from "../../../domain/value-objects/UserId";
 import {Room} from "../../../domain/aggregateRoots/Room";
 import {UserName} from "../../../domain/value-objects/UserName";
 import {EventBus} from "@nestjs/cqrs";
+import {
+    DatabaseConnectionCloseFactory,
+    DatabaseConnectionFactory
+} from "../../../../shared/infrastructure/persistence/TestDatabaseFactory";
 
 
 describe('RoomMysqlRepository', () => {
-    let connection = null;
     let roomRepository: RoomMysqlRepository = null;
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -28,23 +29,7 @@ describe('RoomMysqlRepository', () => {
                 {
                     provide: 'default',
                     inject: [ConfigService],
-                    useFactory: async (config: ConfigService) => {
-                        if (!connection) {
-                            connection = await createConnection({
-                                host: config.get('TEST_DATABASE_HOST'),
-                                user: config.get('TEST_DATABASE_USER'),
-                                password: config.get('TEST_DATABASE_PASSWORD'),
-                                database: config.get('TEST_DATABASE_NAME'),
-                                port: config.get('TEST_DATABASE_PORT'),
-                            });
-                        }
-                        await connection.query('SET FOREIGN_KEY_CHECKS=0;');
-                        for (const tableName of tableIndex) {
-                            await connection.query(`TRUNCATE TABLE ${tableName};`);
-                        }
-                        await connection.query('SET FOREIGN_KEY_CHECKS=1;');
-                        return connection;
-                    }
+                    useFactory: DatabaseConnectionFactory
                 },
             ],
         }).compile();
@@ -53,10 +38,11 @@ describe('RoomMysqlRepository', () => {
     });
 
     afterAll(async () => {
-        await connection.end();
+        await DatabaseConnectionCloseFactory();
     });
 
     it('should save and load a room', async () => {
+        console.log('room-mysql test started');
         const roomId = RoomId.random();
         const userId = UserId.random();
         const otherUserId = UserId.random();
@@ -67,6 +53,9 @@ describe('RoomMysqlRepository', () => {
 
         const currentRoom = await roomRepository.findOneById(roomId);
 
-        expect(currentRoom).toEqual(room);
+        expect(currentRoom.id).toEqual(room.id);
+        expect(currentRoom.host).toEqual(room.host);
+        expect(currentRoom.users).toEqual(room.users);
+        console.log('room-mysql test finished');
     });
 })

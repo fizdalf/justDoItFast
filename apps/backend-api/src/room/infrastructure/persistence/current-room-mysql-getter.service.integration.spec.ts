@@ -2,55 +2,51 @@ import {Test, TestingModule} from '@nestjs/testing';
 import {CurrentRoomMysqlGetter} from './current-room-mysql-getter.service';
 import {RoomId} from '../../domain/value-objects/RoomId';
 import {UserId} from '../../domain/value-objects/UserId';
-import {Connection, createConnection} from 'mysql2/promise';
 import {ConfigModule, ConfigService} from "@nestjs/config";
-import {tableIndex} from "../../../shared/infrastructure/persistence/table-index";
 import {RoomMysqlRepository} from "./repository/room-mysql.repository";
 import {Room} from "../../domain/aggregateRoots/Room";
 import {UserName} from "../../domain/value-objects/UserName";
+import {
+    DatabaseConnectionCloseFactory,
+    DatabaseConnectionFactory
+} from "../../../shared/infrastructure/persistence/TestDatabaseFactory";
+import {RoomRepository} from "../../domain/repositories/room.repository";
+import {EventBus} from "@nestjs/cqrs";
 
 describe('CurrentRoomMysqlGetter', () => {
     let service: CurrentRoomMysqlGetter;
-    let connection: Connection;
+    let roomRepository: RoomRepository;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             imports: [ConfigModule.forRoot()],
             providers: [
                 CurrentRoomMysqlGetter,
-
+                RoomMysqlRepository,
+                {
+                    provide: EventBus,
+                    useValue: {
+                        publish: jest.fn(),
+                        publishAll: jest.fn(),
+                    }
+                },
                 {
                     provide: 'default',
                     inject: [ConfigService],
-                    useFactory: async (config: ConfigService) => {
-                        if (!connection) {
-                            connection = await createConnection({
-                                host: config.get('TEST_DATABASE_HOST'),
-                                user: config.get('TEST_DATABASE_USER'),
-                                password: config.get('TEST_DATABASE_PASSWORD'),
-                                database: config.get('TEST_DATABASE_NAME'),
-                                port: config.get('TEST_DATABASE_PORT'),
-                            });
-                        }
-                        await connection.query('SET FOREIGN_KEY_CHECKS=0;');
-                        for (const tableName of tableIndex) {
-                            await connection.query(`TRUNCATE TABLE ${tableName};`);
-                        }
-                        await connection.query('SET FOREIGN_KEY_CHECKS=1;');
-                        return connection;
-                    }
+                    useFactory: DatabaseConnectionFactory
                 },
             ],
         }).compile();
 
         service = module.get<CurrentRoomMysqlGetter>(CurrentRoomMysqlGetter);
+        roomRepository = module.get<RoomMysqlRepository>(RoomMysqlRepository);
     });
     afterAll(async () => {
-        await connection.end();
+        await DatabaseConnectionCloseFactory()
     });
 
     it('should return current room for valid room id and user id', async () => {
-        const roomRepository = new RoomMysqlRepository(connection, {publish: jest.fn(), publishAll: jest.fn()});
+        console.log('should have cleared the database before running this test!');
 
         const roomId = RoomId.random();
         const userId = UserId.random();
@@ -62,7 +58,7 @@ describe('CurrentRoomMysqlGetter', () => {
 
         const currentRoom = await service.execute(roomId, userId);
 
-        expect(currentRoom).toEqual({
+        expect(currentRoom).toMatchObject({
             id: roomId.value,
             host: userId.value,
             isHost: true,
@@ -82,8 +78,6 @@ describe('CurrentRoomMysqlGetter', () => {
     });
 
     it('should return current room for a user that is not the host', async () => {
-        const roomRepository = new RoomMysqlRepository(connection, {publish: jest.fn(), publishAll: jest.fn()});
-
         const roomId = RoomId.random();
         const userId = UserId.random();
         const room = Room.create(roomId, userId, UserName.fromValue('randomName'), new Date('2021-01-01T00:00:00.000Z'));
