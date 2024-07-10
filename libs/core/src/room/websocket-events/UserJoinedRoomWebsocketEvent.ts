@@ -1,10 +1,10 @@
 import {WebsocketEvent} from '@org/core/room/websocket-events/WebsocketEvent';
 
-export interface UserJoinedRoomEventPayload {
+export interface UserJoinedRoomWebsocketEventPayload {
     userName: string;
 }
 
-export class UserJoinedRoomEvent extends WebsocketEvent<UserJoinedRoomEventPayload> {
+export class UserJoinedRoomWebsocketEvent extends WebsocketEvent<UserJoinedRoomWebsocketEventPayload> {
     protected static override _eventName = 'room.user-joined';
     private readonly userName: string;
 
@@ -13,7 +13,7 @@ export class UserJoinedRoomEvent extends WebsocketEvent<UserJoinedRoomEventPaylo
         this.userName = userName;
     }
 
-    payload(): UserJoinedRoomEventPayload {
+    payload(): UserJoinedRoomWebsocketEventPayload {
         return {userName: this.userName};
     }
 }

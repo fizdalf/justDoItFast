@@ -15,4 +15,6 @@ export interface RoomService {
     leaveRoom(): Promise<void>;
 
     getRoomPreview(roomId: string): Promise<RoomPreviewDto>;
+
+    createGame(): Promise<void>;
 }

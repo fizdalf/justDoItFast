@@ -57,6 +57,15 @@ export class ImpRoomService implements RoomService {
         return await firstValueFrom(this.client.get<RoomPreviewDto>(`/api/room/${sessionId}/preview`));
     }
 
+    async createGame(): Promise<void> {
+        await firstValueFrom(this.client.post('/api/room/create-game', {}, {
+                headers: {
+                    Authorization: `Bearer ${sessionStorage.getItem('roomToken')}`
+                }
+            }
+        ));
+    }
+
 
 }
 

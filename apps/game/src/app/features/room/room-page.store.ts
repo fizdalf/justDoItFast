@@ -3,11 +3,21 @@ import {ComponentStore} from '@ngrx/component-store';
 import {merge, Observable, startWith, switchMap, tap} from 'rxjs';
 import {RoomService} from '../../services/room/roomService';
 import {WebsocketService} from '../../services/websocket/websocket.service';
-import {UserJoinedRoomEvent, UserJoinedRoomEventPayload} from '@org/core/room/websocket-events/UserJoinedRoomEvent';
-import {UserLeftRoomEvent, UserLeftRoomEventPayload} from '@org/core/room/websocket-events/UserLeftRoomEvent';
+import {
+    UserJoinedRoomWebsocketEvent,
+    UserJoinedRoomWebsocketEventPayload
+} from '@org/core/room/websocket-events/UserJoinedRoomWebsocketEvent';
+import {
+    UserLeftRoomEventWebsocketPayload,
+    UserLeftRoomWebsocketEvent
+} from '@org/core/room/websocket-events/UserLeftRoomWebsocketEvent';
 import {AuthenticationService} from '../../services/authentication/authentication.service';
 import {Router} from '@angular/router';
 import {CurrentRoomDto} from "@org/core/room/dto/current-room.dto";
+import {
+    CreatedGameWebsocketEvent,
+    CreatedGameWebsocketEventPayload
+} from "@org/core/room/websocket-events/CreatedGameWebsocketEvent";
 
 export interface Seat {
     id: string;
@@ -61,8 +71,8 @@ export class RoomPageStore extends ComponentStore<CreateSessionPageState> {
 
     private readonly listenSessionChanges = this.effect(() => {
             return merge(
-                this.websocketService.on<UserJoinedRoomEventPayload>(UserJoinedRoomEvent.eventName()),
-                this.websocketService.on<UserLeftRoomEventPayload>(UserLeftRoomEvent.eventName())
+                this.websocketService.on<UserJoinedRoomWebsocketEventPayload>(UserJoinedRoomWebsocketEvent.eventName()),
+                this.websocketService.on<UserLeftRoomEventWebsocketPayload>(UserLeftRoomWebsocketEvent.eventName())
             )
                 .pipe(
                     tap((events) => {
@@ -72,6 +82,10 @@ export class RoomPageStore extends ComponentStore<CreateSessionPageState> {
                 );
         }
     );
+
+    private readonly onGameCreated = this.effect(() => {
+        return this.websocketService.on<CreatedGameWebsocketEventPayload>(CreatedGameWebsocketEvent.eventName())
+    })
 
     constructor(
         private readonly sessionService: RoomService,
@@ -86,6 +100,10 @@ export class RoomPageStore extends ComponentStore<CreateSessionPageState> {
         await this.sessionService.leaveRoom();
         this.authenticationService.logout();
         this.router.navigate(['/']);
+    }
+
+    async createGame() {
+        await this.sessionService.createGame()
     }
 }
 

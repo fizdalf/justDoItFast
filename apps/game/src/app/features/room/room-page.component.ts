@@ -82,6 +82,7 @@ export class RoomPageComponent implements OnInit {
     }
 
     startGame() {
+        this.store.createGame();
     }
 
     leaveRoom() {

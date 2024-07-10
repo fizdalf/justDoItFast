@@ -9,7 +9,7 @@ import {
 import {Server, Socket} from 'socket.io';
 import {Injectable} from '@nestjs/common';
 import {AuthenticationService} from '../authentication/authentication.service';
-import {UserJoinedRoomEvent} from '@org/core/room/websocket-events/UserJoinedRoomEvent';
+import {UserJoinedRoomWebsocketEvent} from '@org/core/room/websocket-events/UserJoinedRoomWebsocketEvent';
 import {
     LoginWebsocketEvent,
     LoginWebsocketEventAcknowledge,
@@ -22,10 +22,11 @@ import {
 } from '@org/core/room/websocket-events/PingWebsocketEvent';
 import {CommandBus} from '@nestjs/cqrs';
 import {RegisterPlayerContactCommand} from '../../domain/commands/register-player-contact.command';
-import {UserLeftRoomEvent} from '@org/core/room/websocket-events/UserLeftRoomEvent';
+import {UserLeftRoomWebsocketEvent} from '@org/core/room/websocket-events/UserLeftRoomWebsocketEvent';
 import {RequestPingWebsocketEvent} from '@org/core/room/websocket-events/RequestPingWebsocketEvent';
 import {RoomId} from "../../domain/value-objects/RoomId";
 import {UserId} from "../../domain/value-objects/UserId";
+import {CreatedGameWebsocketEvent} from "@org/core/room/websocket-events/CreatedGameWebsocketEvent";
 
 
 @WebSocketGateway({cors: {origin: '*'}})
@@ -72,13 +73,17 @@ export class RoomSocketGateway implements OnGatewayInit {
     }
 
     async informPlayerJoined(roomId: string, playerName: string) {
-        const event = new UserJoinedRoomEvent(playerName);
-        this.server.to(roomId).emit(UserJoinedRoomEvent.eventName(), event.payload());
+        const event = new UserJoinedRoomWebsocketEvent(playerName);
+        this.server.to(roomId).emit(UserJoinedRoomWebsocketEvent.eventName(), event.payload());
     }
 
     async informPlayerLeft(roomId: string, playerName: any) {
         console.log('informing player left', playerName, roomId);
-        const event = new UserLeftRoomEvent(playerName);
-        this.server.to(roomId).emit(UserLeftRoomEvent.eventName(), event.payload());
+        const event = new UserLeftRoomWebsocketEvent(playerName);
+        this.server.to(roomId).emit(UserLeftRoomWebsocketEvent.eventName(), event.payload());
+    }
+
+    async informGameSessionCreated({roomId, gameSessionId}: { roomId: string, gameSessionId: string }) {
+        this.server.to(roomId).emit(CreatedGameWebsocketEvent.eventName(), {});
     }
 }
