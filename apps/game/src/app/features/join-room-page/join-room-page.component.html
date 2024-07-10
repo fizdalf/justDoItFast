@@ -6,10 +6,7 @@
         <div class="session-details">
             <h4>Host: {{ vm.roomPreview.hostPlayerName }}</h4>
             <div *ngFor="let player of vm.roomPreview.users; index as i" class="team-info">
-
                 <div class="team-players">
-                    <h5>Users:</h5>
-
                     {{ player }}
                 </div>
             </div>

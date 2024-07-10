@@ -30,6 +30,7 @@ export interface CreateSessionPageViewModel {
     playerCount: number;
     sessionId: string | undefined;
     isHost: boolean;
+    users: { id: string, name: string }[];
 }
 
 interface CreateSessionPageState {
@@ -44,6 +45,7 @@ export class RoomPageStore extends ComponentStore<CreateSessionPageState> {
     private playerCount$ = this.select((state) => state.room?.users.length || 0);
     private isHost$ = this.select((state) => state.room?.isHost ?? false);
     private canStartGame$ = this.select((state) => state.room !== undefined && state.room.users.length >= 4);
+    private users$ = this.select((state) => state.room ? state.room.users : []);
     //// EFFECTS ////
     public readonly fetchSession = this.effect((trigger$) =>
         trigger$.pipe(
@@ -59,6 +61,7 @@ export class RoomPageStore extends ComponentStore<CreateSessionPageState> {
             playerCount: this.playerCount$,
             isHost: this.isHost$,
             canStartGame: this.canStartGame$,
+            users: this.users$
         }, {debounce: true});
 
     //// UPDATERS ////
@@ -86,7 +89,9 @@ export class RoomPageStore extends ComponentStore<CreateSessionPageState> {
     private readonly onGameCreated = this.effect(() => {
         return this.websocketService.on<CreatedGameWebsocketEventPayload>(CreatedGameWebsocketEvent.eventName())
             .pipe(
-                tap(() => {console.log('game created ...it should navigate somewhere')}),
+                tap(() => {
+                    console.log('game created ...it should navigate somewhere')
+                }),
                 tap(() => this.router.navigate(['/game']))
             )
     })
