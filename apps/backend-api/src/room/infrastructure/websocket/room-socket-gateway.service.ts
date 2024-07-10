@@ -8,7 +8,7 @@ import {
 } from '@nestjs/websockets';
 import {Server, Socket} from 'socket.io';
 import {Injectable} from '@nestjs/common';
-import {AuthenticationService} from '../authentication/authentication.service';
+import {AuthenticationService} from '../../../shared/infrastructure/authentication/authentication.service';
 import {UserJoinedRoomWebsocketEvent} from '@org/core/room/websocket-events/UserJoinedRoomWebsocketEvent';
 import {
     LoginWebsocketEvent,
@@ -27,6 +27,7 @@ import {RequestPingWebsocketEvent} from '@org/core/room/websocket-events/Request
 import {RoomId} from "../../domain/value-objects/RoomId";
 import {UserId} from "../../domain/value-objects/UserId";
 import {CreatedGameWebsocketEvent} from "@org/core/room/websocket-events/CreatedGameWebsocketEvent";
+import {RegisterUserInWebsocketCommand} from "../../domain/commands/register-user-in-web-socket-room.command";
 
 
 @WebSocketGateway({cors: {origin: '*'}})
@@ -52,10 +53,11 @@ export class RoomSocketGateway implements OnGatewayInit {
     async handleEvent(@MessageBody() payload: LoginWebsocketEventPayload, @ConnectedSocket() client: Socket): Promise<LoginWebsocketEventAcknowledge> {
         try {
             const resp = await this.authService.validateToken(payload.token);
-            client.join(resp.roomId);
+            // we want to validate that the room still exists...otherwise we should not allow the player to join
+            await this.commandBus.execute(new RegisterUserInWebsocketCommand(UserId.fromValue(resp.playerId), RoomId.fromValue(resp.roomId), client));
             return {type: 'ok'};
         } catch (e) {
-            console.error(e);
+            // console.error(e);
             return {type: 'error'};
         }
     }

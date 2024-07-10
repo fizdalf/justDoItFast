@@ -85,6 +85,10 @@ export class RoomPageStore extends ComponentStore<CreateSessionPageState> {
 
     private readonly onGameCreated = this.effect(() => {
         return this.websocketService.on<CreatedGameWebsocketEventPayload>(CreatedGameWebsocketEvent.eventName())
+            .pipe(
+                tap(() => {console.log('game created ...it should navigate somewhere')}),
+                tap(() => this.router.navigate(['/game']))
+            )
     })
 
     constructor(

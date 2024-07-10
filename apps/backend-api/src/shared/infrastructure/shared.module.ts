@@ -4,16 +4,20 @@ import {MysqlModule} from 'nest-mysql';
 import {JwtModule} from '@nestjs/jwt';
 import {DateTimeService} from '../domain/date-time.service';
 import {SystemDateDateTimeService} from './date-time.service';
+import {AuthenticationService} from "./authentication/authentication.service";
+import {CqrsModule} from "@nestjs/cqrs";
 
 const providers = [
     {
         provide: DateTimeService,
         useClass: SystemDateDateTimeService
-    }
+    },
+    AuthenticationService
 ];
 
 @Module({
     imports: [
+        CqrsModule,
         ConfigModule.forRoot(),
         MysqlModule.forRootAsync({
             imports: [ConfigModule],
@@ -44,6 +48,7 @@ const providers = [
         ConfigModule,
         JwtModule,
         MysqlModule,
+        CqrsModule,
         ...providers
     ]
 })

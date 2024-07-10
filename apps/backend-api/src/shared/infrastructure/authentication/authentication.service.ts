@@ -1,7 +1,7 @@
 import {JwtService} from '@nestjs/jwt';
 import {Injectable} from '@nestjs/common';
-import {RoomToken} from '../../domain/value-objects/RoomToken';
-import {RoomId} from '../../domain/value-objects/RoomId';
+import {RoomToken} from '../../../room/domain/value-objects/RoomToken';
+import {RoomId} from '../../../room/domain/value-objects/RoomId';
 
 export type GenerateTokenParams = { isHost: boolean; roomId: RoomId; userName: string, userId: string };
 

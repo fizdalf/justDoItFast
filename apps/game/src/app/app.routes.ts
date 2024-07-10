@@ -24,6 +24,11 @@ export const appRoutes: Route[] = [
         loadComponent: () => import('./features/join-room-page/join-room-page.component').then((m) => m.JoinRoomPageComponent),
     },
     {
+        path: 'game',
+        canActivate: [sessionConnectedGuard()],
+        loadComponent: () => import('./features/game-home/game-home-page.component').then((m) => m.GameHomePageComponent),
+    },
+    {
         path: '**',
         redirectTo: '',
     },

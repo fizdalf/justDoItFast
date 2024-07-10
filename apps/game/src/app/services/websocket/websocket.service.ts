@@ -27,6 +27,7 @@ export class WebsocketService {
     on<Payload>(eventName: string): Observable<Payload> {
         return new Observable<Payload>(subscriber => {
             const listener = (data: Payload, ack: any) => {
+                console.log('data received on ', eventName, data);
                 subscriber.next(data);
             };
             this.socket.on(eventName, listener);

@@ -1,7 +1,7 @@
 import {JwtService} from "@nestjs/jwt";
 import {AuthenticationService, GenerateTokenParams} from "./authentication.service";
-import {RoomId} from "../../domain/value-objects/RoomId";
-import {RoomToken} from "../../domain/value-objects/RoomToken";
+import {RoomId} from "../../../room/domain/value-objects/RoomId";
+import {RoomToken} from "../../../room/domain/value-objects/RoomToken";
 
 describe('AuthenticationService', () => {
 

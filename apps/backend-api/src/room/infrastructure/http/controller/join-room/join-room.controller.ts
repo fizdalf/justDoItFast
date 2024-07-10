@@ -3,7 +3,7 @@ import {IsNotEmpty, IsString} from 'class-validator';
 import {UserId} from '../../../../domain/value-objects/UserId';
 import {JoinRoomCommand} from '../../../../domain/commands/join-room.command';
 import {CommandBus} from '@nestjs/cqrs';
-import {AuthenticationService} from '../../../authentication/authentication.service';
+import {AuthenticationService} from '../../../../../shared/infrastructure/authentication/authentication.service';
 import {UserName} from '../../../../domain/value-objects/UserName';
 import {RoomId} from '../../../../domain/value-objects/RoomId';
 
