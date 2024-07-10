@@ -3,11 +3,8 @@ import {ComponentStore} from '@ngrx/component-store';
 import {merge, Observable, startWith, switchMap, tap} from 'rxjs';
 import {RoomService} from '../../services/room/roomService';
 import {WebsocketService} from '../../services/websocket/websocket.service';
-import {
-    PlayerJoinedRoomEvent,
-    PlayerJoinedRoomEventPayload
-} from '@org/core/room/websocket-events/PlayerJoinedRoomEvent';
-import {PlayerLeftRoomEvent, PlayerLeftRoomEventPayload} from '@org/core/room/websocket-events/PlayerLeftRoomEvent';
+import {UserJoinedRoomEvent, UserJoinedRoomEventPayload} from '@org/core/room/websocket-events/UserJoinedRoomEvent';
+import {UserLeftRoomEvent, UserLeftRoomEventPayload} from '@org/core/room/websocket-events/UserLeftRoomEvent';
 import {AuthenticationService} from '../../services/authentication/authentication.service';
 import {Router} from '@angular/router';
 import {CurrentRoomDto} from "@org/core/room/dto/current-room.dto";
@@ -64,8 +61,8 @@ export class RoomPageStore extends ComponentStore<CreateSessionPageState> {
 
     private readonly listenSessionChanges = this.effect(() => {
             return merge(
-                this.websocketService.on<PlayerJoinedRoomEventPayload>(PlayerJoinedRoomEvent.eventName()),
-                this.websocketService.on<PlayerLeftRoomEventPayload>(PlayerLeftRoomEvent.eventName())
+                this.websocketService.on<UserJoinedRoomEventPayload>(UserJoinedRoomEvent.eventName()),
+                this.websocketService.on<UserLeftRoomEventPayload>(UserLeftRoomEvent.eventName())
             )
                 .pipe(
                     tap((events) => {

@@ -8,7 +8,7 @@ import {RoomPreviewDto} from '@org/core/room/dto/room-preview.dto';
 
 interface JoinRoomPageState {
     roomId: string | undefined;
-    playerName: string | undefined;
+    userName: string | undefined;
     roomPreview: RoomPreviewDto | undefined;
 }
 
@@ -56,7 +56,7 @@ export class JoinRoomPageStore extends ComponentStore<JoinRoomPageState> {
         super({
             roomId: undefined,
             roomPreview: undefined,
-            playerName: undefined,
+            userName: undefined,
         });
     }
 

@@ -10,7 +10,7 @@ export interface RoomService {
 
     openRoom(): Promise<CurrentRoomDto>;
 
-    joinRoom(roomId: string, playerName: string): Promise<string>;
+    joinRoom(roomId: string, username: string): Promise<string>;
 
     leaveRoom(): Promise<void>;
 

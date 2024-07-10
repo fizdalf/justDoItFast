@@ -9,7 +9,7 @@ describe('GameSessionCreatedEvent', () => {
         const event = new GameSessionCreatedEvent(
             'aggregateId',
             'roomId',
-            [{index: 0, playerName: 'player1', playerUserId: 'userId'}],
+            [{index: 0, userName: 'player1', playerUserId: 'userId'}],
             ['wordPackId'],
             'status',
             new Date(),
@@ -32,7 +32,7 @@ describe('GameSessionCreatedEvent', () => {
             occurredOn: new Date(),
             attributes: {
                 roomId: 'roomId',
-                seats: [{index: 0, playerName: 'player1', playerUserId: 'userId'}],
+                seats: [{index: 0, userName: 'player1', playerUserId: 'userId'}],
                 wordPackIds: ['wordPackId'],
                 status: 'status'
             }
@@ -51,7 +51,7 @@ describe('GameSessionCreatedEvent', () => {
         const event = new GameSessionCreatedEvent(
             'aggregateId',
             'roomId',
-            [{index: 0, playerName: 'player1', playerUserId: 'userId'}],
+            [{index: 0, userName: 'player1', playerUserId: 'userId'}],
             ['wordPackId'],
             'status',
             new Date(),

@@ -51,7 +51,7 @@ describe('AuthenticationService', () => {
         const decodedToken: RoomToken = {
             isHost: true,
             roomId: RoomId.random().value,
-            playerName: 'playerName',
+            userName: 'playerName',
             playerId: 'playerId'
         };
         const expected = 'expected';

@@ -9,7 +9,7 @@ import {
 import {Server, Socket} from 'socket.io';
 import {Injectable} from '@nestjs/common';
 import {AuthenticationService} from '../authentication/authentication.service';
-import {PlayerJoinedRoomEvent} from '@org/core/room/websocket-events/PlayerJoinedRoomEvent';
+import {UserJoinedRoomEvent} from '@org/core/room/websocket-events/UserJoinedRoomEvent';
 import {
     LoginWebsocketEvent,
     LoginWebsocketEventAcknowledge,
@@ -22,7 +22,7 @@ import {
 } from '@org/core/room/websocket-events/PingWebsocketEvent';
 import {CommandBus} from '@nestjs/cqrs';
 import {RegisterPlayerContactCommand} from '../../domain/commands/register-player-contact.command';
-import {PlayerLeftRoomEvent} from '@org/core/room/websocket-events/PlayerLeftRoomEvent';
+import {UserLeftRoomEvent} from '@org/core/room/websocket-events/UserLeftRoomEvent';
 import {RequestPingWebsocketEvent} from '@org/core/room/websocket-events/RequestPingWebsocketEvent';
 import {RoomId} from "../../domain/value-objects/RoomId";
 import {UserId} from "../../domain/value-objects/UserId";
@@ -51,7 +51,6 @@ export class RoomSocketGateway implements OnGatewayInit {
     async handleEvent(@MessageBody() payload: LoginWebsocketEventPayload, @ConnectedSocket() client: Socket): Promise<LoginWebsocketEventAcknowledge> {
         try {
             const resp = await this.authService.validateToken(payload.token);
-            console.log('joining room', resp.roomId);
             client.join(resp.roomId);
             return {type: 'ok'};
         } catch (e) {
@@ -73,13 +72,13 @@ export class RoomSocketGateway implements OnGatewayInit {
     }
 
     async informPlayerJoined(roomId: string, playerName: string) {
-        const event = new PlayerJoinedRoomEvent(playerName);
-        this.server.to(roomId).emit(PlayerJoinedRoomEvent.eventName(), event.payload());
+        const event = new UserJoinedRoomEvent(playerName);
+        this.server.to(roomId).emit(UserJoinedRoomEvent.eventName(), event.payload());
     }
 
     async informPlayerLeft(roomId: string, playerName: any) {
         console.log('informing player left', playerName, roomId);
-        const event = new PlayerLeftRoomEvent(playerName);
-        this.server.to(roomId).emit(PlayerLeftRoomEvent.eventName(), event.payload());
+        const event = new UserLeftRoomEvent(playerName);
+        this.server.to(roomId).emit(UserLeftRoomEvent.eventName(), event.payload());
     }
 }

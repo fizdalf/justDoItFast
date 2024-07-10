@@ -15,16 +15,10 @@ export class RoomPreviewSqlService implements RoomPreviewService {
         const [queryResult, fieldPacket] = await this.pool.query<RowDataPacket[]>(
             `select room.id,
                     host.name,
-                    json_arrayagg(json_object('players', teams.members)) as teams
+                    json_arrayagg(user.name) as users
              from room
                       join room_user host on room.host_id = host.id
-                      join (select team.id,
-                                   json_arrayagg(room_user.name) as members,
-                                   team.room_id
-                            from team
-                                     join team_member on team.id = team_member.team_id
-                                     join room_user on team_member.user_id = room_user.id) as teams
-                           on teams.room_id = room.id
+                      join room_user user on room.id = user.room_id
              where room.id = ?`,
             [
                 id.value
@@ -40,7 +34,7 @@ export class RoomPreviewSqlService implements RoomPreviewService {
         return {
             id: row['id'],
             hostPlayerName: row['name'],
-            players: JSON.parse(row['users'])
+            users: JSON.parse(row['users'])
         }
     }
 }

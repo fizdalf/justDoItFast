@@ -33,11 +33,11 @@ export class ImpRoomService implements RoomService {
         return response;
     }
 
-    async joinRoom(sessionId: string, playerName: string): Promise<string> {
+    async joinRoom(sessionId: string, userName: string): Promise<string> {
         const response = await firstValueFrom(this.client.post<{
             success: boolean,
             token: string
-        }>(`/api/room/${sessionId}/join`, {playerName}));
+        }>(`/api/room/${sessionId}/join`, {userName}));
         return response.token;
     }
 
