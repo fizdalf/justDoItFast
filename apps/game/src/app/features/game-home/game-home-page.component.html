@@ -1,3 +1,11 @@
-<div>
-    This is the page where the game is going to be setup (the player seats and starting the actual "run" of the game)
+<div *ngIf="vm$| async as vm">
+    {{ vm.isHost }}
+
+    <div *ngFor="let seat of vm.seats">
+        <div>{{ seat.playerName }}</div>
+    </div>
+
+    <div *ngIf="vm.isHost">
+        <button (click)="startGame()">Start Game</button>
+    </div>
 </div>
