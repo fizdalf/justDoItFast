@@ -18,7 +18,8 @@ export class CurrentRoomMysqlGetter implements CurrentRoomGetter {
                     host_id,
                     created_at,
                     updated_at,
-                    json_arrayagg(json_object('id', room_user.id, 'name', room_user.name)) as users
+                    json_arrayagg(json_object('id', room_user.id, 'name', room_user.name))       as users,
+                    (select count(*) > 0 from game_session where game_session.room_id = room_id) as is_game_started
              from room
                       join room_user requester on room.id = requester.room_id
                       join room_user on room.id = requester.room_id
@@ -39,7 +40,8 @@ export class CurrentRoomMysqlGetter implements CurrentRoomGetter {
             isHost: room.host_id === userId.value,
             createdAt: room.created_at.toISOString(),
             updatedAt: room.updated_at.toISOString(),
-            users: JSON.parse(room.users)
+            users: JSON.parse(room.users),
+            isGameStarted: room.isGameStarted,
         };
 
     }

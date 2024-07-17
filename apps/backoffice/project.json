@@ -16,10 +16,7 @@
         "polyfills": ["zone.js"],
         "tsConfig": "apps/backoffice/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
-        "assets": [
-          "apps/backoffice/src/favicon.ico",
-          "apps/backoffice/src/assets"
-        ],
+        "assets": ["apps/backoffice/src/favicon.ico", "apps/backoffice/src/assets"],
         "styles": ["apps/backoffice/src/styles.scss"],
         "scripts": []
       },
@@ -69,10 +66,7 @@
       "executor": "@nx/eslint:lint",
       "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": [
-          "apps/backoffice/**/*.ts",
-          "apps/backoffice/**/*.html"
-        ]
+        "lintFilePatterns": ["apps/backoffice/**/*.ts", "apps/backoffice/**/*.html"]
       }
     },
     "test": {

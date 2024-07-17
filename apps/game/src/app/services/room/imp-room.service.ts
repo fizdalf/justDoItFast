@@ -23,14 +23,13 @@ export class ImpRoomService implements RoomService {
 
 
     async openRoom(): Promise<CurrentRoomDto> {
-        const response = await firstValueFrom(
+        return await firstValueFrom(
             this.client.get<CurrentRoomDto>('/api/room', {
                 headers: {
                     Authorization: `Bearer ${sessionStorage.getItem('roomToken')}`
                 }
             })
         );
-        return response;
     }
 
     async joinRoom(sessionId: string, userName: string): Promise<string> {

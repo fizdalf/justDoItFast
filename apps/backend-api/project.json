@@ -6,9 +6,7 @@
   "targets": {
     "build": {
       "executor": "@nx/webpack:webpack",
-      "outputs": [
-        "{options.outputPath}"
-      ],
+      "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "production",
       "options": {
         "target": "node",
@@ -16,9 +14,7 @@
         "outputPath": "dist/apps/backend-api",
         "main": "apps/backend-api/src/main.ts",
         "tsConfig": "apps/backend-api/tsconfig.app.json",
-        "assets": [
-          "apps/backend-api/src/assets"
-        ],
+        "assets": ["apps/backend-api/src/assets"],
         "isolatedConfig": true,
         "webpackConfig": "apps/backend-api/webpack.config.js"
       },
@@ -30,6 +26,11 @@
     "serve": {
       "executor": "@nx/js:node",
       "defaultConfiguration": "development",
+      "dependsOn": [
+        {
+          "projects": ["core"]
+        }
+      ],
       "options": {
         "buildTarget": "apps/backend-api:build"
       },
@@ -44,20 +45,14 @@
     },
     "lint": {
       "executor": "@nx/eslint:lint",
-      "outputs": [
-        "{options.outputFile}"
-      ],
+      "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": [
-          "apps/backend-api/**/*.ts"
-        ]
+        "lintFilePatterns": ["apps/backend-api/**/*.ts"]
       }
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": [
-        "{workspaceRoot}/coverage/{projectRoot}"
-      ],
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
         "jestConfig": "apps/backend-api/jest.config.ts"
       }
@@ -67,23 +62,16 @@
       "options": {
         "jestConfig": "apps/backend-api/jest.config.ts",
         "passWithNoTests": true,
-        "testMatch": [
-          "**/?(*.)+(spec|test).[jt]s?(x)",
-          "!**/?(*.)+(integration.spec).[jt]s?(x)"
-        ]
+        "testMatch": ["**/?(*.)+(spec|test).[jt]s?(x)", "!**/?(*.)+(integration.spec).[jt]s?(x)"]
       }
     },
     "integration-test": {
       "executor": "@nrwl/jest:jest",
-      "outputs": [
-        "{workspaceRoot}/coverage/{projectRoot}"
-      ],
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
         "jestConfig": "apps/backend-api/jest.config.ts",
         "passWithNoTests": true,
-        "testMatch": [
-          "**/?(*.)+(integration.spec).[jt]s?(x)"
-        ],
+        "testMatch": ["**/?(*.)+(integration.spec).[jt]s?(x)"],
         "runInBand": true
       }
     }

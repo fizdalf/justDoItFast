@@ -8,4 +8,5 @@ export interface CurrentRoomDto {
         id: string;
         name: string;
     }[];
+    isGameStarted: boolean;
 }
