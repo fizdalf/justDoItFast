@@ -353,11 +353,13 @@ Tema propio de bombas y artificieros. Se toman **ideas de mecánica** de otros j
 - ✓ Herramientas nuevas aceptadas (a validar en pruebas reales; si no molan se cambian): **Traje antiexplosivos**, **Rayos X**, **Reprogramar temporizador**. Reglas implementadas: ver Step 8.
 - El rediseño visual va en su propio paso (Step 10).
 
-###   Step 9: Pulido sensorial, PWA y despliegue
-- Fallback visual (parpadeo a pantalla completa) cuando audio/vibración estén bloqueados; botón explícito para activar sonido.
-- Animaciones de avance en el tablero y de explosión.
-- Manifest PWA + iconos + instalación en pantalla de inicio.
-- Servir el cliente compilado desde Fastify en producción (`@fastify/static`) para tener un único proceso.
+### ✓ Step 9: Producción, PWA y tests en móvil
+- ✓ **Un solo proceso en producción**: el servidor sirve la API, los WebSockets y la web compilada (`@fastify/static`), con `index.html` para las rutas de la app (`/r/ABCD`). `npm run build && npm start`.
+- ✓ Tailwind compilado en el build (antes por CDN, desaconsejado en producción).
+- ✓ **PWA instalable**: `manifest.webmanifest`, iconos propios (`public/icons`, generados con `npm run icons`). Sin service worker a propósito: el juego necesita conexión en vivo y una caché solo arriesgaría servir código viejo.
+- ✓ **Despliegue en Render** (decidido: hosting gratuito): `render.yaml` con health check `/health` y `ADMIN_TOKEN` generado (en producción el servidor se niega a arrancar sin él). Limitación del plan gratuito: el servicio se duerme tras ~15 min sin uso y las salas en memoria se pierden.
+- ✓ **Tests de extremo a extremo en móvil** (`npm run test:e2e`, Playwright + Edge del sistema, contra el build de producción, en 375×667 y 390×844): partida completa con 5 móviles, roles, falta, rondas, podio y vuelta a la sala; recarga; menú e idioma; manifest. Fallan si hay scroll horizontal o la acción principal no cabe en pantalla; guardan capturas de cada pantalla en `e2e-report/`.
+- Pendiente (pulido sensorial): aviso visual a pantalla completa cuando el audio/vibración están bloqueados; botón explícito para activar el sonido; animaciones de explosión y de paso de bomba (ver también Step 10).
 
 ###   Step 10: Rediseño visual temático
 Paso independiente, sin prioridad por ahora (primero mecánicas).

@@ -161,7 +161,7 @@ export const RoomView: React.FC = () => {
       {room.history.length > 0 && <RoomHistoryPanel />}
 
       {/* Acción principal fija abajo */}
-      <div className="sticky bottom-0 -mx-3 px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] mt-auto bg-gradient-to-t from-slate-950 via-slate-950 to-slate-950/0 space-y-2 text-center">
+      <div className="sticky bottom-0 -mx-3 px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] mt-auto bg-slate-950/95 backdrop-blur border-t border-slate-800/80 space-y-2 text-center">
         {isHost ? (
           <>
             {!quorumValid && <p className="text-xs font-semibold text-amber-400">{t.lobby.quorumMissing}</p>}

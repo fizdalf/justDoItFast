@@ -1,5 +1,8 @@
 import fastify, {FastifyInstance, FastifyReply, FastifyRequest} from 'fastify';
 import cors from '@fastify/cors';
+import fastifyStatic from '@fastify/static';
+import {existsSync} from 'node:fs';
+import {resolve} from 'node:path';
 import {Server as SocketIOServer} from 'socket.io';
 import {DeckEngine, WordPack} from '../core/index.js';
 import {RoomSessionManager} from './RoomSessionManager.js';
@@ -14,6 +17,8 @@ export interface CreateServerOptions {
   deckEngine?: DeckEngine;
   corsOrigin?: string | boolean | string[];
   adminToken?: string;
+  /** Carpeta con el cliente compilado (vite build). Si existe, el servidor también sirve la web. */
+  clientDir?: string;
 }
 
 export interface AppServer {
@@ -37,6 +42,9 @@ export async function createServer(options: CreateServerOptions = {}): Promise<A
 
   const deckEngine = options.deckEngine ?? new DeckEngine();
   const adminToken = options.adminToken ?? process.env.ADMIN_TOKEN ?? 'expresion-admin-secret-key';
+  if (process.env.NODE_ENV === 'production' && !options.adminToken && !process.env.ADMIN_TOKEN) {
+    throw new Error('ADMIN_TOKEN must be set in production');
+  }
 
   const io = new SocketIOServer<ClientToServerEvents, ServerToClientEvents, any, SocketData>(
     app.server,
@@ -277,6 +285,21 @@ export async function createServer(options: CreateServerOptions = {}): Promise<A
       return { success: false, error: err.message, code: errorCodeOf(err) };
     }
   });
+
+  // En producción un solo proceso sirve la API, los sockets y la web compilada.
+  const clientDir = resolve(options.clientDir ?? process.env.CLIENT_DIR ?? 'dist/client');
+  if (existsSync(resolve(clientDir, 'index.html'))) {
+    await app.register(fastifyStatic, { root: clientDir, wildcard: false });
+    // Rutas de la app (p. ej. /r/ABCD): siempre index.html; el cliente decide qué pantalla mostrar.
+    app.setNotFoundHandler((request, reply) => {
+      const path = request.url.split('?')[0];
+      if (request.method !== 'GET' || path.startsWith('/api/') || path.startsWith('/socket.io')) {
+        reply.status(404).send({ success: false, error: 'Not found', code: 'INTERNAL' });
+        return;
+      }
+      reply.header('Cache-Control', 'no-cache').sendFile('index.html');
+    });
+  }
 
   const start = async (port?: number, host?: string): Promise<string> => {
     const targetPort = port ?? options.port ?? 3000;

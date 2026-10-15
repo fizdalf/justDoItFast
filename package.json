@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "¡Desactívala! ¡Rápido! Party game multidispositivo en tiempo real: haz que adivinen el cable antes de que la bomba explote",
   "main": "dist/index.js",
+  "engines": {
+    "node": ">=22"
+  },
   "type": "module",
   "scripts": {
     "dev": "concurrently -k -n server,client -c blue,green \"npm:dev:server\" \"npm:dev:client\"",
@@ -10,6 +13,8 @@
     "dev:client": "vite",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "icons": "node scripts/generate-icons.mjs",
     "build:server": "tsc -p tsconfig.build.json",
     "build:client": "vite build",
     "build": "tsc -p tsconfig.build.json && vite build",

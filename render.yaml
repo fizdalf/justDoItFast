@@ -1,0 +1,18 @@
+# Despliegue en Render (plan gratuito). Un solo servicio sirve API, WebSockets y la web.
+# Ojo: en el plan gratuito el servicio se duerme tras ~15 min sin uso y las salas viven
+# en memoria, así que se pierden al dormirse o redesplegar.
+services:
+  - type: web
+    name: desactivala-rapido
+    runtime: node
+    plan: free
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
+      - key: ADMIN_TOKEN
+        generateValue: true
