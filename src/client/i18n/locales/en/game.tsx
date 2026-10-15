@@ -6,7 +6,7 @@ export const game: GameMessages = {
     banner: "You're the defuser: you've got the bomb!",
     wireLabel: (category: string) => `🔌 Your wire · ${category}`,
     loadingWire: 'LOADING...',
-    hint: "Anything goes: words, mime, sounds... except saying the word or one from its family (for «doghouse», no «dog»). When your backup gets it, cut the wire!",
+    hint: "Anything goes: words, mime, sounds... But if you say the word or something too obvious (like «place full of dogs» for «doghouse»), they can call a foul. When your backup gets it, cut the wire!",
     cutWire: 'WIRE CUT!',
     frozen: (seconds?: number) => (seconds === undefined ? 'JAMMED!' : `JAMMED! ${seconds} s`),
   },
@@ -76,7 +76,7 @@ export const game: GameMessages = {
     intro: (holderName: string) =>
       `${holderName} is the rival defuser. Make sure they don't say the word or cheat — you want it to blow up on them.`,
     wireLabel: (category: string) => `🔌 Rival's wire · ${category}`,
-    warning: '⚠️ Anything goes (words, mime, sounds...) except saying the word, part of it, or one from its family (for «doghouse», no «dog»): foul!',
+    warning: '⚠️ If a clue feels like cheating (saying the word, or something like «place full of dogs» for «doghouse»), call a foul and settle it together.',
     foul: 'FOUL!',
     holdHint: 'Press and hold to call a foul',
   },

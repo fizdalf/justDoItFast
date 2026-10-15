@@ -3,7 +3,7 @@ import type {SocketStatus} from '../../../services/socketService.js';
 
 // Vocabulario del juego: renombrar roles, equipos o herramientas se hace aquí.
 export const common = {
-  gameName: '¡Solo desactívala rápido!',
+  gameName: '¡Desactívala! ¡Rápido!',
   tagline: 'Haz que adivinen el cable antes de que la bomba te explote en las manos',
 
   roles: {

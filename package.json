@@ -1,7 +1,7 @@
 {
-  "name": "solo-desactivala-rapido",
+  "name": "desactivala-rapido",
   "version": "1.0.0",
-  "description": "¡Solo desactívala rápido! Party game multidispositivo en tiempo real: describe el cable antes de que la bomba explote",
+  "description": "¡Desactívala! ¡Rápido! Party game multidispositivo en tiempo real: haz que adivinen el cable antes de que la bomba explote",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {

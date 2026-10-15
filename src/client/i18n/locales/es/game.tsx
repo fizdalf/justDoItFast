@@ -8,7 +8,7 @@ export const game = {
     banner: 'Eres el artificiero: ¡tienes la bomba!',
     wireLabel: (category: string) => `🔌 Tu cable · ${category}`,
     loadingWire: 'CARGANDO...',
-    hint: 'Vale todo: palabras, mímica, sonidos... menos decir la palabra o una de su familia (para «perrera», nada de «perro»). Cuando tus ayudantes la acierten, ¡corta el cable!',
+    hint: 'Vale todo: palabras, mímica, sonidos... Pero si dices la palabra o algo demasiado obvio (como «lugar donde hay perros» para «perrera»), te pueden cantar falta. Cuando tus ayudantes la acierten, ¡corta el cable!',
     cutWire: '¡CABLE CORTADO!',
     frozen: (seconds?: number) => (seconds === undefined ? '¡INHIBIDO!' : `¡INHIBIDO! ${seconds} s`),
   },
@@ -86,7 +86,7 @@ export const game = {
     intro: (holderName: string) =>
       `${holderName} es el artificiero rival. Vigila que no diga la palabra ni haga trampas: queréis que le explote.`,
     wireLabel: (category: string) => `🔌 Cable del rival · ${category}`,
-    warning: '⚠️ Vale todo (palabras, mímica, sonidos...) menos decir la palabra, una parte de ella o una de su familia (para «perrera», nada de «perro»): ¡falta!',
+    warning: '⚠️ Si os parece que una pista se pasa (decir la palabra, o algo como «lugar donde hay perros» para «perrera»), cantad falta y lo decidís entre todos.',
     foul: '¡FALTA!',
     holdHint: 'Mantén pulsado para cantar falta',
   },

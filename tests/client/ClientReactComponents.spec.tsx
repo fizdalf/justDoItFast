@@ -17,7 +17,7 @@ describe('Client React Views & Components', () => {
       </GameProvider>
     );
 
-    expect(screen.getByText(/Solo desactívala rápido/i)).toBeDefined();
+    expect(screen.getByText(/Desactívala! ¡Rápido/i)).toBeDefined();
     expect(screen.queryByText(/Silenciar sonido/i)).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: /Menú/i }));

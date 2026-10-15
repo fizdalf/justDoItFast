@@ -5,7 +5,7 @@ sessionId: session-261001-121332-1tk7
 # Requirements
 
 ### Visión General y Objetivos
-> **Nombre y tema (decidido 2026-10-15):** el juego pasa a llamarse **«¡Solo desactívala rápido!»** con temática de **bombas y artificieros** (sustituye a la marca *Expresión Express* y a la patata). Ver *Step 8b* para el detalle del rebranding.
+> **Nombre y tema (decidido 2026-10-15):** el juego pasa a llamarse **«¡Desactívala! ¡Rápido!»** (en inglés **«Defuse it! Fast!»**; antes «¡Solo desactívala rápido!») con temática de **bombas y artificieros** (sustituye a la marca *Expresión Express* y a la patata). Ver *Step 8b* para el detalle del rebranding.
 
 **Expresión Express Digital** es una adaptación web multidispositivo en tiempo real del clásico party game de 1996. Cada participante juega desde su propio smartphone conectado a una sala común.
 
@@ -71,8 +71,7 @@ Términos que usamos para hablar del juego (fuente de verdad en código: `src/cl
 
 ### Reglas de las pistas
 - El artificiero puede usar **cualquier recurso**: palabras, mímica, gestos, sonidos, señalar...
-- **Falta:** decir la palabra, una parte de ella o **una palabra de su familia**. Ej.: para «perrera» no se puede decir «donde recogen a los perros callejeros» (contiene «perro»).
-- ? Pendiente de confirmar: traducir a otro idioma, deletrear o decir palabras que rimen.
+- ✓ **Las faltas las deciden los jugadores**, no la app: el texto en pantalla es solo una guía con un ejemplo («lugar donde hay perros» para «perrera»). Si alguien cree que una pista se pasa, mantiene pulsado «¡Falta!» y la mesa lo resuelve; el anfitrión asigna el punto o reinicia la ronda. Sin lista cerrada de faltas (traducir, deletrear, rimas… lo decide la mesa).
 
 ### Arquitectura General del Sistema
 El sistema sigue una arquitectura cliente-servidor orientada a eventos en tiempo real con WebSockets:
@@ -268,7 +267,8 @@ Todo texto visible es traducible y cada idioma puede tener textos propios (no so
 - Mensajes con parámetros/plurales como funciones (`connectedPlayers(n)`); mensajes con formato (negritas) como funciones que devuelven JSX, para que cada idioma pueda reordenar la frase.
 - Idioma por dispositivo: guardado en `localStorage`, si no el del navegador, si no español. Selector en la cabecera; actualiza `<html lang>` y el título.
 - **El servidor no envía textos para mostrar**: errores con código estable (`GameError` + `GameErrorCode` en `src/core/errors.ts`, campo `code` obligatorio en `ApiResponse`), herramientas por `type` sin nombre/descripción, activaciones sin texto. El cliente traduce. Así una misma sala puede mezclar jugadores en distintos idiomas.
-- Idiomas iniciales: **español** (completo) e **inglés**. ? Nombre del juego en inglés pendiente (provisional: *Defuse It Fast!*; evitar parecido con *Just Do It* de Nike).
+- Idiomas iniciales: **español** (completo) e **inglés**. ✓ Nombre en inglés: **«Defuse it! Fast!»**.
+- ✓ Mazos por idioma: **más adelante** (cuando haya mazos en otros idiomas).
 - Regla para todo el trabajo futuro: ningún texto visible hard-coded en componentes ni en mensajes del servidor; cada código de error nuevo necesita su traducción en todos los idiomas.
 - ? Pendiente de decidir: **mazos de palabras por idioma** (campo `language` en `WordPack`, filtro en el selector de mazos y en el panel de administración). Las palabras son contenido, no se traducen.
 
@@ -342,10 +342,10 @@ Decisiones de diseño (todas confirmadas):
 - ✓ Cliente: barra de herramientas por rol (`HoldButton`, activas solo cuando `canUsePowerUp` lo permite, pistas de cuándo se pueden usar, Traje como insignia pasiva), botón del artificiero **congelado con cuenta atrás**, contador de cables («Cable 2/3»), indicador de sentido invertido, avisos (`NoticeStack`) para herramientas ganadas/usadas, Doble detonador revelado o devuelto, lectura de Rayos X y Traje; ajustes nuevos en la sala (mecha del Traje, rango de Reprogramar).
 - Pendiente de validar jugando: valores por defecto de las herramientas nuevas; los avisos tapan unos segundos el marcador compacto.
 
-### ✓ Step 8b: Rebranding «¡Solo desactívala rápido!» y power-ups temáticos
+### ✓ Step 8b: Rebranding «¡Desactívala! ¡Rápido!» y power-ups temáticos
 Tema propio de bombas y artificieros. Se toman **ideas de mecánica** de otros juegos (no protegidas), nunca nombres, textos ni arte (evitar p. ej. *Exploding Kittens*, *Pass the Bomb*, *Tick Tack Bumm*). Hacer una búsqueda rápida de marcas antes de publicar.
 
-- ✓ Nombre: **«¡Solo desactívala rápido!»** (grafía confirmada).
+- ✓ Nombre: **«¡Desactívala! ¡Rápido!»** / **«Defuse it! Fast!»** (cambiado el 2026-10-15; antes «¡Solo desactívala rápido!»).
 - ✓ Metáfora central: la bomba sustituye a la patata; **cada palabra es un cable**; acertar = **"¡Cable cortado!"** y la bomba pasa al rival. Equipos **Rojo / Azul** = cable rojo / cable azul (evitar "Brigada Roja" por *Brigate Rosse*).
 - ✓ **Vocabulario centralizado** en los diccionarios de idioma (`src/client/i18n/locales/<idioma>/common.ts`): nombre, roles, equipos y herramientas, por idioma.
 - ✓ **Textos de toda la UI actualizados** al tema (cabecera, inicio, lobby, vistas por rol, disputa, resumen de ronda, podio, tablero, `<title>`, favicon 💣, `package.json`). Los power-ups se llaman **herramientas** en la UI.

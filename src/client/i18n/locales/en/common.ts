@@ -1,8 +1,7 @@
 import type {CommonMessages} from '../es/common.js';
 
 export const common: CommonMessages = {
-  // TODO: provisional English name — pending decision (avoid anything close to Nike's "Just Do It").
-  gameName: 'Defuse It Fast!',
+  gameName: 'Defuse it! Fast!',
   tagline: 'Get them to guess the wire before the bomb blows up in your hands',
 
   roles: {
