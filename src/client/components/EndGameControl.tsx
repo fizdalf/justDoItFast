@@ -3,7 +3,7 @@ import {useGame} from '../context/GameContext.js';
 import {useI18n} from '../i18n/index.js';
 
 /** Botón del anfitrión para terminar la partida antes de tiempo, con paso de confirmación. */
-export const EndGameControl: React.FC = () => {
+export const EndGameControl: React.FC<{ className?: string }> = ({ className }) => {
   const { game, isHost, endGame } = useGame();
   const { t } = useI18n();
   const [confirming, setConfirming] = useState(false);
@@ -27,9 +27,12 @@ export const EndGameControl: React.FC = () => {
       <button
         onClick={() => setConfirming(true)}
         title={labels.button}
-        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-rose-500/50 rounded-lg text-xs font-bold text-rose-300 transition-colors"
+        className={
+          className ??
+          'px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-rose-500/50 rounded-lg text-xs font-bold text-rose-300 transition-colors'
+        }
       >
-        {labels.button}
+        <span>{labels.button}</span>
       </button>
 
       {confirming && (
@@ -37,9 +40,9 @@ export const EndGameControl: React.FC = () => {
           role="dialog"
           aria-modal="true"
           aria-labelledby="end-game-title"
-          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn"
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-end sm:items-center justify-center sm:p-4 animate-fadeIn"
         >
-          <div className="bg-slate-900 border-2 border-rose-500/60 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-5 text-center">
+          <div className="bg-slate-900 border-2 border-rose-500/60 rounded-t-3xl sm:rounded-3xl p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] max-w-sm w-full shadow-2xl space-y-5 text-center">
             <h2 id="end-game-title" className="text-xl font-black text-rose-400 uppercase tracking-wide">
               {labels.confirmTitle}
             </h2>

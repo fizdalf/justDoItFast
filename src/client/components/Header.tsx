@@ -8,11 +8,14 @@ interface HeaderProps {
   onOpenAdmin?: () => void;
 }
 
+// Pensada para móvil: solo título, estado de conexión y un menú (⋮) con el resto de controles.
 export const Header: React.FC<HeaderProps> = ({ onOpenAdmin }) => {
   const { socketStatus, room, leaveRoom } = useGame();
   const { t, lang, setLang } = useI18n();
   const [isMuted, setIsMuted] = useState(audioService.getIsMuted());
   const [copied, setCopied] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const labels = t.common.header;
 
   const toggleMute = () => {
     const next = !isMuted;
@@ -28,88 +31,128 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAdmin }) => {
     }
   };
 
-  const getStatusColor = () => {
-    switch (socketStatus) {
-      case 'CONNECTED':
-        return 'bg-emerald-500';
-      case 'CONNECTING':
-      case 'RECONNECTING':
-        return 'bg-amber-500 animate-pulse';
-      default:
-        return 'bg-rose-500';
-    }
-  };
+  const isConnected = socketStatus === 'CONNECTED';
+  const statusColor = isConnected
+    ? 'bg-emerald-500'
+    : socketStatus === 'CONNECTING' || socketStatus === 'RECONNECTING'
+      ? 'bg-amber-500 animate-pulse'
+      : 'bg-rose-500';
+
+  const menuItem =
+    'w-full flex items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-slate-200 hover:bg-slate-800 active:bg-slate-700 transition-colors';
 
   return (
-    <header className="bg-slate-900 border-b border-slate-800 text-white px-4 py-3 flex items-center justify-between sticky top-0 z-40 select-none shadow-md">
-      <div className="flex items-center space-x-3">
-        <div className="flex items-center space-x-2">
-          <span className="text-2xl" role="img" aria-label={t.common.header.bombAlt}>💣</span>
-          <span className="font-extrabold text-lg tracking-wide text-amber-400 truncate">{t.common.gameName}</span>
-        </div>
+    <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur border-b border-slate-800 text-white select-none pt-[env(safe-area-inset-top)]">
+      <div className="h-14 px-3 sm:px-4 flex items-center gap-2 max-w-5xl mx-auto">
+        <span className="text-2xl shrink-0" role="img" aria-label={labels.bombAlt}>💣</span>
+        <span className="flex-1 min-w-0 truncate font-extrabold text-base sm:text-lg tracking-wide text-amber-400">
+          {t.common.gameName}
+        </span>
 
-        <div className="flex items-center space-x-1.5 bg-slate-800/80 px-2 py-1 rounded-full text-xs font-medium border border-slate-700/50">
-          <span className={`w-2 h-2 rounded-full ${getStatusColor()}`} />
-          <span className="text-slate-300 capitalize">{t.common.connection[socketStatus]}</span>
-        </div>
-      </div>
-
-      <div className="flex items-center space-x-2">
-        <select
-          value={lang}
-          onChange={(e) => setLang(e.target.value as Language)}
-          title={t.common.header.language}
-          aria-label={t.common.header.language}
-          className="bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-bold text-slate-200 px-2 py-1.5 uppercase focus:outline-none focus:ring-2 focus:ring-amber-500"
+        {/* El estado solo ocupa sitio con texto cuando hay un problema de conexión */}
+        <span
+          role="status"
+          title={t.common.connection[socketStatus]}
+          className={`shrink-0 flex items-center gap-1.5 rounded-full text-xs font-medium ${
+            isConnected ? 'p-1' : 'bg-slate-800/80 border border-slate-700/50 px-2 py-1'
+          }`}
         >
-          {(Object.keys(LANGUAGES) as Language[]).map((code) => (
-            <option key={code} value={code}>
-              {code.toUpperCase()} · {LANGUAGES[code].label}
-            </option>
-          ))}
-        </select>
-
-        {room && (
-          <button
-            onClick={copyRoomCode}
-            title={t.common.header.copyRoomCode}
-            className="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg text-sm font-mono font-bold text-amber-300 transition-colors"
-          >
-            <span>{room.roomCode}</span>
-            <span className="text-xs text-slate-400">{copied ? '✓' : '📋'}</span>
-          </button>
-        )}
+          <span className={`w-2.5 h-2.5 rounded-full ${statusColor}`} />
+          {isConnected ? (
+            <span className="sr-only">{t.common.connection[socketStatus]}</span>
+          ) : (
+            <span className="text-slate-300">{t.common.connection[socketStatus]}</span>
+          )}
+        </span>
 
         <button
-          onClick={toggleMute}
-          title={isMuted ? t.common.header.unmute : t.common.header.mute}
-          className="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-200 transition-colors"
+          onClick={() => setMenuOpen((open) => !open)}
+          aria-expanded={menuOpen}
+          aria-haspopup="menu"
+          aria-label={labels.menu}
+          className="shrink-0 w-11 h-11 -mr-1 flex items-center justify-center rounded-xl text-2xl leading-none text-slate-200 hover:bg-slate-800 active:bg-slate-700"
         >
-          {isMuted ? '🔇' : '🔊'}
+          ⋮
         </button>
-
-        {onOpenAdmin && !room && (
-          <button
-            onClick={onOpenAdmin}
-            title={t.common.header.adminTitle}
-            className="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-200 text-xs font-semibold transition-colors"
-          >
-            {t.common.header.admin}
-          </button>
-        )}
-
-        <EndGameControl />
-
-        {room && (
-          <button
-            onClick={() => leaveRoom()}
-            title={t.common.header.leaveTitle}
-            className="px-3 py-1.5 bg-rose-600/80 hover:bg-rose-600 border border-rose-500 rounded-lg text-xs font-bold text-white transition-colors"
-          >
-            {t.common.header.leave}
-          </button>
-        )}
       </div>
+
+      {menuOpen && (
+        <>
+          <button
+            aria-label={t.common.close}
+            onClick={() => setMenuOpen(false)}
+            className="fixed inset-0 z-40 cursor-default"
+          />
+          <div
+            role="menu"
+            className="absolute right-2 sm:right-4 top-full mt-1 z-50 w-72 max-w-[calc(100vw-1rem)] bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden animate-fadeIn"
+          >
+            {room && (
+              <button role="menuitem" onClick={copyRoomCode} title={labels.copyRoomCode} className={menuItem}>
+                <span>{labels.roomCode}</span>
+                <span className="font-mono font-black tracking-widest text-amber-300">
+                  {room.roomCode} <span className="text-xs text-slate-400">{copied ? '✓' : '📋'}</span>
+                </span>
+              </button>
+            )}
+
+            <div className="px-4 py-3 flex items-center justify-between gap-3 border-t border-slate-800">
+              <span className="text-sm font-semibold text-slate-200">{labels.language}</span>
+              <div className="flex rounded-lg border border-slate-700 overflow-hidden" role="group" aria-label={labels.language}>
+                {(Object.keys(LANGUAGES) as Language[]).map((code) => (
+                  <button
+                    key={code}
+                    onClick={() => setLang(code)}
+                    aria-pressed={lang === code}
+                    title={LANGUAGES[code].label}
+                    className={`px-3 py-1.5 text-xs font-bold uppercase ${
+                      lang === code ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-300'
+                    }`}
+                  >
+                    {code}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button role="menuitem" onClick={toggleMute} className={`${menuItem} border-t border-slate-800`}>
+              <span>{isMuted ? labels.unmute : labels.mute}</span>
+              <span>{isMuted ? '🔇' : '🔊'}</span>
+            </button>
+
+            {onOpenAdmin && !room && (
+              <button
+                role="menuitem"
+                onClick={() => {
+                  setMenuOpen(false);
+                  onOpenAdmin();
+                }}
+                title={labels.adminTitle}
+                className={`${menuItem} border-t border-slate-800`}
+              >
+                <span>{labels.admin}</span>
+              </button>
+            )}
+
+            <EndGameControl className={`${menuItem} border-t border-slate-800 text-rose-300`} />
+
+            {room && (
+              <button
+                role="menuitem"
+                onClick={() => {
+                  setMenuOpen(false);
+                  void leaveRoom();
+                }}
+                title={labels.leaveTitle}
+                className={`${menuItem} border-t border-slate-800 text-rose-400`}
+              >
+                <span>{labels.leaveTitle}</span>
+                <span>🚪</span>
+              </button>
+            )}
+          </div>
+        </>
+      )}
     </header>
   );
 };

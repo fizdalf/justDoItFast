@@ -43,18 +43,17 @@ describe('Specification: Foul Triggering, Social Mediation & Host Resolution', (
   });
 
   it('GIVEN an active round WHEN a rival player signals a foul THEN the game status transitions to DISPUTE_PAUSED and dispute state is recorded', () => {
-    const result = disputeEngine.triggerFoul(mockGameState, 'rival-1', 'Dijo parte de la palabra');
+    const result = disputeEngine.triggerFoul(mockGameState, 'rival-1');
 
     expect(result.status).toBe('DISPUTE_PAUSED');
     expect(result.currentDispute).toBeDefined();
     expect(result.currentDispute?.triggeredByPlayerId).toBe('rival-1');
     expect(result.currentDispute?.triggeredByTeam).toBe('B');
-    expect(result.currentDispute?.foulReason).toBe('Dijo parte de la palabra');
   });
 
   it('GIVEN an active player trying to call foul on themselves WHEN attempted THEN error is thrown preventing self-fouls', () => {
     expect(() => {
-      disputeEngine.triggerFoul(mockGameState, 'host-1', 'Falta propia');
+      disputeEngine.triggerFoul(mockGameState, 'host-1');
     }).toThrow(/Only opponent team can trigger a foul/);
   });
 

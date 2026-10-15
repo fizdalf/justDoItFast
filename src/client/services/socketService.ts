@@ -136,8 +136,8 @@ export class SocketService {
     return this.emitWithAck('turn:guess_success', undefined);
   }
 
-  public async triggerFoul(reason?: string): Promise<ApiResponse<{ dispute: DisputeState }>> {
-    return this.emitWithAck('turn:foul_triggered', { reason });
+  public async triggerFoul(): Promise<ApiResponse<{ dispute: DisputeState }>> {
+    return this.emitWithAck('turn:foul_triggered', undefined);
   }
 
   public async resolveDispute(resolution: DisputeResolution): Promise<ApiResponse<RoomSnapshot>> {

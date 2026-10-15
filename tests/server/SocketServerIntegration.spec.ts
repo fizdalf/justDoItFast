@@ -219,9 +219,7 @@ describe('Socket.io Real-Time Game Server Integration', () => {
     // Rival (Bob on Team B) calls foul while Alice (Team A) is active
     const disputePromise = waitForEvent<{ dispute: DisputeState; game: GameState }>(host, 'game:dispute_started');
 
-    const foulRes = await emitAsync<{ dispute: DisputeState }>(p2, 'turn:foul_triggered', {
-      reason: 'Palabra prohibida dicha',
-    });
+    const foulRes = await emitAsync<{ dispute: DisputeState }>(p2, 'turn:foul_triggered');
     expect(foulRes.success).toBe(true);
 
     const disputeEvent = await disputePromise;
@@ -518,7 +516,7 @@ describe('Socket.io Real-Time Game Server Integration', () => {
 
       const activeTeam = gameOf(roomCode).currentTurn!.activeTeam;
       const rival = activeTeam === 'A' ? p2 : host;
-      await emitAsync(rival, 'turn:foul_triggered', { reason: 'test' });
+      await emitAsync(rival, 'turn:foul_triggered');
       const resolveRes = await emitAsync<RoomSnapshot>(host, 'host:resolve_dispute', { resolution: 'AWARD_TEAM_B' });
       expect(resolveRes.success).toBe(true);
       return dataOf(resolveRes);
@@ -588,7 +586,7 @@ describe('Socket.io Real-Time Game Server Integration', () => {
     const { host, p2, p3, roomCode } = await setupFourPlayers();
     await emitAsync(host, 'game:start');
     // Un punto para B antes de abandonar
-    await emitAsync(p2, 'turn:foul_triggered', {});
+    await emitAsync(p2, 'turn:foul_triggered');
     await emitAsync(host, 'host:resolve_dispute', { resolution: 'AWARD_TEAM_B' });
     await emitAsync(host, 'game:start_round');
 
@@ -615,7 +613,7 @@ describe('Socket.io Real-Time Game Server Integration', () => {
 
     // Game actions now have no game to act on
     expect(await emitAsync(host, 'turn:guess_success')).toMatchObject({ success: false, code: 'INVALID_STATE' });
-    expect(await emitAsync(p2, 'turn:foul_triggered', {})).toMatchObject({ success: false, code: 'INVALID_STATE' });
+    expect(await emitAsync(p2, 'turn:foul_triggered')).toMatchObject({ success: false, code: 'INVALID_STATE' });
     expect(await emitAsync(host, 'game:start_round')).toMatchObject({ success: false, code: 'INVALID_STATE' });
 
     const next = dataOf(await emitAsync<RoomSnapshot>(host, 'game:start')).game!;
@@ -643,7 +641,7 @@ describe('Socket.io Real-Time Game Server Integration', () => {
       .toMatchObject({ success: false, code: 'NOT_HOST' });
 
     await emitAsync(host, 'game:start');
-    await emitAsync(p2, 'turn:foul_triggered', {});
+    await emitAsync(p2, 'turn:foul_triggered');
 
     expect(await emitAsync(p3, 'host:resolve_dispute', { resolution: 'AWARD_TEAM_A' }))
       .toMatchObject({ success: false, code: 'NOT_HOST' });
@@ -674,7 +672,7 @@ describe('Socket.io Real-Time Game Server Integration', () => {
 
     // Eve is on team A (the defending team is B now), so she could foul and use A's power-up if she played
     expect(gameOf(roomCode).currentTurn!.activeTeam).toBe('B');
-    expect(await emitAsync(late, 'turn:foul_triggered', {})).toMatchObject({ success: false, code: 'NOT_A_PARTICIPANT' });
+    expect(await emitAsync(late, 'turn:foul_triggered')).toMatchObject({ success: false, code: 'NOT_A_PARTICIPANT' });
     expect(await emitAsync(late, 'powerup:use', { powerUpId: powerUp.id }))
       .toMatchObject({ success: false, code: 'NOT_A_PARTICIPANT' });
     expect(await emitAsync(late, 'turn:guess_success')).toMatchObject({ success: false, code: 'NOT_A_PARTICIPANT' });
@@ -745,10 +743,10 @@ describe('Socket.io Real-Time Game Server Integration', () => {
 
     // ...but resolves disputes, starts rounds and ends the game
     const rival = game.currentTurn!.activeTeam === 'A' ? bob : charlie;
-    dataOf(await emitAsync(rival, 'turn:foul_triggered', {}));
+    dataOf(await emitAsync(rival, 'turn:foul_triggered'));
     expect(dataOf(await emitAsync<RoomSnapshot>(late, 'host:resolve_dispute', { resolution: 'RESTART_ROUND' })).game!.status)
       .toBe('PLAYING');
-    dataOf(await emitAsync(rival, 'turn:foul_triggered', {}));
+    dataOf(await emitAsync(rival, 'turn:foul_triggered'));
     expect(dataOf(await emitAsync<RoomSnapshot>(late, 'host:resolve_dispute', { resolution: 'AWARD_TEAM_A' })).game!.status)
       .toBe('ROUND_OVER');
     expect(dataOf(await emitAsync<RoomSnapshot>(late, 'game:start_round')).game!.roundNumber).toBe(2);
@@ -798,7 +796,7 @@ describe('Socket.io Real-Time Game Server Integration', () => {
 
       expect(res.game!.participantIds).toContain(bob.player.id);
       // Bob (team B) can still act in the game
-      dataOf(await emitAsync(reloaded, 'turn:foul_triggered', {}));
+      dataOf(await emitAsync(reloaded, 'turn:foul_triggered'));
     });
 
     it('rejects unknown rooms, invalid tokens and tokens of players who left', async () => {

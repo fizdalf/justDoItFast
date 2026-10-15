@@ -257,8 +257,8 @@ export class RoomSession {
     return this.requireParticipant(playerId).recordGuessSuccess(playerId);
   }
 
-  triggerFoul(playerId: string, reason?: string): DisputeState {
-    return this.requireParticipant(playerId).triggerFoul(playerId, reason);
+  triggerFoul(playerId: string): DisputeState {
+    return this.requireParticipant(playerId).triggerFoul(playerId);
   }
 
   resolveDispute(playerId: string, resolution: DisputeResolution): RoomSnapshot {

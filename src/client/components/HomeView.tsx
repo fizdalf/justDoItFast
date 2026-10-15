@@ -47,11 +47,11 @@ export const HomeView: React.FC<HomeViewProps> = ({ initialRoomCode }) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-65px)] p-4 max-w-md mx-auto w-full">
-      <div className="w-full bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-md">
+    <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full py-4">
+      <div className="w-full sm:bg-slate-900/90 sm:border sm:border-slate-800 sm:rounded-2xl px-1 sm:p-8 sm:shadow-2xl">
         
         {/* Title & Tagline */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-4xl mb-3 shadow-inner">
             💣
           </div>
@@ -79,7 +79,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ initialRoomCode }) => {
             value={playerName}
             onChange={(e) => handleNameChange(e.target.value)}
             placeholder={t.home.namePlaceholder}
-            className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white font-medium placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+            className="w-full min-h-[52px] px-4 py-3 text-base bg-slate-800 border border-slate-700 rounded-xl text-white font-medium placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
           />
         </div>
 
@@ -89,7 +89,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ initialRoomCode }) => {
             <button
               onClick={handleCreate}
               disabled={loading || !playerName.trim()}
-              className="w-full py-3.5 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 font-bold rounded-xl shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center space-x-2 text-base"
+              className="w-full min-h-[56px] px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 font-bold rounded-xl shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center space-x-2 text-base"
             >
               <span>{loading ? t.home.creating : t.home.createRoom}</span>
             </button>
@@ -97,7 +97,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ initialRoomCode }) => {
             <button
               onClick={() => setMode('JOIN')}
               disabled={!playerName.trim()}
-              className="w-full py-3.5 px-4 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl border border-slate-700 transition-all flex items-center justify-center space-x-2 text-base"
+              className="w-full min-h-[56px] px-4 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl border border-slate-700 transition-all flex items-center justify-center space-x-2 text-base"
             >
               <span>{t.home.joinWithCode}</span>
             </button>
@@ -118,7 +118,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ initialRoomCode }) => {
                 value={roomCode}
                 onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
                 placeholder={t.home.roomCodePlaceholder}
-                className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white font-mono text-center text-2xl font-bold tracking-widest placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent uppercase transition-all"
+                className="w-full min-h-[52px] px-4 py-3 text-base bg-slate-800 border border-slate-700 rounded-xl text-white font-mono text-center text-2xl font-bold tracking-widest placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent uppercase transition-all"
               />
             </div>
 

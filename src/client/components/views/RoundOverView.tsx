@@ -24,11 +24,11 @@ export const RoundOverView: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center w-full max-w-md mx-auto space-y-6 text-center animate-fadeIn">
+    <div className="flex flex-col items-center w-full max-w-md mx-auto space-y-4 text-center animate-fadeIn">
 
       {/* Round Result Header */}
       <div className="space-y-3">
-        <div className="w-20 h-20 rounded-3xl bg-rose-500/20 border-2 border-rose-500 flex items-center justify-center text-5xl mx-auto shadow-2xl">
+        <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl bg-rose-500/20 border-2 border-rose-500 flex items-center justify-center text-3xl sm:text-5xl mx-auto shadow-2xl">
           {result?.reason === 'DISPUTE' ? '⚖️' : '💥'}
         </div>
         <h2 className="text-3xl font-black text-amber-400 uppercase tracking-tight">
@@ -72,7 +72,7 @@ export const RoundOverView: React.FC = () => {
       )}
 
       {/* Next Round Action */}
-      <div className="w-full pt-2">
+      <div className="self-stretch sticky bottom-0 -mx-3 px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-slate-950 via-slate-950 to-slate-950/0">
         {isHost ? (
           <button
             onClick={handleNextRound}

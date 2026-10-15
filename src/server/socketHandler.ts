@@ -195,9 +195,9 @@ export function setupSocketHandlers(
       );
     });
 
-    socket.on('turn:foul_triggered', (payload, callback) => {
+    socket.on('turn:foul_triggered', (callback) => {
       handleRoomAction(socket, callback, 'Error triggering foul', (session, playerId) => ({
-        dispute: session.triggerFoul(playerId, payload?.reason),
+        dispute: session.triggerFoul(playerId),
       }));
     });
 

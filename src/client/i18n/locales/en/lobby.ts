@@ -21,6 +21,8 @@ export const lobby: LobbyMessages = {
   invite: {
     showQr: '📱 QR code',
     hideQr: 'Hide QR',
+    linkShort: '🔗 Link',
+    qrShort: '📱 QR',
     qrHint: "Scan it with your phone's camera to join",
     qrAlt: (roomCode: string) => `QR code to join room ${roomCode}`,
   },
@@ -45,6 +47,8 @@ export const lobby: LobbyMessages = {
   settings: {
     title: '⚙️ Next game settings',
     hostOnly: 'Only the host can change them',
+    summary: (targetScore: number, minSec: number, maxSec: number, tools: boolean) =>
+      `${targetScore} pts · bomb ${minSec}–${maxSec} s · tools ${tools ? 'on' : 'off'}`,
     targetScore: 'Points to win',
     minRoundDuration: 'Shortest bomb fuse',
     maxRoundDuration: 'Longest bomb fuse',

@@ -38,7 +38,6 @@ export interface WordPack {
 export interface DisputeState {
   triggeredByPlayerId: string;
   triggeredByTeam: TeamId;
-  foulReason?: string;
   timestamp: number;
   remainingTimeMsAtPause: number;
 }

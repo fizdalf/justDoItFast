@@ -4,10 +4,10 @@ import type {SocketStatus} from '../../../services/socketService.js';
 // Vocabulario del juego: renombrar roles, equipos o herramientas se hace aquí.
 export const common = {
   gameName: '¡Solo desactívala rápido!',
-  tagline: 'Describe el cable antes de que la bomba te explote en las manos',
+  tagline: 'Haz que adivinen el cable antes de que la bomba te explote en las manos',
 
   roles: {
-    /** Quien tiene la bomba y describe el cable. */
+    /** Quien tiene la bomba y da pistas del cable (con palabras, mímica, sonidos...). */
     holder: { singular: 'Artificiero', plural: 'Artificieros' },
     /** Compañeros del artificiero: adivinan el cable. */
     helpers: { singular: 'Ayudante', plural: 'Ayudantes' },
@@ -61,6 +61,8 @@ export const common = {
     leave: 'Salir',
     leaveTitle: 'Salir de la sala',
     language: 'Idioma',
+    menu: 'Menú',
+    roomCode: 'Código de sala',
   },
 
   you: '(Tú)',

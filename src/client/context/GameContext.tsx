@@ -67,7 +67,7 @@ export interface GameContextValue {
   startRound: () => Promise<ApiResponse<RoomSnapshot>>;
   endGame: () => Promise<ApiResponse<RoomSnapshot>>;
   guessSuccess: () => Promise<ApiResponse<{ isFastGuess: boolean; currentTurn: TurnState }>>;
-  triggerFoul: (reason?: string) => Promise<ApiResponse<{ dispute: DisputeState }>>;
+  triggerFoul: () => Promise<ApiResponse<{ dispute: DisputeState }>>;
   resolveDispute: (resolution: DisputeResolution) => Promise<ApiResponse<RoomSnapshot>>;
   usePowerUp: (powerUpId: string) => Promise<ApiResponse<{ powerUpType: PowerUpType }>>;
   clearError: () => void;
@@ -321,7 +321,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 
   const guessSuccess = useCallback(() => socketService.guessSuccess(), []);
-  const triggerFoul = useCallback((reason?: string) => socketService.triggerFoul(reason), []);
+  const triggerFoul = useCallback(() => socketService.triggerFoul(), []);
   const usePowerUp = useCallback((powerUpId: string) => socketService.usePowerUp(powerUpId), []);
 
   const clearError = useCallback(() => setError(null), []);

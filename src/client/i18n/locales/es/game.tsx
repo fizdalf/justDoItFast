@@ -7,14 +7,14 @@ export const game = {
     banner: 'Eres el artificiero: ¡tienes la bomba!',
     wireLabel: (category: string) => `🔌 Tu cable · ${category}`,
     loadingWire: 'CARGANDO...',
-    hint: 'Describe la palabra sin decirla ni usar su raíz. Cuando tus ayudantes la acierten, ¡corta el cable!',
+    hint: 'Vale todo: palabras, mímica, sonidos... menos decir la palabra o una de su familia (para «perrera», nada de «perro»). Cuando tus ayudantes la acierten, ¡corta el cable!',
     cutWire: '¡CABLE CORTADO!',
   },
 
   // Vista de los ayudantes (compañeros del artificiero)
   helpers: {
     roleBadge: '🧰 Rol: Ayudante',
-    intro: (holderName: string) => `${holderName} es vuestro artificiero y tiene la bomba. ¡Escucha y adivina el cable!`,
+    intro: (holderName: string) => `${holderName} es vuestro artificiero y tiene la bomba. ¡Atento a sus pistas y adivina el cable!`,
     categoryLabel: (category: string) => `Categoría: ${category}`,
     guessAloud: '¡ADIVINA EN VOZ ALTA!',
     guessHint: 'Di todas las palabras que se te ocurran hasta acertar, antes de que la bomba explote',
@@ -28,22 +28,15 @@ export const game = {
     intro: (holderName: string) =>
       `${holderName} es el artificiero rival. Vigila que no diga la palabra ni haga trampas: queréis que le explote.`,
     wireLabel: (category: string) => `🔌 Cable del rival · ${category}`,
-    warning: '⚠️ Si el artificiero rival dice la palabra, una parte de ella o la traduce: ¡falta!',
+    warning: '⚠️ Vale todo (palabras, mímica, sonidos...) menos decir la palabra, una parte de ella o una de su familia (para «perrera», nada de «perro»): ¡falta!',
     foul: '¡FALTA!',
-    reasonTitle: 'Selecciona el motivo de la falta:',
-    reasons: [
-      '1. Dijo la palabra exacta o su raíz',
-      '2. Usó una traducción o deletreó',
-      '3. Hizo mímica o gestos',
-    ],
-    defaultReason: 'Infracción de reglas',
+    holdHint: 'Mantén pulsado para cantar falta',
   },
 
   dispute: {
     title: '¡FALTA CANTADA!',
     subtitle: 'La ronda se ha detenido para revisión arbitral',
     calledBy: 'Reclamada por:',
-    reason: 'Motivo:',
     hostDecision: '👑 Decisión del anfitrión',
     awardTo: (teamName: string) => `🏆 Dar punto al ${teamName}`,
     restart: '🔄 Reiniciar ronda (sin puntos)',

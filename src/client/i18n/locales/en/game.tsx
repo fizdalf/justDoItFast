@@ -6,13 +6,13 @@ export const game: GameMessages = {
     banner: "You're the defuser: you've got the bomb!",
     wireLabel: (category: string) => `🔌 Your wire · ${category}`,
     loadingWire: 'LOADING...',
-    hint: "Describe the word without saying it or any part of it. When your backup gets it, cut the wire!",
+    hint: "Anything goes: words, mime, sounds... except saying the word or one from its family (for «doghouse», no «dog»). When your backup gets it, cut the wire!",
     cutWire: 'WIRE CUT!',
   },
 
   helpers: {
     roleBadge: '🧰 Role: Backup',
-    intro: (holderName: string) => `${holderName} is your defuser and has the bomb. Listen and guess the wire!`,
+    intro: (holderName: string) => `${holderName} is your defuser and has the bomb. Watch their clues and guess the wire!`,
     categoryLabel: (category: string) => `Category: ${category}`,
     guessAloud: 'GUESS OUT LOUD!',
     guessHint: 'Shout every word that comes to mind until you get it, before the bomb goes off',
@@ -24,22 +24,15 @@ export const game: GameMessages = {
     intro: (holderName: string) =>
       `${holderName} is the rival defuser. Make sure they don't say the word or cheat — you want it to blow up on them.`,
     wireLabel: (category: string) => `🔌 Rival's wire · ${category}`,
-    warning: '⚠️ If the rival defuser says the word, part of it, or translates it: foul!',
+    warning: '⚠️ Anything goes (words, mime, sounds...) except saying the word, part of it, or one from its family (for «doghouse», no «dog»): foul!',
     foul: 'FOUL!',
-    reasonTitle: 'Pick the reason for the foul:',
-    reasons: [
-      '1. Said the exact word or its root',
-      '2. Used a translation or spelled it out',
-      '3. Mimed or used gestures',
-    ],
-    defaultReason: 'Rule violation',
+    holdHint: 'Press and hold to call a foul',
   },
 
   dispute: {
     title: 'FOUL CALLED!',
     subtitle: 'The round has been stopped for review',
     calledBy: 'Called by:',
-    reason: 'Reason:',
     hostDecision: "👑 Host's decision",
     awardTo: (teamName: string) => `🏆 Point to the ${teamName}`,
     restart: '🔄 Restart round (no points)',

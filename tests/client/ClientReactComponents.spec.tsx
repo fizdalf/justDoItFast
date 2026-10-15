@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import {describe, expect, it} from 'vitest';
 import React from 'react';
-import {render, screen} from '@testing-library/react';
+import {fireEvent, render, screen} from '@testing-library/react';
 import {GameProvider} from '../../src/client/context/GameContext.js';
 import {Header} from '../../src/client/components/Header.js';
 import {ActiveGiverView} from '../../src/client/components/views/ActiveGiverView.js';
@@ -10,7 +10,7 @@ import {TeamMateView} from '../../src/client/components/views/TeamMateView.js';
 import {GameOverView} from '../../src/client/components/views/GameOverView.js';
 
 describe('Client React Views & Components', () => {
-  it('Header renders title and mute controls', () => {
+  it('Header renders the title and keeps the controls in the menu', () => {
     render(
       <GameProvider>
         <Header />
@@ -18,7 +18,11 @@ describe('Client React Views & Components', () => {
     );
 
     expect(screen.getByText(/Solo desactívala rápido/i)).toBeDefined();
-    expect(screen.getByTitle(/Silenciar sonido/i)).toBeDefined();
+    expect(screen.queryByText(/Silenciar sonido/i)).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /Menú/i }));
+    expect(screen.getByRole('menu')).toBeDefined();
+    expect(screen.getByText(/Silenciar sonido/i)).toBeDefined();
   });
 
   it('ActiveGiverView renders the artificiero role and cut-wire button', () => {

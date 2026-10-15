@@ -112,9 +112,8 @@ describe('translated UI', () => {
 
     expect(screen.getByText(LANGUAGES.es.messages.common.gameName)).toBeDefined();
 
-    fireEvent.change(screen.getByLabelText(LANGUAGES.es.messages.common.header.language), {
-      target: { value: 'en' },
-    });
+    fireEvent.click(screen.getByRole('button', { name: LANGUAGES.es.messages.common.header.menu }));
+    fireEvent.click(screen.getByRole('button', { name: 'en' }));
 
     expect(screen.getByText(LANGUAGES.en.messages.common.gameName)).toBeDefined();
     expect(localStorage.getItem('sdr_language')).toBe('en');

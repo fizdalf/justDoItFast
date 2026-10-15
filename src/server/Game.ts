@@ -254,13 +254,13 @@ export class Game {
     return { isFastGuess: guessResult.isFastGuess, currentTurn: nextTurn };
   }
 
-  triggerFoul(playerId: string, reason?: string): DisputeState {
+  triggerFoul(playerId: string): DisputeState {
     if (this.gameState.status !== 'PLAYING') {
       throw new GameError('INVALID_STATE', `Cannot trigger foul when game status is ${this.gameState.status}`);
     }
 
     // Validar antes de pausar el temporizador, para no dejarlo parado si se rechaza.
-    const newGameState = this.disputeEngine.triggerFoul(this.gameState, playerId, reason);
+    const newGameState = this.disputeEngine.triggerFoul(this.gameState, playerId);
 
     const remainingMs = this.timerEngine.getRemainingMs();
     this.timerEngine.pause();

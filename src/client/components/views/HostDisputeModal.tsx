@@ -21,8 +21,8 @@ export const HostDisputeModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 select-none animate-fadeIn">
-      <div className="bg-slate-900 border-2 border-rose-500 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6 text-center">
+    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-end sm:items-center justify-center sm:p-4 select-none animate-fadeIn">
+      <div className="bg-slate-900 border-2 border-rose-500 rounded-t-3xl sm:rounded-3xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-8 max-w-md w-full max-h-[90dvh] overflow-y-auto shadow-2xl space-y-5 text-center">
         
         {/* Header Icon & Title */}
         <div>
@@ -43,12 +43,6 @@ export const HostDisputeModal: React.FC = () => {
             <span className="font-bold text-slate-300">{t.game.dispute.calledBy}</span>{' '}
             <span className="text-amber-300 font-bold">{triggeringPlayer?.name || t.common.roles.saboteurs.singular}</span> ({t.common.teams[dispute.triggeredByTeam]})
           </div>
-          {dispute.foulReason && (
-            <div className="text-xs text-slate-400">
-              <span className="font-bold text-slate-300">{t.game.dispute.reason}</span>{' '}
-              <span className="text-white italic">&quot;{dispute.foulReason}&quot;</span>
-            </div>
-          )}
         </div>
 
         {/* Host Mediation Actions */}
@@ -62,7 +56,7 @@ export const HostDisputeModal: React.FC = () => {
               <button
                 onClick={() => handleResolve('AWARD_TEAM_A')}
                 disabled={resolving}
-                className="w-full py-3 px-4 bg-rose-600/30 hover:bg-rose-600/50 border border-rose-500/60 text-rose-200 font-bold rounded-xl text-sm transition-all text-left flex items-center justify-between"
+                className="w-full min-h-[52px] px-4 bg-rose-600/30 hover:bg-rose-600/50 border border-rose-500/60 text-rose-200 font-bold rounded-xl text-sm transition-all text-left flex items-center justify-between"
               >
                 <span>{t.game.dispute.awardTo(t.common.teams.A)}</span>
                 <span className="text-xs font-mono">+1</span>
@@ -71,7 +65,7 @@ export const HostDisputeModal: React.FC = () => {
               <button
                 onClick={() => handleResolve('AWARD_TEAM_B')}
                 disabled={resolving}
-                className="w-full py-3 px-4 bg-sky-600/30 hover:bg-sky-600/50 border border-sky-500/60 text-sky-200 font-bold rounded-xl text-sm transition-all text-left flex items-center justify-between"
+                className="w-full min-h-[52px] px-4 bg-sky-600/30 hover:bg-sky-600/50 border border-sky-500/60 text-sky-200 font-bold rounded-xl text-sm transition-all text-left flex items-center justify-between"
               >
                 <span>{t.game.dispute.awardTo(t.common.teams.B)}</span>
                 <span className="text-xs font-mono">+1</span>
@@ -80,7 +74,7 @@ export const HostDisputeModal: React.FC = () => {
               <button
                 onClick={() => handleResolve('RESTART_ROUND')}
                 disabled={resolving}
-                className="w-full py-3 px-4 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 font-bold rounded-xl text-sm transition-all text-left flex items-center justify-between"
+                className="w-full min-h-[52px] px-4 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 font-bold rounded-xl text-sm transition-all text-left flex items-center justify-between"
               >
                 <span>{t.game.dispute.restart}</span>
                 <span className="text-xs">{t.game.dispute.restartHint}</span>

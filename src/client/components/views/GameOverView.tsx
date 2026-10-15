@@ -23,11 +23,11 @@ export const GameOverView: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[500px] w-full max-w-md mx-auto p-4 space-y-8 text-center animate-fadeIn">
+    <div className="flex-1 flex flex-col items-center w-full max-w-md mx-auto pt-3 space-y-5 text-center animate-fadeIn">
       
       {/* Trophy & Winner Title */}
       <div className="space-y-3">
-        <div className="w-24 h-24 rounded-3xl bg-amber-500/20 border-2 border-amber-500 flex items-center justify-center text-5xl mx-auto shadow-2xl animate-bounce">
+        <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl bg-amber-500/20 border-2 border-amber-500 flex items-center justify-center text-4xl sm:text-5xl mx-auto shadow-2xl animate-bounce">
           🏆
         </div>
         <h1 className="text-3xl sm:text-4xl font-black text-amber-400 uppercase tracking-tight">
@@ -62,7 +62,7 @@ export const GameOverView: React.FC = () => {
       </div>
 
       {/* Action Buttons */}
-      <div className="w-full space-y-3 pt-2">
+      <div className="self-stretch mt-auto space-y-2 sticky bottom-0 -mx-3 px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-slate-950 via-slate-950 to-slate-950/0">
         {isHost ? (
           <button
             onClick={handleBackToRoom}

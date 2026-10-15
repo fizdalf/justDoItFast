@@ -3,7 +3,7 @@ import type {CommonMessages} from '../es/common.js';
 export const common: CommonMessages = {
   // TODO: provisional English name — pending decision (avoid anything close to Nike's "Just Do It").
   gameName: 'Defuse It Fast!',
-  tagline: 'Describe the wire before the bomb blows up in your hands',
+  tagline: 'Get them to guess the wire before the bomb blows up in your hands',
 
   roles: {
     holder: { singular: 'Defuser', plural: 'Defusers' },
@@ -57,6 +57,8 @@ export const common: CommonMessages = {
     leave: 'Leave',
     leaveTitle: 'Leave the room',
     language: 'Language',
+    menu: 'Menu',
+    roomCode: 'Room code',
   },
 
   you: '(You)',

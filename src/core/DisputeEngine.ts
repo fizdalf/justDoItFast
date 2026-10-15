@@ -14,7 +14,7 @@ export class DisputeEngine {
     this.players = players;
   }
 
-  triggerFoul(gameState: GameState, callingPlayerId: string, reason?: string): GameState {
+  triggerFoul(gameState: GameState, callingPlayerId: string): GameState {
     if (gameState.status !== 'PLAYING') {
       throw new GameError('INVALID_STATE', `Cannot trigger foul when game is in state ${gameState.status}`);
     }
@@ -37,7 +37,6 @@ export class DisputeEngine {
     const dispute: DisputeState = {
       triggeredByPlayerId: callingPlayer.id,
       triggeredByTeam: callingPlayer.team,
-      foulReason: reason,
       timestamp: Date.now(),
       remainingTimeMsAtPause: 0,
     };

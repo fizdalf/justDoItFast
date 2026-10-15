@@ -19,6 +19,8 @@ export const lobby = {
   invite: {
     showQr: '📱 Código QR',
     hideQr: 'Ocultar QR',
+    linkShort: '🔗 Enlace',
+    qrShort: '📱 QR',
     qrHint: 'Escanéalo con la cámara del móvil para unirte',
     qrAlt: (roomCode: string) => `Código QR para unirse a la sala ${roomCode}`,
   },
@@ -43,6 +45,8 @@ export const lobby = {
   settings: {
     title: '⚙️ Ajustes de la próxima partida',
     hostOnly: 'Solo el anfitrión puede cambiarlos',
+    summary: (targetScore: number, minSec: number, maxSec: number, tools: boolean) =>
+      `${targetScore} pts · bomba ${minSec}–${maxSec} s · herramientas ${tools ? 'sí' : 'no'}`,
     targetScore: 'Puntos para ganar',
     minRoundDuration: 'Duración mínima de la bomba',
     maxRoundDuration: 'Duración máxima de la bomba',

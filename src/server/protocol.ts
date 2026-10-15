@@ -53,10 +53,6 @@ export interface UpdateSetupPayload {
   packIds?: string[];
 }
 
-export interface FoulTriggerPayload {
-  reason?: string;
-}
-
 export interface ResolveDisputePayload {
   resolution: DisputeResolution;
 }
@@ -138,10 +134,8 @@ export interface ClientToServerEvents {
   'turn:guess_success': (
     callback: (res: ApiResponse<{ isFastGuess: boolean; currentTurn: TurnState }>) => void
   ) => void;
-  'turn:foul_triggered': (
-    payload: FoulTriggerPayload,
-    callback: (res: ApiResponse<{ dispute: DisputeState }>) => void
-  ) => void;
+  /** Cantar falta: la ronda se detiene y el anfitrión decide (el motivo se discute en la mesa). */
+  'turn:foul_triggered': (callback: (res: ApiResponse<{ dispute: DisputeState }>) => void) => void;
   'host:resolve_dispute': (
     payload: ResolveDisputePayload,
     callback: (res: ApiResponse<RoomSnapshot>) => void

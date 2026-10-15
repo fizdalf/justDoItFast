@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {useGame} from '../../context/GameContext.js';
 import {useI18n} from '../../i18n/index.js';
 import {ALL_POWER_UPS} from '../../../core/settings.js';
@@ -17,7 +17,9 @@ const UI_RANGES = {
 
 type RangedSetting = keyof typeof UI_RANGES;
 
-export const RoomSettingsPanel: React.FC = () => {
+/** `collapsible`: en la sala se muestra plegado con un resumen, para no alargar la pantalla en el móvil. */
+export const RoomSettingsPanel: React.FC<{ collapsible?: boolean }> = ({ collapsible = false }) => {
+  const [open, setOpen] = useState(!collapsible);
   const { room, isHost, updateSetup } = useGame();
   const { t } = useI18n();
   const settings = room?.setup.settings;
@@ -62,11 +64,37 @@ export const RoomSettingsPanel: React.FC = () => {
   );
 
   return (
-    <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">{labels.title}</h3>
-        {!isHost && <span className="text-[11px] text-slate-500 italic">{labels.hostOnly}</span>}
-      </div>
+    <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-3 sm:p-5 space-y-4">
+      {collapsible ? (
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          className="w-full min-h-[44px] flex items-center gap-2 text-left"
+        >
+          <span className="flex-1 min-w-0">
+            <span className="block text-xs font-bold uppercase tracking-wider text-slate-400">{labels.title}</span>
+            <span className="block text-sm font-semibold text-amber-300 truncate">
+              {labels.summary(
+                settings.targetScore,
+                settings.minRoundDurationSec,
+                settings.maxRoundDurationSec,
+                settings.allowPowerUps
+              )}
+            </span>
+          </span>
+          <span className={`shrink-0 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`}>▾</span>
+        </button>
+      ) : (
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">{labels.title}</h3>
+          {!isHost && <span className="text-[11px] text-slate-500 italic">{labels.hostOnly}</span>}
+        </div>
+      )}
+
+      {open && (
+      <div className="space-y-4">
+      {collapsible && !isHost && <p className="text-[11px] text-slate-500 italic">{labels.hostOnly}</p>}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {stepper('targetScore', labels.targetScore)}
@@ -131,6 +159,8 @@ export const RoomSettingsPanel: React.FC = () => {
           </>
         )}
       </div>
+      </div>
+      )}
     </div>
   );
 };

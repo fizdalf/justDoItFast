@@ -1,91 +1,102 @@
 import React from 'react';
 import {useI18n} from '../../i18n/index.js';
 import {useGame} from '../../context/GameContext.js';
-import {BoardTile} from '../../../core/types.js';
+import {BoardTile, TeamId, TileType} from '../../../core/types.js';
 
-export const GameBoard: React.FC = () => {
+const TILE_ICON: Partial<Record<TileType, string>> = {
+  DOUBLE_TIME: '⚡',
+  MYSTERY_POWERUP: '🎁',
+  GOAL: '🏆',
+};
+
+const TEAM_STYLE: Record<TeamId, { text: string; dot: string; fill: string }> = {
+  A: { text: 'text-rose-400', dot: 'bg-rose-500', fill: 'bg-rose-500' },
+  B: { text: 'text-sky-400', dot: 'bg-sky-500', fill: 'bg-sky-500' },
+};
+
+/**
+ * Marcador y tablero. `compact` es una sola línea para la pantalla de juego (deja sitio al
+ * cable y al botón); el tablero completo son dos carriles de casillas, uno por equipo.
+ */
+export const GameBoard: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
   const { game } = useGame();
   const { t } = useI18n();
-
   if (!game) return null;
 
   const { scores, targetScore, boardTiles } = game;
-  const scoreA = scores.A ?? 0;
-  const scoreB = scores.B ?? 0;
+  // Casillas a recorrer: de la 1 a la meta (la 0 es la salida).
+  const track = (boardTiles ?? []).filter((tile) => tile.index > 0);
+
+  if (compact) {
+    return (
+      <div className="w-full flex items-center justify-between gap-2 bg-slate-900/90 border border-slate-800 rounded-xl px-3 py-2">
+        <TeamScore team="A" name={t.common.teams.A} score={scores.A ?? 0} />
+        <span className="text-[11px] font-mono font-bold uppercase text-slate-400 whitespace-nowrap">
+          {t.game.board.goal(targetScore)}
+        </span>
+        <TeamScore team="B" name={t.common.teams.B} score={scores.B ?? 0} alignRight />
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl w-full">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-2">
-          <span className="w-3 h-3 rounded-full bg-rose-500 shadow-sm" />
-          <span className="text-sm font-bold text-rose-400">{t.common.teams.A}: <span className="text-lg font-black">{scoreA}</span> {t.game.board.pointsShort}</span>
-        </div>
-        
-        <div className="text-xs font-bold font-mono uppercase tracking-widest text-slate-400 bg-slate-800 px-3 py-1 rounded-full border border-slate-700">
+    <div className="w-full bg-slate-900/90 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-xl">
+      <div className="flex items-center justify-between gap-2">
+        <TeamScore team="A" name={t.common.teams.A} score={scores.A ?? 0} large />
+        <span className="text-[11px] font-mono font-bold uppercase text-slate-400 whitespace-nowrap">
           {t.game.board.goal(targetScore)}
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <span className="text-sm font-bold text-sky-400">{t.common.teams.B}: <span className="text-lg font-black">{scoreB}</span> {t.game.board.pointsShort}</span>
-          <span className="w-3 h-3 rounded-full bg-sky-500 shadow-sm" />
-        </div>
+        </span>
+        <TeamScore team="B" name={t.common.teams.B} score={scores.B ?? 0} large alignRight />
       </div>
 
-      {/* Visual Track */}
-      <div className="relative pt-2 pb-1">
-        <div className="grid grid-cols-6 sm:grid-cols-6 gap-2">
-          {(boardTiles || []).map((tile: BoardTile) => {
-            const hasTeamA = scoreA === tile.index;
-            const hasTeamB = scoreB === tile.index;
-
-            return (
-              <div
-                key={tile.index}
-                className={`relative flex flex-col items-center justify-between p-2 rounded-xl border min-h-[75px] transition-all ${
-                  tile.type === 'GOAL'
-                    ? 'bg-amber-500/10 border-amber-500/50 shadow-inner'
-                    : tile.type === 'DOUBLE_TIME'
-                    ? 'bg-purple-500/10 border-purple-500/40'
-                    : tile.type === 'MYSTERY_POWERUP'
-                    ? 'bg-emerald-500/10 border-emerald-500/40'
-                    : 'bg-slate-800/60 border-slate-700/60'
-                }`}
-              >
-                <div className="w-full flex items-center justify-between text-[10px] font-mono font-bold text-slate-400">
-                  <span>#{tile.index}</span>
-                  {tile.type === 'GOAL' && <span>🏆</span>}
-                  {tile.type === 'DOUBLE_TIME' && <span>⚡</span>}
-                  {tile.type === 'MYSTERY_POWERUP' && <span>🎁</span>}
-                </div>
-
-                {/* Team markers */}
-                <div className="flex items-center justify-center space-x-1.5 my-auto">
-                  {hasTeamA && (
-                    <span
-                      title={t.common.teams.A}
-                      className="w-5 h-5 rounded-full bg-rose-500 border-2 border-white shadow-lg flex items-center justify-center text-[10px] font-black text-white animate-bounce"
-                    >
-                      A
-                    </span>
-                  )}
-                  {hasTeamB && (
-                    <span
-                      title={t.common.teams.B}
-                      className="w-5 h-5 rounded-full bg-sky-500 border-2 border-white shadow-lg flex items-center justify-center text-[10px] font-black text-white animate-bounce"
-                    >
-                      B
-                    </span>
-                  )}
-                </div>
-
-                <div className="text-[9px] font-bold tracking-tighter text-slate-400 uppercase text-center truncate w-full">
-                  {t.game.board.tiles[tile.type]}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+      {/* Casillas especiales, alineadas con los carriles */}
+      <div className="flex gap-1" aria-hidden>
+        {track.map((tile) => (
+          <div key={tile.index} className="flex-1 text-center text-xs leading-none h-4">
+            {TILE_ICON[tile.type] ?? ''}
+          </div>
+        ))}
       </div>
+      <TeamLane team="A" score={scores.A ?? 0} track={track} label={t.common.teams.A} tileLabels={t.game.board.tiles} />
+      <TeamLane team="B" score={scores.B ?? 0} track={track} label={t.common.teams.B} tileLabels={t.game.board.tiles} />
     </div>
   );
 };
+
+const TeamScore: React.FC<{ team: TeamId; name: string; score: number; large?: boolean; alignRight?: boolean }> = ({
+  team,
+  name,
+  score,
+  large,
+  alignRight,
+}) => (
+  <div className={`flex items-center gap-1.5 min-w-0 ${alignRight ? 'flex-row-reverse text-right' : ''}`}>
+    <span className={`w-2.5 h-2.5 shrink-0 rounded-full ${TEAM_STYLE[team].dot}`} />
+    <span className={`truncate text-xs font-bold ${TEAM_STYLE[team].text}`}>{name}</span>
+    <span className={`font-black text-white tabular-nums ${large ? 'text-2xl' : 'text-lg'}`}>{score}</span>
+  </div>
+);
+
+const TeamLane: React.FC<{
+  team: TeamId;
+  score: number;
+  track: BoardTile[];
+  label: string;
+  tileLabels: Record<TileType, string>;
+}> = ({ team, score, track, label, tileLabels }) => (
+  <div className="flex gap-1" role="img" aria-label={`${label}: ${score}/${track.length}`}>
+    {track.map((tile) => {
+      const reached = tile.index <= score;
+      const isCurrent = tile.index === score;
+      return (
+        <div
+          key={tile.index}
+          title={tileLabels[tile.type]}
+          className={`flex-1 h-3 rounded-full transition-colors duration-500 ${
+            reached ? TEAM_STYLE[team].fill : tile.type === 'GOAL' ? 'bg-amber-500/25' : 'bg-slate-800'
+          } ${isCurrent ? 'ring-2 ring-white/70' : ''}`}
+        />
+      );
+    })}
+  </div>
+);

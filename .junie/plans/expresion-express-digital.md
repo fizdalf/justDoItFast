@@ -36,7 +36,7 @@ El sistema digital conserva la emoción física de la "patata caliente" y el ace
 
 ### Historias de Usuario (User Stories)
 - **Como Anfitrión de la sala**, quiero crear una partida, configurar las rondas/mazos, compartir un código QR y resolver disputas de faltas pudiendo fallar a favor de un equipo o reiniciar la ronda.
-- **Como Jugador activo (Portador)**, quiero ver la palabra a describir con claridad, sentir la vibración y el tic-tac acelerándose en mi mano, y pulsar "Acertado" para pasarle de inmediato la patata al rival.
+- **Como Jugador activo (Portador)**, quiero ver con claridad la palabra que tengo que hacer adivinar, sentir la vibración y el tic-tac acelerándose en mi mano, y pulsar "Acertado" para pasarle de inmediato la patata al rival.
 - **Como Rival (Árbitro)**, quiero ver la palabra que el equipo contrario intenta adivinar para vigilar que no hagan trampas y poder pulsar "¡Falta!" si dicen una palabra prohibida, deteniendo la ronda para revisión.
 - **Como Miembro del equipo**, quiero adivinar rápido la palabra para que mi equipo gane power-ups tácticos (como rebotar la patata o forzar al rival a acertar dos palabras).
 - **Como Administrador**, quiero acceder a un panel privado y protegido para crear, editar y organizar los packs de palabras y configurar si son packs estándar o prémium para su futura monetización.
@@ -44,7 +44,12 @@ El sistema digital conserva la emoción física de la "patata caliente" y el ace
 
 ### Requisitos No Funcionales
 - **Baja latencia en tiempo real**: Eventos de pase de turno transmitidos en <100ms mediante WebSockets.
-- **Accesibilidad y respuesta móvil**: UI táctil de gran tamaño optimizada para uso con una sola mano en pantallas de 4.7" a 6.7".
+- **Mobile first** (decidido): el juego se juega en móviles; el PC solo se usa para probar. Toda pantalla se diseña primero para 375–430 px de ancho y una sola mano:
+  - La acción principal de cada pantalla va **fija abajo** (zona del pulgar) y debe verse sin hacer scroll incluso en un iPhone SE (375×667).
+  - Cabecera mínima (título, estado, menú ⋮); los controles secundarios van en el menú.
+  - Objetivos táctiles de al menos 44 px; ventanas modales como hojas que suben desde abajo; respetar las zonas seguras (`env(safe-area-inset-*)`) y usar `dvh`.
+  - Durante la partida, marcador compacto en una línea; el tablero completo solo entre rondas.
+  - Verificación visual con capturas en viewport móvil (390×844 y 375×667) de todo el flujo.
 - **Resiliencia ante reconexiones**: Si un jugador pierde conexión brevemente, el servidor preserva su estado y sincroniza la vista al reconectar.
 - **Imparcialidad garantizada**: El tiempo de detonación se calcula y almacena exclusivamente en memoria del servidor, evitando cualquier lectura o manipulación por parte del cliente.
 
@@ -56,13 +61,18 @@ Términos que usamos para hablar del juego (fuente de verdad en código: `src/cl
 | Término | Significado |
 |---|---|
 | **Bomba** | Lo que se pasa de mano en mano; explota a un tiempo secreto. |
-| **Cable** | La palabra que hay que describir. Acertar = **cortar el cable**. |
-| **Artificiero** | Quien tiene la bomba en este momento y describe el cable. |
+| **Cable** | La palabra que hay que hacer adivinar. Acertar = **cortar el cable**. |
+| **Artificiero** | Quien tiene la bomba en este momento y da pistas del cable. |
 | **Ayudantes** | Los compañeros de equipo del artificiero; adivinan el cable. |
 | **Saboteadores** | El equipo rival del artificiero; vigilan, cantan faltas y usan herramientas ofensivas. |
 | **Anfitrión** | Quien creó la sala; arranca rondas y resuelve disputas. |
 | **Herramientas** | Los power-ups (Devolver al remitente, Otro cable, Doble detonador, Inhibidor, …). |
 | **Equipo Rojo / Equipo Azul** | Los dos equipos (A / B en el código). |
+
+### Reglas de las pistas
+- El artificiero puede usar **cualquier recurso**: palabras, mímica, gestos, sonidos, señalar...
+- **Falta:** decir la palabra, una parte de ella o **una palabra de su familia**. Ej.: para «perrera» no se puede decir «donde recogen a los perros callejeros» (contiene «perro»).
+- ? Pendiente de confirmar: traducir a otro idioma, deletrear o decir palabras que rimen.
 
 ### Arquitectura General del Sistema
 El sistema sigue una arquitectura cliente-servidor orientada a eventos en tiempo real con WebSockets:
@@ -303,7 +313,7 @@ Contexto de diseño: la duración de la ronda es secreta pero el tic-tac acelera
 
 Decisiones de diseño (todas confirmadas):
 - ✓ **Regla general:** los defensivos se pulsan en el móvil del **portador**; los ofensivos en los móviles del **equipo rival**. **Sin límite de usos** por turno ni por ronda: los efectos se acumulan.
-- ✓ **Rebote** (defensivo, lo pulsa el portador que describe): en cualquier momento. Devuelve la patata a quien la acaba de pasar, con palabra nueva, **e invierte el sentido de rotación** el resto de la ronda (cada ronda empieza en sentido normal). El servidor guarda quién pasó por última vez; si se ha desconectado, va al siguiente jugador de su equipo en el nuevo sentido. Ej.: A1→B1, B1 rebota → A1 → B2 → A2 → B1…
+- ✓ **Rebote** (defensivo, lo pulsa el artificiero): en cualquier momento. Devuelve la patata a quien la acaba de pasar, con palabra nueva, **e invierte el sentido de rotación** el resto de la ronda (cada ronda empieza en sentido normal). El servidor guarda quién pasó por última vez; si se ha desconectado, va al siguiente jugador de su equipo en el nuevo sentido. Ej.: A1→B1, B1 rebota → A1 → B2 → A2 → B1…
 - ✓ **Salto** (defensivo, lo pulsa el portador): descarta la palabra actual. Coste: **ese turno ya no otorga power-up**.
 - ✓ Ni *Rebote* ni *Salto* otorgan power-up. Tras un *Rebote*, quien recibe la patata empieza con ventana de acierto rápido nueva.
 - ✓ **Doble Reto** (ofensivo): en cualquier momento sobre el turno actual del rival. **Secreto** para todo el equipo portador; se revela al primer "Acertado" (aparece otra palabra en lugar de pasar). Requiere filtrar estado/eventos por equipo.
@@ -321,7 +331,7 @@ Decisiones de diseño (todas confirmadas):
 - ✓ **UI anti-errores:**
   - "¡Acertado!" = toque simple, grande, abajo, verde.
   - Power-ups = **mantener pulsado ~0,5 s** con animación de llenado.
-  - **¡Falta!** = también **mantener pulsado ~0,5 s**, sin selector de motivo: el motivo se verbaliza en la mesa (se elimina el paso de motivos de `OpponentRefereeView` y el campo de motivo del modal del anfitrión). Situado lejos de los botones ofensivos.
+  - ✓ **¡Falta!** = **mantener pulsado 0,5 s** (componente `HoldButton`, reutilizable para las herramientas), **sin motivos**: la app solo permite cantar la falta y al anfitrión asignar el punto o reiniciar la ronda; el motivo se discute en la mesa. Eliminado `foulReason` del protocolo y del modelo.
   - Sin bloqueo de "Acertado" al recibir la patata (por ahora no se espera que los Rebotes sean tan rápidos como para causar dobles toques; revisar tras pruebas reales).
 - Validación en servidor de quién y cuándo puede usar cada power-up; `GameSession.recordGuessSuccess` respeta `requiredGuesses` (nueva palabra sin pasar turno) y rechaza aciertos mientras `isFrozen`.
 - UI: botones de power-up solo cuando son utilizables; cuenta atrás de congelación; revelación sorpresa de *Doble Reto* al primer acierto ("¡Doble Reto! Otra más"); aviso de activación a todos **excepto** para *Doble Reto*, que solo ve el equipo que lo lanzó hasta revelarse.

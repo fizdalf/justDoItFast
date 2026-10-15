@@ -38,12 +38,12 @@ const GameContent: React.FC = () => {
   }, [error, clearError]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans antialiased selection:bg-amber-500 selection:text-slate-950">
+    <div className="min-h-[100dvh] bg-slate-950 text-slate-100 flex flex-col font-sans antialiased selection:bg-amber-500 selection:text-slate-950">
       <Header onOpenAdmin={() => setShowAdmin(true)} />
 
-      <main className="flex-1 flex flex-col justify-center items-center p-3 sm:p-6 w-full max-w-5xl mx-auto">
+      <main className="flex-1 flex flex-col items-center w-full max-w-5xl mx-auto px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6 sm:pt-6">
         {!room && restoringRoom ? (
-          <div className="flex flex-col items-center space-y-3 text-slate-300 animate-fadeIn">
+          <div className="my-auto flex flex-col items-center space-y-3 text-slate-300 animate-fadeIn">
             <div className="text-5xl animate-pulse">💣</div>
             <div className="text-sm font-semibold">{t.common.returningToRoom(restoringRoom)}</div>
           </div>
@@ -56,13 +56,13 @@ const GameContent: React.FC = () => {
         ) : game.status === 'GAME_OVER' ? (
           <GameOverView />
         ) : game.status === 'ROUND_OVER' ? (
-          <div className="w-full flex flex-col items-center space-y-6">
+          <div className="w-full max-w-md flex flex-col items-center gap-4">
             <GameBoard />
             <RoundOverView />
           </div>
         ) : (
-          <div className="w-full flex flex-col items-center space-y-6">
-            <GameBoard />
+          <div className="flex-1 w-full max-w-md flex flex-col gap-3">
+            <GameBoard compact />
 
             {/* Asymmetric Role-based views */}
             {isActivePlayer ? (
