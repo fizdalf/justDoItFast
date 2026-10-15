@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html class="dark" lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport" />
+    <meta content="#090d16" name="theme-color" />
+    <meta content="yes" name="apple-mobile-web-app-capable" />
+    <meta content="black-translucent" name="apple-mobile-web-app-status-bar-style" />
+    <title>¡Solo desactívala rápido!</title>
+    <link href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💣</text></svg>" rel="icon">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                50: '#fffbeb',
+                100: '#fef3c7',
+                400: '#fbbf24',
+                500: '#f59e0b',
+                600: '#d97706',
+              }
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0', transform: 'scale(0.97)' },
+                '100%': { opacity: '1', transform: 'scale(1)' },
+              }
+            },
+            animation: {
+              fadeIn: 'fadeIn 0.2s ease-out forwards',
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body {
+        background-color: #020617;
+        color: #f8fafc;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+      }
+    </style>
+  </head>
+  <body class="bg-slate-950 min-h-screen text-slate-100 antialiased overflow-x-hidden">
+    <div id="root"></div>
+    <script src="/src/client/main.tsx" type="module"></script>
+  </body>
+</html>

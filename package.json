@@ -1,0 +1,47 @@
+{
+  "name": "solo-desactivala-rapido",
+  "version": "1.0.0",
+  "description": "¡Solo desactívala rápido! Party game multidispositivo en tiempo real: describe el cable antes de que la bomba explote",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k -n server,client -c blue,green \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "tsx watch src/main.ts",
+    "dev:client": "vite",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build:server": "tsc -p tsconfig.build.json",
+    "build:client": "vite build",
+    "build": "tsc -p tsconfig.build.json && vite build",
+    "start": "node dist/main.js"
+  },
+  "keywords": [
+    "party-game",
+    "realtime",
+    "party",
+    "word-game",
+    "websockets"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "^22.13.9",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "concurrently": "^10.0.6",
+    "jsdom": "^29.1.1",
+    "socket.io-client": "^4.8.4",
+    "tsx": "^4.23.15",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.7"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.3.0",
+    "fastify": "^5.12.5",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "socket.io": "^4.8.4"
+  }
+}

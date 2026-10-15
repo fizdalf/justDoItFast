@@ -1,0 +1,25 @@
+import type {ErrorMessages} from '../es/errors.js';
+
+export const errors: ErrorMessages = {
+  ROOM_NOT_FOUND: "There's no room with that code.",
+  ROOM_CODE_REQUIRED: 'Enter the room code.',
+  NOT_IN_ROOM: "You're not in a room.",
+  NAME_REQUIRED: 'Enter your name.',
+  PLAYER_NOT_FOUND: "That player isn't in the room anymore.",
+  NOT_HOST: 'Only the host can do that.',
+  INVALID_STATE: "You can't do that right now.",
+  NOT_ENOUGH_PLAYERS: 'You need at least 2 players per team.',
+  NOT_ACTIVE_PLAYER: 'Only the defuser can cut the wire.',
+  ONLY_OPPONENTS_CAN_FOUL: 'Only saboteurs can call a foul.',
+  PACK_NOT_FOUND: "That deck doesn't exist.",
+  PACK_NAME_REQUIRED: 'The deck needs a name.',
+  PACK_CATEGORY_REQUIRED: 'The deck needs a category.',
+  PACK_TOO_FEW_WORDS: 'A deck needs at least 5 different words.',
+  INVALID_IMPORT: "The file doesn't contain a valid list of decks.",
+  POWERUP_NOT_FOUND: "That tool isn't available anymore.",
+  UNAUTHORIZED: 'Wrong admin token.',
+  INTERNAL: 'Something went wrong. Please try again.',
+  NOT_CONNECTED: 'No connection to the server.',
+  TIMEOUT: 'The server is not responding. Please try again.',
+  CONNECTION_ERROR: "Can't connect to the server.",
+};
