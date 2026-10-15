@@ -92,6 +92,24 @@ describe('Socket.io Real-Time Game Server Integration', () => {
     expect(res.data.gameState.status).toBe('LOBBY');
   });
 
+  it('gives a joining player the current member list (response and broadcast)', async () => {
+    const host = await createClient();
+    const joiner = await createClient();
+
+    const createRes: any = await emitAsync(host, 'room:create', { playerName: 'Alice' });
+    const roomCode = createRes.data.roomCode;
+
+    // The broadcast sent while joining must also reach the joining socket
+    const stateForJoiner = waitForEvent<{ gameState: GameState; players: Player[] }>(joiner, 'room:state_updated');
+    const joinRes: any = await emitAsync(joiner, 'room:join', { roomCode, playerName: 'Bob' });
+
+    expect(joinRes.success).toBe(true);
+    expect(joinRes.data.players.map((p: Player) => p.name)).toEqual(['Alice', 'Bob']);
+
+    const broadcast = await stateForJoiner;
+    expect(broadcast.players.map((p) => p.name)).toEqual(['Alice', 'Bob']);
+  });
+
   it('allows 4 players to join, balances teams and orders seats', async () => {
     const host = await createClient();
     const p2 = await createClient();

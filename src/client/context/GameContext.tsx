@@ -5,14 +5,14 @@ import {audioService} from '../services/audioService.js';
 import {hapticService} from '../services/hapticService.js';
 import {ApiResponse, TimerExplodedPayload, TimerTickPayload, TurnChangedPayload,} from '../../server/protocol.js';
 import {
-    DisputeResolution,
-    DisputeState,
-    GameState,
-    Player,
-    PowerUp,
-    PowerUpType,
-    TeamId,
-    TurnState,
+  DisputeResolution,
+  DisputeState,
+  GameState,
+  Player,
+  PowerUp,
+  PowerUpType,
+  TeamId,
+  TurnState,
 } from '../../core/types.js';
 
 export interface GameContextValue {
@@ -39,7 +39,7 @@ export interface GameContextValue {
 
   // Actions
   createRoom: (playerName: string, packId?: string) => Promise<ApiResponse<{ roomCode: string; player: Player; gameState: GameState; sessionToken: string }>>;
-  joinRoom: (roomCode: string, playerName: string) => Promise<ApiResponse<{ player: Player; gameState: GameState; sessionToken: string }>>;
+  joinRoom: (roomCode: string, playerName: string) => Promise<ApiResponse<{ player: Player; players: Player[]; gameState: GameState; sessionToken: string }>>;
   leaveRoom: () => Promise<ApiResponse<{}>>;
   switchTeam: (team: TeamId) => Promise<ApiResponse<{ player: Player; gameState: GameState }>>;
   selectPack: (packId: string) => Promise<ApiResponse<{ gameState: GameState }>>;
@@ -287,6 +287,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       setRoomUrl(res.data.gameState.roomCode);
       setPlayerId(res.data.player.id);
+      setPlayers(res.data.players);
       setGameState(res.data.gameState);
     }
     return res;

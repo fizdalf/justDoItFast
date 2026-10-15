@@ -70,8 +70,8 @@ export function setupSocketHandlers(
         // Siempre es un jugador nuevo: para volver como uno existente se usa room:rejoin con su token.
         const playerId = `p_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
-        const player = session.joinPlayer(playerId, payload.playerName.trim());
-
+        // Entrar en la sala de socket.io antes de anunciar al jugador, para que
+        // también reciba el estado que se difunde al unirse.
         socket.join(session.roomCode);
         socket.data = {
           playerId,
@@ -86,10 +86,13 @@ export function setupSocketHandlers(
           payload.playerName.trim()
         );
 
+        const player = session.joinPlayer(playerId, payload.playerName.trim());
+
         return callback({
           success: true,
           data: {
             player,
+            players: session.getPlayers(),
             gameState: session.getGameState(),
             sessionToken: session.issueSessionToken(playerId),
           },

@@ -1,13 +1,13 @@
 import {
-    DisputeResolution,
-    DisputeState,
-    GameSettings,
-    GameState,
-    Player,
-    PowerUp,
-    PowerUpType,
-    TeamId,
-    TurnState,
+  DisputeResolution,
+  DisputeState,
+  GameSettings,
+  GameState,
+  Player,
+  PowerUp,
+  PowerUpType,
+  TeamId,
+  TurnState,
 } from '../core/types.js';
 import type {GameErrorCode} from '../core/errors.js';
 
@@ -102,7 +102,9 @@ export interface ClientToServerEvents {
   ) => void;
   'room:join': (
     payload: JoinRoomPayload,
-    callback: (res: ApiResponse<{ player: Player; gameState: GameState; sessionToken: string }>) => void
+    callback: (
+      res: ApiResponse<{ player: Player; players: Player[]; gameState: GameState; sessionToken: string }>
+    ) => void
   ) => void;
   'room:rejoin': (
     payload: RejoinRoomPayload,

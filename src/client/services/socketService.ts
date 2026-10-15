@@ -1,14 +1,14 @@
 import {io, Socket} from 'socket.io-client';
 import {
-    ApiErrorCode,
-    ApiResponse,
-    ClientToServerEvents,
-    PowerUpActivatedPayload,
-    RoundStartedPayload,
-    ServerToClientEvents,
-    TimerExplodedPayload,
-    TimerTickPayload,
-    TurnChangedPayload,
+  ApiErrorCode,
+  ApiResponse,
+  ClientToServerEvents,
+  PowerUpActivatedPayload,
+  RoundStartedPayload,
+  ServerToClientEvents,
+  TimerExplodedPayload,
+  TimerTickPayload,
+  TurnChangedPayload,
 } from '../../server/protocol.js';
 import {DisputeResolution, DisputeState, GameState, Player, PowerUpType, TeamId, TurnState,} from '../../core/types.js';
 
@@ -102,7 +102,7 @@ export class SocketService {
   public async joinRoom(
     roomCode: string,
     playerName: string
-  ): Promise<ApiResponse<{ player: Player; gameState: GameState; sessionToken: string }>> {
+  ): Promise<ApiResponse<{ player: Player; players: Player[]; gameState: GameState; sessionToken: string }>> {
     return this.emitWithAck('room:join', { roomCode, playerName });
   }
 
