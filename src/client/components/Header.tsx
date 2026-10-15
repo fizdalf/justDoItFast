@@ -2,13 +2,14 @@ import React, {useState} from 'react';
 import {useGame} from '../context/GameContext.js';
 import {audioService} from '../services/audioService.js';
 import {Language, LANGUAGES, useI18n} from '../i18n/index.js';
+import {EndGameControl} from './EndGameControl.js';
 
 interface HeaderProps {
   onOpenAdmin?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ onOpenAdmin }) => {
-  const { socketStatus, gameState, leaveRoom } = useGame();
+  const { socketStatus, room, leaveRoom } = useGame();
   const { t, lang, setLang } = useI18n();
   const [isMuted, setIsMuted] = useState(audioService.getIsMuted());
   const [copied, setCopied] = useState(false);
@@ -20,8 +21,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAdmin }) => {
   };
 
   const copyRoomCode = () => {
-    if (gameState?.roomCode && typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(gameState.roomCode);
+    if (room?.roomCode && typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(room.roomCode);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -68,13 +69,13 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAdmin }) => {
           ))}
         </select>
 
-        {gameState && (
+        {room && (
           <button
             onClick={copyRoomCode}
             title={t.common.header.copyRoomCode}
             className="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg text-sm font-mono font-bold text-amber-300 transition-colors"
           >
-            <span>{gameState.roomCode}</span>
+            <span>{room.roomCode}</span>
             <span className="text-xs text-slate-400">{copied ? '✓' : '📋'}</span>
           </button>
         )}
@@ -87,7 +88,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAdmin }) => {
           {isMuted ? '🔇' : '🔊'}
         </button>
 
-        {onOpenAdmin && !gameState && (
+        {onOpenAdmin && !room && (
           <button
             onClick={onOpenAdmin}
             title={t.common.header.adminTitle}
@@ -97,7 +98,9 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAdmin }) => {
           </button>
         )}
 
-        {gameState && (
+        <EndGameControl />
+
+        {room && (
           <button
             onClick={() => leaveRoom()}
             title={t.common.header.leaveTitle}

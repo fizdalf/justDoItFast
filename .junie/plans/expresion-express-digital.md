@@ -275,11 +275,28 @@ Cumplir el requisito no funcional de reconexión.
 - ? Limitación conocida: cerrar la pestaña pierde la sesión (`sessionStorage`). Valorar en pruebas reales si en móvil hace falta persistir más (p. ej. `localStorage` con identificador de pestaña).
 - Pendiente para otros pasos: indicador de desconectados durante la partida; limpiar salas abandonadas (si todos se desconectan la sala queda en memoria); en producción el servidor debe servir `index.html` para `/r/*` (Step 9).
 
-###   Step 7: Configuración de partida del anfitrión y QR
-- Panel de ajustes en el Lobby (solo anfitrión): puntuación objetivo, duración mínima/máxima de ronda, umbral de acierto rápido, power-ups on/off (global y por tipo), máximo de power-ups por equipo, duración de Congelación. Ningún valor de reglas hard-coded: todo sale de `GameSettings` con valores por defecto. Exponer `updateSettings` en `GameContext`.
-- Aplicar los ajustes realmente a `TimerEngine`, `PowerUpEngine` y `TurnManager` (hoy solo se guardan).
-- Selector de mazo en el Lobby (`room:select_pack`), visible para todos y editable por el anfitrión.
-- Código QR del enlace de invitación junto al código de sala.
+### ✓ Step 7: Configuración de partida del anfitrión y QR
+- ✓ Ajustes centralizados en `src/core/settings.ts`: valores por defecto (`DEFAULT_SETTINGS`) y validación de cordura en servidor (`resolveSettings`, error `INVALID_SETTINGS`), tanto al crear la sala como al cambiarlos. Nada de reglas hard-coded.
+- ✓ Ajustes nuevos: herramientas permitidas por tipo (`enabledPowerUps`), máximo por equipo (`maxPowerUpsPerTeam`, 2 por defecto; con el inventario lleno no se gana ninguna), duración del Inhibidor (`freezeDurationSec`, 3 s), espera por desconexión (`disconnectGraceSec`, 5 s).
+- ✓ Los ajustes **se aplican de verdad**: `GameSession.applySettings()` reconfigura temporizador (rango de duración), turnos y herramientas (umbral de acierto rápido, tipos, límite) y tablero (puntos para ganar).
+- ✓ Los ajustes viajan en `GameState.settings`: todos los jugadores ven las reglas; solo el anfitrión las cambia.
+- ✓ Lobby: panel de ajustes con botones −/+ (rangos jugables en la UI, más estrechos que los límites del servidor), interruptor de herramientas y selección por tipo; selector de mazo (editable por el anfitrión, visible para todos); **código QR** del enlace `/r/ABCD`, generado en el navegador (librería `qrcode`).
+
+### ✓ Step 7b: Separar la sala de la partida
+Una **sala** es el grupo de gente reunida (dura toda la sesión); dentro se juegan varias **partidas**, cada una con sus mazos y ajustes. "Crear partida" pasa a ser **"Crear sala"**.
+
+- **Sala** (`RoomState`): código/URL, anfitrión, jugadores con equipos y asientos (se mantienen entre partidas), conexiones y tokens, **preparación de la próxima partida** (`setup`: ajustes + mazos; se conserva la última usada) e **historial** (`GameSummary[]`, en memoria).
+- **Partida** (`GameState`): número de partida, copia congelada de los ajustes, **uno o varios mazos combinados** (`packIds`; palabras deduplicadas, cada una con su categoría), participantes, marcador, rondas, tablero, herramientas, temporizador, disputas.
+- ✓ Decidido: quien entra en la sala con una partida empezada **es espectador hasta la siguiente** (ve el tablero, no la palabra).
+- ✓ Decidido: el anfitrión puede **terminar la partida antes de tiempo** (con confirmación); queda en el historial como no terminada.
+- ✓ Decidido: **historial sencillo** de partidas de la sala (mazos y resultado).
+- Cambios de equipo y de preparación solo sin partida en curso. Las acciones de partida exigen ser participante (`NOT_A_PARTICIPANT`); las de anfitrión (siguiente ronda, resolver disputa, terminar) las comprueba la sala aunque el anfitrión sea espectador.
+- Protocolo (`src/server/protocol.ts`): el servidor envía siempre `RoomSnapshot = { room, game | null }` en `room:state_updated`. Eventos nuevos: `room:update_setup` (sustituye a `room:select_pack` y `room:update_settings`), `game:start`, `game:end` (sustituye a `game:return_to_lobby`). Desaparecen `room:player_joined/left/reconnected` (los cubre `room:state_updated`).
+- Servidor: `GameSession` se divide en `RoomSession` (sala) y `Game` (partida); `GameSessionManager` → `RoomSessionManager`.
+- Cliente: el lobby pasa a ser la **pantalla de sala** (equipos, selección múltiple de mazos, ajustes, historial, "Empezar partida"); vista de espectador; botón "Terminar partida" para el anfitrión; el podio vuelve a la sala.
+- ✓ Implementado: servidor `RoomSession` + `Game` + `RoomSessionManager`; cliente con `room`/`game` en el contexto, `RoomView`, `SpectatorView`, selector múltiple de mazos, historial, control "Terminar partida" con confirmación y vuelta a la sala desde el podio.
+- ✓ Corregido de paso: una falta rechazada (p. ej. cantada por el propio equipo) dejaba el temporizador pausado; si el artificiero abandona la sala, la bomba pasa al momento sin esperar la gracia; la rotación ya no depende de `seatIndex` (fallaba con participantes que son un subconjunto de la sala).
+- Pendiente menor: `room:switch_team` no valida que el equipo sea A/B; si todos los participantes abandonan y quedan espectadores, la partida sigue sin rotación hasta que el anfitrión la termina; `Player.isHost` duplica `RoomState.hostPlayerId` (el cliente usa este último).
 
 ###   Step 8: Power-ups y casillas con reglas reales
 Contexto de diseño: la duración de la ronda es secreta pero el tic-tac acelera, así que tener la patata es más peligroso cuanto más avanza la ronda; los power-ups ganan valor tarde.

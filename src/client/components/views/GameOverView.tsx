@@ -3,23 +3,23 @@ import {useI18n} from '../../i18n/index.js';
 import {useGame} from '../../context/GameContext.js';
 
 export const GameOverView: React.FC = () => {
-  const { gameOver, gameState, players, isHost, returnToLobby, leaveRoom } = useGame();
+  const { gameOver, game, hostPlayer, isHost, endGame, leaveRoom } = useGame();
   const { t } = useI18n();
-  const [restarting, setRestarting] = useState(false);
+  const [returning, setReturning] = useState(false);
 
   const winner =
     gameOver?.winner ??
-    gameState?.winningTeam ??
-    ((gameState?.scores.A ?? 0) >= (gameState?.scores.B ?? 0) ? 'A' : 'B');
-  const scores = gameOver?.finalScores || gameState?.scores || { A: 0, B: 0 };
+    game?.winningTeam ??
+    ((game?.scores.A ?? 0) >= (game?.scores.B ?? 0) ? 'A' : 'B');
+  const scores = gameOver?.finalScores || game?.scores || { A: 0, B: 0 };
   const isTeamAWinner = winner === 'A';
-  const hostPlayer = players.find((p) => p.isHost);
 
-  const handlePlayAgain = async () => {
-    if (restarting) return;
-    setRestarting(true);
-    await returnToLobby();
-    setRestarting(false);
+  // Cierra el podio: la partida pasa al historial y todos vuelven a la sala.
+  const handleBackToRoom = async () => {
+    if (returning) return;
+    setReturning(true);
+    await endGame();
+    setReturning(false);
   };
 
   return (
@@ -65,15 +65,15 @@ export const GameOverView: React.FC = () => {
       <div className="w-full space-y-3 pt-2">
         {isHost ? (
           <button
-            onClick={handlePlayAgain}
-            disabled={restarting}
+            onClick={handleBackToRoom}
+            disabled={returning}
             className="w-full py-4 px-6 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-lg rounded-2xl shadow-xl shadow-amber-500/20 transition-all uppercase tracking-wide disabled:opacity-50"
           >
-            {restarting ? t.game.gameOver.preparing : t.game.gameOver.playAgain}
+            {returning ? t.game.gameOver.returning : t.game.gameOver.backToRoom}
           </button>
         ) : (
           <div className="text-xs text-slate-400 italic">
-            {t.game.gameOver.waitingRematch(hostPlayer?.name || t.common.roles.host.singular)}
+            {t.game.gameOver.waitingBackToRoom(hostPlayer?.name || t.common.roles.host.singular)}
           </div>
         )}
 
@@ -81,7 +81,7 @@ export const GameOverView: React.FC = () => {
           onClick={() => leaveRoom()}
           className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-bold rounded-xl text-sm transition-colors"
         >
-          {t.game.gameOver.exitToMenu}
+          {t.game.gameOver.leaveRoom}
         </button>
       </div>
 

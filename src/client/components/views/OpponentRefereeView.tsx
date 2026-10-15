@@ -4,14 +4,14 @@ import {useGame} from '../../context/GameContext.js';
 import {Player} from '../../../core/types.js';
 
 export const OpponentRefereeView: React.FC = () => {
-  const { currentTurn, gameState, players, triggerFoul } = useGame();
+  const { currentTurn, game, players, triggerFoul } = useGame();
   const { t } = useI18n();
   const [submitting, setSubmitting] = useState(false);
   const [showReasonSelect, setShowReasonSelect] = useState(false);
 
-  const word = currentTurn?.currentWord || gameState?.currentTurn?.currentWord || '...';
-  const category = currentTurn?.category || gameState?.currentTurn?.category || '';
-  const activeId = currentTurn?.activePlayerId || gameState?.currentTurn?.activePlayerId;
+  const word = currentTurn?.currentWord || game?.currentTurn?.currentWord || '...';
+  const category = currentTurn?.category || game?.currentTurn?.category || '';
+  const activeId = currentTurn?.activePlayerId || game?.currentTurn?.activePlayerId;
   const activePlayerName =
     players.find((p: Player) => p.id === activeId)?.name || t.common.roles.holder.singular;
 

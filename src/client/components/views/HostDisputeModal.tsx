@@ -4,15 +4,14 @@ import {useGame} from '../../context/GameContext.js';
 import {DisputeResolution, Player} from '../../../core/types.js';
 
 export const HostDisputeModal: React.FC = () => {
-  const { currentDispute, gameState, players, isHost, resolveDispute } = useGame();
+  const { currentDispute, game, players, hostPlayer, isHost, resolveDispute } = useGame();
   const { t } = useI18n();
   const [resolving, setResolving] = useState(false);
 
-  const dispute = currentDispute || gameState?.currentDispute;
+  const dispute = currentDispute || game?.currentDispute;
   if (!dispute) return null;
 
   const triggeringPlayer = players.find((p: Player) => p.id === dispute.triggeredByPlayerId);
-  const hostPlayer = players.find((p: Player) => p.isHost);
 
   const handleResolve = async (resolution: DisputeResolution) => {
     if (resolving) return;

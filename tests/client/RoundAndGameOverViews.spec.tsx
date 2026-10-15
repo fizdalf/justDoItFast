@@ -4,6 +4,7 @@ import React from 'react';
 import {cleanup, fireEvent, render, screen} from '@testing-library/react';
 import {GameState, Player} from '../../src/core/types.js';
 import {es} from '../../src/client/i18n/locales/es/index.js';
+import {DEFAULT_SETTINGS} from '../../src/core/settings.js';
 
 const mockGame: Record<string, any> = {};
 
@@ -21,28 +22,32 @@ const players: Player[] = [
 
 function baseState(overrides: Partial<GameState> = {}): GameState {
   return {
-    roomCode: 'ABCD',
+    gameNumber: 1,
     status: 'ROUND_OVER',
     scores: { A: 0, B: 1 },
     targetScore: 5,
     roundNumber: 1,
     teamInventory: { A: [], B: [] },
     boardTiles: [],
-    selectedPackId: 'classic-1996',
+    packIds: ['classic-1996'],
+    participantIds: players.map((p) => p.id),
+    settings: DEFAULT_SETTINGS,
     ...overrides,
   };
 }
 
-function setGame(gameState: GameState, me: Player, extra: Record<string, any> = {}) {
+function setGame(game: GameState, me: Player, extra: Record<string, any> = {}) {
   Object.keys(mockGame).forEach((k) => delete mockGame[k]);
   Object.assign(mockGame, {
-    gameState,
+    game,
     players,
     myPlayer: me,
-    isHost: me.isHost,
+    hostPlayer: players[0],
+    isHost: me.id === players[0].id,
+    isSpectator: false,
     gameOver: null,
     startRound: vi.fn().mockResolvedValue({ success: true }),
-    returnToLobby: vi.fn().mockResolvedValue({ success: true }),
+    endGame: vi.fn().mockResolvedValue({ success: true }),
     leaveRoom: vi.fn().mockResolvedValue({ success: true }),
     ...extra,
   });
@@ -91,7 +96,7 @@ describe('GameOverView', () => {
 
   beforeEach(() => {
     setGame(baseState({ status: 'GAME_OVER', scores: { A: 2, B: 5 }, winningTeam: 'B' }), players[0], {
-      gameOver: { winner: 'B', finalScores: { A: 2, B: 5 }, gameState: baseState() },
+      gameOver: { winner: 'B', finalScores: { A: 2, B: 5 }, game: baseState() },
     });
   });
 
@@ -100,12 +105,19 @@ describe('GameOverView', () => {
     expect(screen.getByText(/GANADOR: EQUIPO AZUL/i)).toBeDefined();
   });
 
-  it('returns to the lobby for a rematch and leaves the room on exit', () => {
+  it('lets the host close the podium back to the room and anyone leave the room', () => {
     render(<GameOverView />);
-    fireEvent.click(screen.getByText(/Jugar Otra Partida/i));
-    expect(mockGame.returnToLobby).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByText(es.game.gameOver.backToRoom));
+    expect(mockGame.endGame).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByText(/Salir al Menú Principal/i));
+    fireEvent.click(screen.getByText(es.game.gameOver.leaveRoom));
     expect(mockGame.leaveRoom).toHaveBeenCalledTimes(1);
+  });
+
+  it('makes other players wait for the host to head back', () => {
+    setGame(baseState({ status: 'GAME_OVER', winningTeam: 'B' }), players[1]);
+    render(<GameOverView />);
+    expect(screen.queryByText(es.game.gameOver.backToRoom)).toBeNull();
+    expect(screen.getByText(es.game.gameOver.waitingBackToRoom('Alice'))).toBeDefined();
   });
 });

@@ -64,6 +64,18 @@ export class DisputeEngine {
       throw new GameError('NOT_HOST', `Only host can resolve disputes`);
     }
 
+    return this.applyResolution(gameState, resolution, freshCard);
+  }
+
+  /**
+   * Aplica la resolución sin comprobar quién la pide. Lo usa la sala, que valida al
+   * anfitrión por su cuenta (el anfitrión puede ser espectador y no estar en la rotación).
+   */
+  applyResolution(gameState: GameState, resolution: DisputeResolution, freshCard?: CardPayload): GameState {
+    if (gameState.status !== 'DISPUTE_PAUSED') {
+      throw new GameError('INVALID_STATE', `Cannot resolve dispute when game is in state ${gameState.status}`);
+    }
+
     if (resolution === 'AWARD_TEAM_A') {
       return {
         ...gameState,

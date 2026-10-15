@@ -5,10 +5,18 @@ import {GameError} from './errors.js';
 
 export interface PowerUpEngineOptions {
   fastGuessThresholdSec?: number;
+  /** Tipos que pueden salir como recompensa (por defecto, todos). */
+  enabledTypes?: PowerUpType[];
+  /** Máximo por equipo; con el inventario lleno no se gana ninguna (por defecto, sin límite). */
+  maxPerTeam?: number;
 }
+
+const ALL_TYPES: PowerUpType[] = ['REVERSE', 'DOUBLE_BURDEN', 'FREEZE', 'SKIP'];
 
 export class PowerUpEngine {
   private fastGuessThresholdSec: number;
+  private enabledTypes: PowerUpType[];
+  private maxPerTeam: number;
   private teamInventories: Record<TeamId, PowerUp[]> = {
     A: [],
     B: [],
@@ -16,6 +24,14 @@ export class PowerUpEngine {
 
   constructor(options: PowerUpEngineOptions = {}) {
     this.fastGuessThresholdSec = options.fastGuessThresholdSec ?? 5.0;
+    this.enabledTypes = options.enabledTypes ?? ALL_TYPES;
+    this.maxPerTeam = options.maxPerTeam ?? Infinity;
+  }
+
+  configure(options: PowerUpEngineOptions): void {
+    if (options.fastGuessThresholdSec !== undefined) this.fastGuessThresholdSec = options.fastGuessThresholdSec;
+    if (options.enabledTypes !== undefined) this.enabledTypes = options.enabledTypes;
+    if (options.maxPerTeam !== undefined) this.maxPerTeam = options.maxPerTeam;
   }
 
   resetInventories(): void {
@@ -37,12 +53,12 @@ export class PowerUpEngine {
   }
 
   evaluateGuessSpeed(durationSec: number, team: TeamId): PowerUp | undefined {
-    if (durationSec < this.fastGuessThresholdSec) {
-      const types: PowerUpType[] = ['REVERSE', 'DOUBLE_BURDEN', 'FREEZE', 'SKIP'];
-      const randomType = types[Math.floor(Math.random() * types.length)];
-      return this.grantPowerUp(team, randomType);
-    }
-    return undefined;
+    if (durationSec >= this.fastGuessThresholdSec) return undefined;
+    if (this.enabledTypes.length === 0) return undefined;
+    if (this.teamInventories[team].length >= this.maxPerTeam) return undefined;
+
+    const randomType = this.enabledTypes[Math.floor(Math.random() * this.enabledTypes.length)];
+    return this.grantPowerUp(team, randomType);
   }
 
   applyPowerUp(

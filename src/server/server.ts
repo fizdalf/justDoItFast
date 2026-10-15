@@ -2,7 +2,7 @@ import fastify, {FastifyInstance, FastifyReply, FastifyRequest} from 'fastify';
 import cors from '@fastify/cors';
 import {Server as SocketIOServer} from 'socket.io';
 import {DeckEngine, WordPack} from '../core/index.js';
-import {GameSessionManager} from './GameSessionManager.js';
+import {RoomSessionManager} from './RoomSessionManager.js';
 import {setupSocketHandlers} from './socketHandler.js';
 import {ClientToServerEvents, ServerToClientEvents, SocketData,} from './protocol.js';
 
@@ -19,7 +19,7 @@ export interface CreateServerOptions {
 export interface AppServer {
   app: FastifyInstance;
   io: SocketIOServer<ClientToServerEvents, ServerToClientEvents, any, SocketData>;
-  sessionManager: GameSessionManager;
+  sessionManager: RoomSessionManager;
   deckEngine: DeckEngine;
   start: (port?: number, host?: string) => Promise<string>;
   close: () => Promise<void>;
@@ -48,7 +48,7 @@ export async function createServer(options: CreateServerOptions = {}): Promise<A
     }
   );
 
-  const sessionManager = new GameSessionManager(io, deckEngine);
+  const sessionManager = new RoomSessionManager(io, deckEngine);
   setupSocketHandlers(io, sessionManager);
 
   // Authentication helper for admin routes
@@ -153,13 +153,15 @@ export async function createServer(options: CreateServerOptions = {}): Promise<A
       return { success: false, error: 'Room not found', code: 'ROOM_NOT_FOUND' };
     }
 
+    // `status` es el de la partida en curso, o null si la sala está reunida sin jugar.
+    const snapshot = session.getSnapshot();
     return {
       success: true,
       data: {
         roomCode: session.roomCode,
-        status: session.getGameState().status,
-        playersCount: session.getPlayers().length,
-        gameState: session.getGameState(),
+        status: snapshot.game?.status ?? null,
+        playersCount: snapshot.room.players.length,
+        ...snapshot,
       },
     };
   });

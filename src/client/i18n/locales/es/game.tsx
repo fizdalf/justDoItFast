@@ -76,10 +76,27 @@ export const game = {
     winner: (teamName: string) => `Ganador: ${teamName}`,
     finalScore: 'Marcador final',
     points: 'puntos',
-    preparing: 'Preparando...',
-    playAgain: '🔄 Jugar otra partida',
-    waitingRematch: (hostName: string) => `Esperando a que el anfitrión (${hostName}) prepare una nueva partida...`,
-    exitToMenu: 'Salir al menú principal',
+    returning: 'Volviendo...',
+    backToRoom: '🏠 Volver a la sala',
+    waitingBackToRoom: (hostName: string) => `Esperando a que el anfitrión (${hostName}) vuelva a la sala...`,
+    leaveRoom: 'Salir de la sala',
+  },
+
+  // Quien entró en la sala con la partida ya empezada
+  spectator: {
+    badge: '👀 Espectador',
+    title: 'Partida en curso',
+    body: 'Has llegado con la partida empezada: jugarás en la siguiente.',
+    hint: 'Mientras tanto, sigue el marcador desde aquí.',
+  },
+
+  // El anfitrión termina la partida antes de tiempo
+  endGame: {
+    button: '🛑 Terminar partida',
+    confirmTitle: '¿Terminar la partida?',
+    confirmBody: 'Todos volveréis a la sala y la partida quedará en el historial como terminada antes de tiempo.',
+    confirm: 'Sí, terminar',
+    ending: 'Terminando...',
   },
 
   board: {

@@ -4,18 +4,17 @@ import {useGame} from '../../context/GameContext.js';
 import {Player} from '../../../core/types.js';
 
 export const RoundOverView: React.FC = () => {
-  const { gameState, players, myPlayer, isHost, startRound } = useGame();
+  const { game, players, myPlayer, hostPlayer, isHost, isSpectator, startRound } = useGame();
   const { t } = useI18n();
   const [starting, setStarting] = useState(false);
 
-  if (!gameState) return null;
+  if (!game) return null;
 
-  const result = gameState.lastRoundResult;
+  const result = game.lastRoundResult;
   const winningTeam = result?.winningTeam;
   const isTeamAWinner = winningTeam === 'A';
   const didMyTeamScore = !!myPlayer && myPlayer.team === winningTeam;
   const explodedPlayer = players.find((p: Player) => p.id === result?.explodedPlayerId);
-  const hostPlayer = players.find((p: Player) => p.isHost);
 
   const handleNextRound = async () => {
     if (starting) return;
@@ -35,7 +34,7 @@ export const RoundOverView: React.FC = () => {
         <h2 className="text-3xl font-black text-amber-400 uppercase tracking-tight">
           {result?.reason === 'DISPUTE' ? t.game.roundOver.titleDispute : t.game.roundOver.titleExplosion}
         </h2>
-        <p className="text-sm text-slate-400">{t.game.roundOver.roundEnded(gameState.roundNumber)}</p>
+        <p className="text-sm text-slate-400">{t.game.roundOver.roundEnded(game.roundNumber)}</p>
       </div>
 
       {/* Round Details Card */}
@@ -64,7 +63,7 @@ export const RoundOverView: React.FC = () => {
             {isTeamAWinner ? '🔴' : '🔵'} {t.game.roundOver.pointFor(t.common.teams[winningTeam ?? 'A'])}
           </div>
 
-          {myPlayer && (
+          {myPlayer && !isSpectator && (
             <div className={`text-xs font-bold uppercase tracking-wider ${didMyTeamScore ? 'text-emerald-400' : 'text-slate-500'}`}>
               {didMyTeamScore ? t.game.roundOver.myTeamScored : t.game.roundOver.myTeamDidNotScore}
             </div>

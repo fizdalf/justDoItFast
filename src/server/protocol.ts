@@ -6,6 +6,7 @@ import {
   Player,
   PowerUp,
   PowerUpType,
+  RoomState,
   TeamId,
   TurnState,
 } from '../core/types.js';
@@ -18,10 +19,17 @@ export type ApiResponse<T> =
   | { success: true; data: T }
   | { success: false; error: string; code: ApiErrorCode };
 
+/**
+ * Foto completa de lo que ve un jugador: la sala y, si hay una en curso, la partida.
+ * `game` es null mientras la sala está reunida sin jugar.
+ */
+export interface RoomSnapshot {
+  room: RoomState;
+  game: GameState | null;
+}
+
 export interface CreateRoomPayload {
   playerName: string;
-  selectedPackId?: string;
-  settings?: Partial<GameSettings>;
 }
 
 export interface JoinRoomPayload {
@@ -39,12 +47,10 @@ export interface SwitchTeamPayload {
   targetTeam: TeamId;
 }
 
-export interface SelectPackPayload {
-  packId: string;
-}
-
-export interface UpdateSettingsPayload {
-  settings: Partial<GameSettings>;
+/** Cambios en la preparación de la próxima partida (solo anfitrión, sin partida en curso). */
+export interface UpdateSetupPayload {
+  settings?: Partial<GameSettings>;
+  packIds?: string[];
 }
 
 export interface FoulTriggerPayload {
@@ -90,45 +96,45 @@ export interface PowerUpActivatedPayload {
 export interface RoundStartedPayload {
   roundNumber: number;
   currentTurn: TurnState;
-  gameState: GameState;
+  game: GameState;
 }
 
 export interface ClientToServerEvents {
+  // --- Sala ---
   'room:create': (
     payload: CreateRoomPayload,
-    callback: (
-      res: ApiResponse<{ roomCode: string; player: Player; gameState: GameState; sessionToken: string }>
-    ) => void
+    callback: (res: ApiResponse<RoomSnapshot & { player: Player; sessionToken: string }>) => void
   ) => void;
   'room:join': (
     payload: JoinRoomPayload,
-    callback: (
-      res: ApiResponse<{ player: Player; players: Player[]; gameState: GameState; sessionToken: string }>
-    ) => void
+    callback: (res: ApiResponse<RoomSnapshot & { player: Player; sessionToken: string }>) => void
   ) => void;
   'room:rejoin': (
     payload: RejoinRoomPayload,
-    callback: (res: ApiResponse<{ player: Player; players: Player[]; gameState: GameState }>) => void
+    callback: (res: ApiResponse<RoomSnapshot & { player: Player }>) => void
   ) => void;
   'room:leave': (callback?: (res: ApiResponse<{}>) => void) => void;
+  /** Solo sin partida en curso. */
   'room:switch_team': (
     payload: SwitchTeamPayload,
-    callback: (res: ApiResponse<{ player: Player; gameState: GameState }>) => void
+    callback: (res: ApiResponse<RoomSnapshot>) => void
   ) => void;
-  'room:select_pack': (
-    payload: SelectPackPayload,
-    callback: (res: ApiResponse<{ gameState: GameState }>) => void
+  /** Ajustes y mazos de la próxima partida. Solo anfitrión, sin partida en curso. */
+  'room:update_setup': (
+    payload: UpdateSetupPayload,
+    callback: (res: ApiResponse<RoomSnapshot>) => void
   ) => void;
-  'room:update_settings': (
-    payload: UpdateSettingsPayload,
-    callback: (res: ApiResponse<{ gameState: GameState }>) => void
-  ) => void;
-  'game:start_round': (
-    callback: (res: ApiResponse<{ gameState: GameState; currentTurn: TurnState }>) => void
-  ) => void;
-  'game:return_to_lobby': (
-    callback: (res: ApiResponse<{ gameState: GameState }>) => void
-  ) => void;
+
+  // --- Partida ---
+  /** Crea una partida con la preparación actual y arranca la primera ronda. Solo anfitrión. */
+  'game:start': (callback: (res: ApiResponse<RoomSnapshot>) => void) => void;
+  /** Siguiente ronda (desde ROUND_OVER). Solo anfitrión. */
+  'game:start_round': (callback: (res: ApiResponse<RoomSnapshot>) => void) => void;
+  /**
+   * Termina la partida y vuelve a la sala. Solo anfitrión. Tras GAME_OVER cierra el podio;
+   * antes, abandona la partida (queda en el historial como no terminada).
+   */
+  'game:end': (callback: (res: ApiResponse<RoomSnapshot>) => void) => void;
   'turn:guess_success': (
     callback: (res: ApiResponse<{ isFastGuess: boolean; currentTurn: TurnState }>) => void
   ) => void;
@@ -138,7 +144,7 @@ export interface ClientToServerEvents {
   ) => void;
   'host:resolve_dispute': (
     payload: ResolveDisputePayload,
-    callback: (res: ApiResponse<{ gameState: GameState }>) => void
+    callback: (res: ApiResponse<RoomSnapshot>) => void
   ) => void;
   'powerup:use': (
     payload: UsePowerUpPayload,
@@ -147,18 +153,16 @@ export interface ClientToServerEvents {
 }
 
 export interface ServerToClientEvents {
-  'room:state_updated': (payload: { gameState: GameState; players: Player[] }) => void;
-  'room:player_joined': (payload: { player: Player; players: Player[] }) => void;
-  'room:player_left': (payload: { playerId: string; newHostId?: string; players: Player[] }) => void;
-  'room:player_reconnected': (payload: { player: Player; players: Player[] }) => void;
+  /** Estado completo tras cualquier cambio de sala o partida. Es la fuente de verdad del cliente. */
+  'room:state_updated': (payload: RoomSnapshot) => void;
   'game:round_started': (payload: RoundStartedPayload) => void;
   'timer:tick': (payload: TimerTickPayload) => void;
   'turn:changed': (payload: TurnChangedPayload) => void;
-  'game:dispute_started': (payload: { dispute: DisputeState; gameState: GameState }) => void;
-  'game:dispute_resolved': (payload: { resolution: DisputeResolution; gameState: GameState }) => void;
+  'game:dispute_started': (payload: { dispute: DisputeState; game: GameState }) => void;
+  'game:dispute_resolved': (payload: { resolution: DisputeResolution; game: GameState }) => void;
   'powerup:activated': (payload: PowerUpActivatedPayload) => void;
   'timer:exploded': (payload: TimerExplodedPayload) => void;
-  'game:over': (payload: { winner: TeamId; finalScores: Record<TeamId, number>; gameState: GameState }) => void;
+  'game:over': (payload: { winner: TeamId; finalScores: Record<TeamId, number>; game: GameState }) => void;
   'error:message': (payload: { code: GameErrorCode; message: string }) => void;
 }
 

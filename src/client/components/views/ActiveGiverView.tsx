@@ -4,13 +4,13 @@ import {useGame} from '../../context/GameContext.js';
 import {PowerUp} from '../../../core/types.js';
 
 export const ActiveGiverView: React.FC = () => {
-  const { currentTurn, gameState, guessSuccess, usePowerUp, inventory, myPlayer, lastTick } = useGame();
+  const { currentTurn, game, guessSuccess, usePowerUp, inventory, myPlayer, lastTick } = useGame();
   const { t } = useI18n();
   const [submitting, setSubmitting] = useState(false);
   const [activePowerUpId, setActivePowerUpId] = useState<string | null>(null);
 
-  const word = currentTurn?.currentWord || gameState?.currentTurn?.currentWord || t.game.holder.loadingWire;
-  const category = currentTurn?.category || gameState?.currentTurn?.category || '';
+  const word = currentTurn?.currentWord || game?.currentTurn?.currentWord || t.game.holder.loadingWire;
+  const category = currentTurn?.category || game?.currentTurn?.category || '';
   const myTeam = myPlayer?.team || 'A';
   const myTeamInventory = inventory[myTeam] || [];
 

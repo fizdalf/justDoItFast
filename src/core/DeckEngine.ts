@@ -117,30 +117,42 @@ export class DeckEngine {
     return { imported, skipped };
   }
 
-  createSessionDeck(packId: string): SessionDeck {
-    const pack = this.packs.get(packId);
-    if (!pack) {
-      throw new GameError('PACK_NOT_FOUND', `Word pack ${packId} not found`);
+  /**
+   * Mazo de una partida: uno o varios packs combinados. Las palabras repetidas entre
+   * packs aparecen una sola vez (gana el primer pack) y cada una conserva su categoría.
+   */
+  createSessionDeck(packIds: string | string[]): SessionDeck {
+    const ids = Array.isArray(packIds) ? packIds : [packIds];
+    if (ids.length === 0) {
+      throw new GameError('NO_PACKS_SELECTED', `At least one word pack is required`);
     }
 
-    const allWords = [...pack.words];
-    let currentPool: string[] = this.shuffle([...allWords]);
+    const cardsByWord = new Map<string, CardPayload>();
+    for (const id of ids) {
+      const pack = this.packs.get(id);
+      if (!pack) {
+        throw new GameError('PACK_NOT_FOUND', `Word pack ${id} not found`);
+      }
+      for (const word of pack.words) {
+        const key = word.toLocaleLowerCase();
+        if (!cardsByWord.has(key)) cardsByWord.set(key, { word, category: pack.category });
+      }
+    }
+
+    const allCards = [...cardsByWord.values()];
+    let currentPool: CardPayload[] = this.shuffle([...allCards]);
 
     return {
       drawNextWord: (): CardPayload => {
         if (currentPool.length === 0) {
-          currentPool = this.shuffle([...allWords]);
+          currentPool = this.shuffle([...allCards]);
         }
-        const word = currentPool.pop()!;
-        return {
-          word,
-          category: pack.category,
-        };
+        return { ...currentPool.pop()! };
       },
       getRemainingWordsCount: (): number => currentPool.length,
-      getTotalWordsCount: (): number => allWords.length,
+      getTotalWordsCount: (): number => allCards.length,
       reset: (): void => {
-        currentPool = this.shuffle([...allWords]);
+        currentPool = this.shuffle([...allCards]);
       },
     };
   }

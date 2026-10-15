@@ -1,9 +1,16 @@
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react';
-import {ClientError, socketService, SocketStatus,} from '../services/socketService.js';
+import {ClientError, JoinedRoom, socketService, SocketStatus} from '../services/socketService.js';
 import {clearSession, saveSession, sessionForCurrentUrl, setRoomUrl} from '../services/roomSession.js';
 import {audioService} from '../services/audioService.js';
 import {hapticService} from '../services/hapticService.js';
-import {ApiResponse, TimerExplodedPayload, TimerTickPayload, TurnChangedPayload,} from '../../server/protocol.js';
+import {
+  ApiResponse,
+  RoomSnapshot,
+  TimerExplodedPayload,
+  TimerTickPayload,
+  TurnChangedPayload,
+  UpdateSetupPayload,
+} from '../../server/protocol.js';
 import {
   DisputeResolution,
   DisputeState,
@@ -11,43 +18,57 @@ import {
   Player,
   PowerUp,
   PowerUpType,
+  RoomState,
   TeamId,
   TurnState,
 } from '../../core/types.js';
 
+export interface GameOverInfo {
+  winner: TeamId;
+  finalScores: Record<TeamId, number>;
+  game: GameState;
+}
+
 export interface GameContextValue {
   socketStatus: SocketStatus;
   playerId: string | null;
-  gameState: GameState | null;
+  /** La sala en la que estás (null en el inicio). */
+  room: RoomState | null;
+  /** La partida en curso de la sala (null mientras la sala está reunida sin jugar). */
+  game: GameState | null;
   players: Player[];
   currentTurn: TurnState | null;
   currentDispute: DisputeState | null;
   lastTick: TimerTickPayload | null;
   explosion: TimerExplodedPayload | null;
-  gameOver: { winner: TeamId; finalScores: Record<TeamId, number>; gameState: GameState } | null;
+  gameOver: GameOverInfo | null;
   inventory: Record<TeamId, PowerUp[]>;
   error: ClientError | null;
   /** Código de la sala a la que se está volviendo tras recargar (null si no). */
   restoringRoom: string | null;
-  
-  // Computed helpers
+
+  // Ayudas calculadas
   myPlayer: Player | undefined;
+  hostPlayer: Player | undefined;
   isHost: boolean;
+  /** Hay partida y no participas en ella: juegas en la siguiente. */
+  isSpectator: boolean;
   isActivePlayer: boolean;
   isOpponentReferee: boolean;
   isTeammate: boolean;
 
-  // Actions
-  createRoom: (playerName: string, packId?: string) => Promise<ApiResponse<{ roomCode: string; player: Player; gameState: GameState; sessionToken: string }>>;
-  joinRoom: (roomCode: string, playerName: string) => Promise<ApiResponse<{ player: Player; players: Player[]; gameState: GameState; sessionToken: string }>>;
+  // Acciones
+  createRoom: (playerName: string) => Promise<ApiResponse<JoinedRoom & { sessionToken: string }>>;
+  joinRoom: (roomCode: string, playerName: string) => Promise<ApiResponse<JoinedRoom & { sessionToken: string }>>;
   leaveRoom: () => Promise<ApiResponse<{}>>;
-  switchTeam: (team: TeamId) => Promise<ApiResponse<{ player: Player; gameState: GameState }>>;
-  selectPack: (packId: string) => Promise<ApiResponse<{ gameState: GameState }>>;
-  startRound: () => Promise<ApiResponse<{ gameState: GameState; currentTurn: TurnState }>>;
-  returnToLobby: () => Promise<ApiResponse<{ gameState: GameState }>>;
+  switchTeam: (team: TeamId) => Promise<ApiResponse<RoomSnapshot>>;
+  updateSetup: (changes: UpdateSetupPayload) => Promise<ApiResponse<RoomSnapshot>>;
+  startGame: () => Promise<ApiResponse<RoomSnapshot>>;
+  startRound: () => Promise<ApiResponse<RoomSnapshot>>;
+  endGame: () => Promise<ApiResponse<RoomSnapshot>>;
   guessSuccess: () => Promise<ApiResponse<{ isFastGuess: boolean; currentTurn: TurnState }>>;
   triggerFoul: (reason?: string) => Promise<ApiResponse<{ dispute: DisputeState }>>;
-  resolveDispute: (resolution: DisputeResolution) => Promise<ApiResponse<{ gameState: GameState }>>;
+  resolveDispute: (resolution: DisputeResolution) => Promise<ApiResponse<RoomSnapshot>>;
   usePowerUp: (powerUpId: string) => Promise<ApiResponse<{ powerUpType: PowerUpType }>>;
   clearError: () => void;
   resetLocalState: () => void;
@@ -58,18 +79,46 @@ const GameContext = createContext<GameContextValue | null>(null);
 export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [socketStatus, setSocketStatus] = useState<SocketStatus>(socketService.getStatus());
   const [playerId, setPlayerId] = useState<string | null>(null);
-  const [gameState, setGameState] = useState<GameState | null>(null);
-  const [players, setPlayers] = useState<Player[]>([]);
+  const [room, setRoom] = useState<RoomState | null>(null);
+  const [game, setGame] = useState<GameState | null>(null);
   const [currentTurn, setCurrentTurn] = useState<TurnState | null>(null);
   const [currentDispute, setCurrentDispute] = useState<DisputeState | null>(null);
   const [lastTick, setLastTick] = useState<TimerTickPayload | null>(null);
   const [explosion, setExplosion] = useState<TimerExplodedPayload | null>(null);
-  const [gameOver, setGameOver] = useState<{ winner: TeamId; finalScores: Record<TeamId, number>; gameState: GameState } | null>(null);
+  const [gameOver, setGameOver] = useState<GameOverInfo | null>(null);
   const [error, setError] = useState<ClientError | null>(null);
   const [restoringRoom, setRestoringRoom] = useState<string | null>(
     () => sessionForCurrentUrl()?.roomCode ?? null
   );
   const rejoinedSocketId = useRef<string | undefined>(undefined);
+
+  /** Aplica una foto completa de sala + partida (la fuente de verdad). */
+  const applySnapshot = useCallback((snapshot: RoomSnapshot) => {
+    setRoom(snapshot.room);
+    setGame(snapshot.game);
+    if (snapshot.game) {
+      setCurrentTurn(snapshot.game.currentTurn ?? null);
+      setCurrentDispute(snapshot.game.currentDispute ?? null);
+    } else {
+      // De vuelta en la sala: se olvida todo lo de la partida anterior.
+      setCurrentTurn(null);
+      setCurrentDispute(null);
+      setExplosion(null);
+      setGameOver(null);
+      setLastTick(null);
+    }
+  }, []);
+
+  const clearLocalState = useCallback(() => {
+    setPlayerId(null);
+    setRoom(null);
+    setGame(null);
+    setCurrentTurn(null);
+    setCurrentDispute(null);
+    setExplosion(null);
+    setGameOver(null);
+    setLastTick(null);
+  }, []);
 
   // Volver a la sala de la URL con la sesión guardada: al cargar la página (F5)
   // y cada vez que el socket se reconecta tras perder la conexión.
@@ -88,10 +137,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await socketService.rejoinRoom(session.roomCode, session.sessionToken);
       if (res.success) {
         setPlayerId(res.data.player.id);
-        setPlayers(res.data.players);
-        setGameState(res.data.gameState);
-        setCurrentTurn(res.data.gameState.currentTurn ?? null);
-        setCurrentDispute(res.data.gameState.currentDispute ?? null);
+        applySnapshot(res.data);
       } else if (res.code === 'ROOM_NOT_FOUND' || res.code === 'SESSION_EXPIRED') {
         // La URL se mantiene: el inicio mostrará el formulario de unirse con ese código.
         clearSession();
@@ -102,280 +148,195 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return socketService.onStatusChange((status) => {
       if (status === 'CONNECTED') void tryRejoin();
     });
-  }, []);
+  }, [applySnapshot]);
 
   // La URL siempre refleja la sala en la que estás (también si se pulsa "atrás").
+  const roomCode = room?.roomCode;
   useEffect(() => {
-    const roomCode = gameState?.roomCode;
     if (!roomCode) return;
     setRoomUrl(roomCode, 'replace');
     const keepRoomUrl = () => setRoomUrl(roomCode, 'push');
     window.addEventListener('popstate', keepRoomUrl);
     return () => window.removeEventListener('popstate', keepRoomUrl);
-  }, [gameState?.roomCode]);
+  }, [roomCode]);
 
   useEffect(() => {
     socketService.connect();
 
-    const unsubStatus = socketService.onStatusChange((status) => {
-      setSocketStatus(status);
-    });
+    const unsubs = [
+      socketService.onStatusChange((status) => setSocketStatus(status)),
+      socketService.onError((err) => setError(err)),
+      socketService.onRoomStateUpdated(applySnapshot),
 
-    const unsubError = socketService.onError((err) => {
-      setError(err);
-    });
-
-    const unsubRoomState = socketService.onRoomStateUpdated((payload) => {
-      setGameState(payload.gameState);
-      setPlayers(payload.players);
-      if (payload.gameState.currentDispute) {
-        setCurrentDispute(payload.gameState.currentDispute);
-      } else {
+      socketService.onRoundStarted((payload) => {
+        setGame(payload.game);
+        setCurrentTurn(payload.currentTurn);
         setCurrentDispute(null);
-      }
-      if (payload.gameState.currentTurn) {
-        setCurrentTurn(payload.gameState.currentTurn);
-      }
-      if (payload.gameState.status === 'LOBBY') {
-        setCurrentTurn(null);
         setExplosion(null);
-        setGameOver(null);
-      }
-    });
+        audioService.playSuccess();
+      }),
 
-    const unsubPlayerJoined = socketService.onPlayerJoined((payload) => {
-      setPlayers(payload.players);
-    });
+      socketService.onTurnChanged((payload: TurnChangedPayload) => {
+        setCurrentTurn(payload.currentTurn);
+        setCurrentDispute(null);
+        setExplosion(null);
+        audioService.playSuccess();
+      }),
 
-    const unsubPlayerLeft = socketService.onPlayerLeft((payload) => {
-      setPlayers(payload.players);
-    });
+      socketService.onDisputeStarted((payload) => {
+        setCurrentDispute(payload.dispute);
+        setGame(payload.game);
+        audioService.playFoulBuzzer();
+        hapticService.vibrateFoul();
+      }),
 
-    const unsubRoundStarted = socketService.onRoundStarted((payload) => {
-      setGameState(payload.gameState);
-      setCurrentTurn(payload.currentTurn);
-      setCurrentDispute(null);
-      setExplosion(null);
-      audioService.playSuccess();
-    });
+      socketService.onDisputeResolved((payload) => {
+        setCurrentDispute(null);
+        setGame(payload.game);
+        if (payload.game.currentTurn) {
+          setCurrentTurn(payload.game.currentTurn);
+        }
+      }),
 
-    const unsubTurnChanged = socketService.onTurnChanged((payload: TurnChangedPayload) => {
-      setCurrentTurn(payload.currentTurn);
-      setCurrentDispute(null);
-      setExplosion(null);
-      audioService.playSuccess();
-    });
+      socketService.onTimerTick((tick) => {
+        setLastTick(tick);
+        if (playerId && tick.activePlayerId === playerId) {
+          const interval = tick.intervalMs || 1000;
+          const urgencyHz = 700 + Math.max(0, Math.floor((1000 - interval) * 1.5));
+          audioService.playTick(urgencyHz, 50);
+          hapticService.vibrateTick(45);
+        }
+      }),
 
-    const unsubDisputeStarted = socketService.onDisputeStarted((payload) => {
-      setCurrentDispute(payload.dispute);
-      setGameState(payload.gameState);
-      audioService.playFoulBuzzer();
-      hapticService.vibrateFoul();
-    });
+      socketService.onTimerExploded((exploded) => {
+        setExplosion(exploded);
+        audioService.playExplosion();
+        hapticService.vibrateExplosion();
+      }),
 
-    const unsubDisputeResolved = socketService.onDisputeResolved((payload) => {
-      setCurrentDispute(null);
-      setGameState(payload.gameState);
-      if (payload.gameState.currentTurn) {
-        setCurrentTurn(payload.gameState.currentTurn);
-      }
-    });
+      socketService.onGameOver((go) => {
+        setGameOver(go);
+        setGame(go.game);
+        audioService.playExplosion();
+      }),
 
-    const unsubTimerTick = socketService.onTimerTick((tick) => {
-      setLastTick(tick);
-      if (playerId && tick.activePlayerId === playerId) {
-        const interval = tick.intervalMs || 1000;
-        const urgencyHz = 700 + Math.max(0, Math.floor((1000 - interval) * 1.5));
-        audioService.playTick(urgencyHz, 50);
-        hapticService.vibrateTick(45);
-      }
-    });
+      socketService.onErrorMessage((err) => setError(err)),
+    ];
 
-    const unsubTimerExploded = socketService.onTimerExploded((exploded) => {
-      setExplosion(exploded);
-      audioService.playExplosion();
-      hapticService.vibrateExplosion();
-    });
+    return () => unsubs.forEach((unsub) => unsub());
+  }, [playerId, applySnapshot]);
 
-    const unsubGameOver = socketService.onGameOver((go) => {
-      setGameOver(go);
-      setGameState(go.gameState);
-      audioService.playExplosion();
-    });
-
-    const unsubErrorMessage = socketService.onErrorMessage((err) => {
-      setError(err);
-    });
-
-    return () => {
-      unsubStatus();
-      unsubError();
-      unsubRoomState();
-      unsubPlayerJoined();
-      unsubPlayerLeft();
-      unsubRoundStarted();
-      unsubTurnChanged();
-      unsubDisputeStarted();
-      unsubDisputeResolved();
-      unsubTimerTick();
-      unsubTimerExploded();
-      unsubGameOver();
-      unsubErrorMessage();
-    };
-  }, [playerId]);
+  const players = useMemo(() => room?.players ?? [], [room]);
 
   const myPlayer = useMemo(() => {
     if (!playerId) return undefined;
     return players.find((p: Player) => p.id === playerId);
   }, [players, playerId]);
 
-  const isHost = useMemo(() => {
-    return myPlayer?.isHost ?? false;
-  }, [myPlayer]);
+  const hostPlayer = useMemo(
+    () => players.find((p: Player) => p.id === room?.hostPlayerId),
+    [players, room?.hostPlayerId]
+  );
 
-  const activePlayerId = useMemo(() => {
-    if (currentTurn) return currentTurn.activePlayerId;
-    if (gameState?.currentTurn) return gameState.currentTurn.activePlayerId;
-    return null;
-  }, [currentTurn, gameState]);
+  const isHost = !!playerId && room?.hostPlayerId === playerId;
 
-  const activeTeam = useMemo(() => {
-    if (currentTurn) return currentTurn.activeTeam;
-    if (gameState?.currentTurn) return gameState.currentTurn.activeTeam;
-    return null;
-  }, [currentTurn, gameState]);
+  const isSpectator = !!game && !!playerId && !game.participantIds.includes(playerId);
 
-  const isActivePlayer = useMemo(() => {
-    return !!(playerId && activePlayerId && playerId === activePlayerId);
-  }, [playerId, activePlayerId]);
+  const activePlayerId = currentTurn?.activePlayerId ?? game?.currentTurn?.activePlayerId ?? null;
+  const activeTeam = currentTurn?.activeTeam ?? game?.currentTurn?.activeTeam ?? null;
 
-  const isOpponentReferee = useMemo(() => {
-    if (!myPlayer || !activeTeam) return false;
-    return myPlayer.team !== activeTeam;
-  }, [myPlayer, activeTeam]);
+  // Los roles solo tienen sentido para quien participa en la partida.
+  const isActivePlayer = !isSpectator && !!playerId && !!activePlayerId && playerId === activePlayerId;
+  const isOpponentReferee = !isSpectator && !!myPlayer && !!activeTeam && myPlayer.team !== activeTeam;
+  const isTeammate =
+    !isSpectator &&
+    !!myPlayer &&
+    !!activeTeam &&
+    !!activePlayerId &&
+    myPlayer.team === activeTeam &&
+    myPlayer.id !== activePlayerId;
 
-  const isTeammate = useMemo(() => {
-    if (!myPlayer || !activeTeam || !activePlayerId) return false;
-    return myPlayer.team === activeTeam && myPlayer.id !== activePlayerId;
-  }, [myPlayer, activeTeam, activePlayerId]);
+  const inventory = useMemo(() => game?.teamInventory || { A: [], B: [] }, [game]);
 
-  const inventory = useMemo(() => {
-    return gameState?.teamInventory || { A: [], B: [] };
-  }, [gameState]);
+  /** Guarda la sesión de la pestaña y muestra la sala recién creada o a la que te unes. */
+  const enterRoom = useCallback(
+    (data: JoinedRoom & { sessionToken: string }) => {
+      saveSession({ roomCode: data.room.roomCode, playerId: data.player.id, sessionToken: data.sessionToken });
+      setRoomUrl(data.room.roomCode);
+      setPlayerId(data.player.id);
+      applySnapshot(data);
+    },
+    [applySnapshot]
+  );
 
-  const createRoom = useCallback(async (playerName: string, packId?: string) => {
-    audioService.enableAudio();
-    const res = await socketService.createRoom(playerName, packId);
-    if (res.success && res.data) {
-      saveSession({ roomCode: res.data.roomCode, playerId: res.data.player.id, sessionToken: res.data.sessionToken });
-      setRoomUrl(res.data.roomCode);
-      setPlayerId(res.data.player.id);
-      setGameState(res.data.gameState);
-      setPlayers([res.data.player]);
-    }
-    return res;
-  }, []);
+  const createRoom = useCallback(
+    async (playerName: string) => {
+      audioService.enableAudio();
+      const res = await socketService.createRoom(playerName);
+      if (res.success) enterRoom(res.data);
+      return res;
+    },
+    [enterRoom]
+  );
 
-  const joinRoom = useCallback(async (roomCode: string, playerName: string) => {
-    audioService.enableAudio();
-    const res = await socketService.joinRoom(roomCode, playerName);
-    if (res.success && res.data) {
-      saveSession({
-        roomCode: res.data.gameState.roomCode,
-        playerId: res.data.player.id,
-        sessionToken: res.data.sessionToken,
-      });
-      setRoomUrl(res.data.gameState.roomCode);
-      setPlayerId(res.data.player.id);
-      setPlayers(res.data.players);
-      setGameState(res.data.gameState);
-    }
-    return res;
-  }, []);
+  const joinRoom = useCallback(
+    async (code: string, playerName: string) => {
+      audioService.enableAudio();
+      const res = await socketService.joinRoom(code, playerName);
+      if (res.success) enterRoom(res.data);
+      return res;
+    },
+    [enterRoom]
+  );
 
   const leaveRoom = useCallback(async () => {
     const res = await socketService.leaveRoom();
     clearSession();
     setRoomUrl(null);
-    setPlayerId(null);
-    setGameState(null);
-    setPlayers([]);
-    setCurrentTurn(null);
-    setCurrentDispute(null);
-    setExplosion(null);
-    setGameOver(null);
+    clearLocalState();
     return res;
-  }, []);
+  }, [clearLocalState]);
 
-  const switchTeam = useCallback(async (team: TeamId) => {
-    const res = await socketService.switchTeam(team);
-    if (res.success && res.data) {
-      setGameState(res.data.gameState);
-    }
-    return res;
-  }, []);
+  /** Envuelve una acción que responde con la foto de la sala. */
+  const withSnapshot = useCallback(
+    async (request: Promise<ApiResponse<RoomSnapshot>>) => {
+      const res = await request;
+      if (res.success) applySnapshot(res.data);
+      return res;
+    },
+    [applySnapshot]
+  );
 
-  const selectPack = useCallback(async (packId: string) => {
-    const res = await socketService.selectPack(packId);
-    if (res.success && res.data) {
-      setGameState(res.data.gameState);
-    }
-    return res;
-  }, []);
+  const switchTeam = useCallback((team: TeamId) => withSnapshot(socketService.switchTeam(team)), [withSnapshot]);
+  const updateSetup = useCallback(
+    (changes: UpdateSetupPayload) => withSnapshot(socketService.updateSetup(changes)),
+    [withSnapshot]
+  );
+  const startGame = useCallback(() => withSnapshot(socketService.startGame()), [withSnapshot]);
+  const startRound = useCallback(() => withSnapshot(socketService.startRound()), [withSnapshot]);
+  const endGame = useCallback(() => withSnapshot(socketService.endGame()), [withSnapshot]);
+  const resolveDispute = useCallback(
+    (resolution: DisputeResolution) => withSnapshot(socketService.resolveDispute(resolution)),
+    [withSnapshot]
+  );
 
-  const startRound = useCallback(async () => {
-    const res = await socketService.startRound();
-    if (res.success && res.data) {
-      setGameState(res.data.gameState);
-      setCurrentTurn(res.data.currentTurn);
-    }
-    return res;
-  }, []);
+  const guessSuccess = useCallback(() => socketService.guessSuccess(), []);
+  const triggerFoul = useCallback((reason?: string) => socketService.triggerFoul(reason), []);
+  const usePowerUp = useCallback((powerUpId: string) => socketService.usePowerUp(powerUpId), []);
 
-  const returnToLobby = useCallback(async () => {
-    const res = await socketService.returnToLobby();
-    if (res.success && res.data) {
-      setGameState(res.data.gameState);
-    }
-    return res;
-  }, []);
-
-  const guessSuccess = useCallback(async () => {
-    return socketService.guessSuccess();
-  }, []);
-
-  const triggerFoul = useCallback(async (reason?: string) => {
-    return socketService.triggerFoul(reason);
-  }, []);
-
-  const resolveDispute = useCallback(async (resolution: DisputeResolution) => {
-    return socketService.resolveDispute(resolution);
-  }, []);
-
-  const usePowerUp = useCallback(async (powerUpId: string) => {
-    return socketService.usePowerUp(powerUpId);
-  }, []);
-
-  const clearError = useCallback(() => {
-    setError(null);
-  }, []);
+  const clearError = useCallback(() => setError(null), []);
 
   const resetLocalState = useCallback(() => {
     clearSession();
     setRoomUrl(null);
-    setPlayerId(null);
-    setGameState(null);
-    setPlayers([]);
-    setCurrentTurn(null);
-    setCurrentDispute(null);
-    setExplosion(null);
-    setGameOver(null);
-  }, []);
+    clearLocalState();
+  }, [clearLocalState]);
 
   const value: GameContextValue = {
     socketStatus,
     playerId,
-    gameState,
+    room,
+    game,
     players,
     currentTurn,
     currentDispute,
@@ -386,7 +347,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     error,
     restoringRoom,
     myPlayer,
+    hostPlayer,
     isHost,
+    isSpectator,
     isActivePlayer,
     isOpponentReferee,
     isTeammate,
@@ -394,9 +357,10 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     joinRoom,
     leaveRoom,
     switchTeam,
-    selectPack,
+    updateSetup,
+    startGame,
     startRound,
-    returnToLobby,
+    endGame,
     guessSuccess,
     triggerFoul,
     resolveDispute,

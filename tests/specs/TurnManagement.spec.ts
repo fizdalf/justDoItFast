@@ -103,4 +103,34 @@ describe('Specification: Circular Turn Rotation & Hot Potato Passing', () => {
     expect(turn.activeTeam).toBe('B');
     expect(['p2', 'p4']).toContain(turn.activePlayerId);
   });
+
+  it('GIVEN only some room players take part (seat indexes with gaps) WHEN the bomb is passed THEN it rotates through the participants only', () => {
+    // Sala: A1 B1 A2 B2 A3 (asientos 0..4); A2 (asiento 2) entró a mitad de partida y es espectador.
+    const participants: Player[] = [
+      { id: 'a1', name: 'A1', team: 'A', isHost: true, isConnected: true, seatIndex: 0 },
+      { id: 'b1', name: 'B1', team: 'B', isHost: false, isConnected: true, seatIndex: 1 },
+      { id: 'b2', name: 'B2', team: 'B', isHost: false, isConnected: true, seatIndex: 3 },
+      { id: 'a3', name: 'A3', team: 'A', isHost: false, isConnected: true, seatIndex: 4 },
+    ];
+    const manager = new TurnManager(participants);
+    manager.startRound(0, { word: 'W0', category: 'G' });
+
+    const order = ['a1'];
+    for (let i = 0; i < 4; i++) {
+      order.push(manager.passTurn(order[order.length - 1], { word: `W${i + 1}`, category: 'G' }).activePlayerId);
+    }
+
+    // Orden de asientos entre participantes: a1, b1, b2, a3 (el hueco de A2 no rompe la rotación).
+    expect(order).toEqual(['a1', 'b1', 'a3', 'b1', 'a3']);
+  });
+
+  it('GIVEN the defuser left the rotation WHEN the bomb is reassigned THEN it goes to the next teammate after the gap', () => {
+    turnManager.startRound(0, { word: 'PALABRA_1', category: 'General' });
+    turnManager.passTurn('p1', { word: 'PALABRA_2', category: 'General' }); // p2 (B) tiene la bomba
+    turnManager.updatePlayers(players.filter((p) => p.id !== 'p2'));
+
+    const turn = turnManager.reassignTurn({ word: 'PALABRA_3', category: 'General' });
+
+    expect(turn.activePlayerId).toBe('p4');
+  });
 });

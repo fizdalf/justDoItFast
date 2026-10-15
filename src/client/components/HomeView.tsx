@@ -1,7 +1,6 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {errorText, useI18n} from '../i18n/index.js';
 import {useGame} from '../context/GameContext.js';
-import {WordPack} from '../../core/types.js';
 
 interface HomeViewProps {
   initialRoomCode?: string;
@@ -19,21 +18,8 @@ export const HomeView: React.FC<HomeViewProps> = ({ initialRoomCode }) => {
   });
   
   const [roomCode, setRoomCode] = useState(initialRoomCode || '');
-  const [mode, setMode] = useState<'CHOICE' | 'CREATE' | 'JOIN'>(initialRoomCode ? 'JOIN' : 'CHOICE');
-  const [packs, setPacks] = useState<WordPack[]>([]);
-  const [selectedPackId, setSelectedPackId] = useState<string>('classic-1996');
+  const [mode, setMode] = useState<'CHOICE' | 'JOIN'>(initialRoomCode ? 'JOIN' : 'CHOICE');
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    fetch('/api/packs')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.data) {
-          setPacks(data.data);
-        }
-      })
-      .catch(() => {});
-  }, []);
 
   const handleNameChange = (val: string) => {
     setPlayerName(val);
@@ -42,12 +28,12 @@ export const HomeView: React.FC<HomeViewProps> = ({ initialRoomCode }) => {
     }
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!playerName.trim()) return;
+  // Crear sala solo pide el nombre: mazos y ajustes se eligen ya dentro de la sala.
+  const handleCreate = async () => {
+    if (!playerName.trim() || loading) return;
     setLoading(true);
     clearError();
-    await createRoom(playerName.trim(), selectedPackId);
+    await createRoom(playerName.trim());
     setLoading(false);
   };
 
@@ -101,11 +87,11 @@ export const HomeView: React.FC<HomeViewProps> = ({ initialRoomCode }) => {
         {mode === 'CHOICE' && (
           <div className="space-y-3">
             <button
-              onClick={() => setMode('CREATE')}
-              disabled={!playerName.trim()}
+              onClick={handleCreate}
+              disabled={loading || !playerName.trim()}
               className="w-full py-3.5 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 font-bold rounded-xl shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center space-x-2 text-base"
             >
-              <span>{t.home.createGame}</span>
+              <span>{loading ? t.home.creating : t.home.createRoom}</span>
             </button>
 
             <button
@@ -116,45 +102,6 @@ export const HomeView: React.FC<HomeViewProps> = ({ initialRoomCode }) => {
               <span>{t.home.joinWithCode}</span>
             </button>
           </div>
-        )}
-
-        {/* Create Room Form */}
-        {mode === 'CREATE' && (
-          <form onSubmit={handleCreate} className="space-y-5">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                {t.home.packLabel}
-              </label>
-              <select
-                value={selectedPackId}
-                onChange={(e) => setSelectedPackId(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
-              >
-                {packs.map((pack) => (
-                  <option key={pack.id} value={pack.id}>
-                    {t.home.packOption(pack.name, pack.category, pack.words?.length || 0)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex space-x-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setMode('CHOICE')}
-                className="w-1/3 py-3 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl border border-slate-700 transition-all"
-              >
-                {t.common.back}
-              </button>
-              <button
-                type="submit"
-                disabled={loading || !playerName.trim()}
-                className="w-2/3 py-3 px-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-lg shadow-amber-500/20 transition-all disabled:opacity-50"
-              >
-                {loading ? t.home.creating : t.home.createRoom}
-              </button>
-            </div>
-          </form>
         )}
 
         {/* Join Room Form */}

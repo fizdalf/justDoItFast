@@ -72,10 +72,25 @@ export const game: GameMessages = {
     winner: (teamName: string) => `Winner: ${teamName}`,
     finalScore: 'Final score',
     points: 'points',
-    preparing: 'Getting ready...',
-    playAgain: '🔄 Play again',
-    waitingRematch: (hostName: string) => `Waiting for the host (${hostName}) to set up a new game...`,
-    exitToMenu: 'Back to main menu',
+    returning: 'Heading back...',
+    backToRoom: '🏠 Back to the room',
+    waitingBackToRoom: (hostName: string) => `Waiting for the host (${hostName}) to head back to the room...`,
+    leaveRoom: 'Leave the room',
+  },
+
+  spectator: {
+    badge: '👀 Spectator',
+    title: 'Game in progress',
+    body: "You arrived mid-game: you'll play in the next one.",
+    hint: 'Meanwhile, follow the score from here.',
+  },
+
+  endGame: {
+    button: '🛑 End game',
+    confirmTitle: 'End the game?',
+    confirmBody: 'Everyone goes back to the room and the game is recorded in the history as ended early.',
+    confirm: 'Yes, end it',
+    ending: 'Ending...',
   },
 
   board: {

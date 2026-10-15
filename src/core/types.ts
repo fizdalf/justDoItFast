@@ -1,6 +1,7 @@
 export type TeamId = 'A' | 'B';
 
-export type GameStatus = 'LOBBY' | 'PLAYING' | 'DISPUTE_PAUSED' | 'ROUND_OVER' | 'GAME_OVER';
+/** Estado de una partida en curso. Fuera de una partida, la sala está reunida sin jugar (no hay GameState). */
+export type GameStatus = 'PLAYING' | 'DISPUTE_PAUSED' | 'ROUND_OVER' | 'GAME_OVER';
 
 export type PowerUpType = 'REVERSE' | 'DOUBLE_BURDEN' | 'FREEZE' | 'SKIP';
 
@@ -66,6 +67,12 @@ export interface GameSettings {
   maxRoundDurationSec: number;
   fastGuessThresholdSec: number;
   allowPowerUps: boolean;
+  /** Herramientas que pueden salir como recompensa. */
+  enabledPowerUps: PowerUpType[];
+  /** Máximo de herramientas que puede guardar un equipo; con el inventario lleno no se gana ninguna. */
+  maxPowerUpsPerTeam: number;
+  /** Segundos que el Inhibidor bloquea el botón del artificiero rival. */
+  freezeDurationSec: number;
   /** Segundos que se espera a un artificiero desconectado antes de pasar la bomba a un compañero. */
   disconnectGraceSec: number;
 }
@@ -78,8 +85,10 @@ export interface RoundResult {
   explodedWord?: string;
 }
 
+/** Una partida: de la primera ronda al podio. Vive dentro de una sala. */
 export interface GameState {
-  roomCode: string;
+  /** Número de partida dentro de la sala (1, 2, 3...). */
+  gameNumber: number;
   status: GameStatus;
   scores: Record<TeamId, number>;
   targetScore: number;
@@ -90,5 +99,38 @@ export interface GameState {
   boardTiles: BoardTile[];
   winningTeam?: TeamId;
   lastRoundResult?: RoundResult;
-  selectedPackId: string;
+  /** Mazos combinados en esta partida. */
+  packIds: string[];
+  /** Copia de los ajustes con los que empezó la partida (no cambian durante ella). */
+  settings: GameSettings;
+  /** Jugadores que participan; quien entra en la sala a mitad de partida es espectador hasta la siguiente. */
+  participantIds: string[];
+}
+
+/** Lo que se jugará en la próxima partida; el anfitrión lo prepara en la sala. */
+export interface GameSetup {
+  settings: GameSettings;
+  packIds: string[];
+}
+
+/** Resultado de una partida, para el historial de la sala. */
+export interface GameSummary {
+  gameNumber: number;
+  packIds: string[];
+  scores: Record<TeamId, number>;
+  winningTeam?: TeamId;
+  /** false si el anfitrión la terminó antes de que ganara nadie. */
+  finished: boolean;
+  roundsPlayed: number;
+  endedAt: number;
+}
+
+/** La sala: el grupo de gente reunida. Dura toda la sesión y puede jugar varias partidas. */
+export interface RoomState {
+  roomCode: string;
+  hostPlayerId: string;
+  /** Jugadores de la sala en orden de asiento (equipos incluidos). */
+  players: Player[];
+  setup: GameSetup;
+  history: GameSummary[];
 }

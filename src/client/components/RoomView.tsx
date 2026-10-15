@@ -1,17 +1,23 @@
 import React, {useState} from 'react';
 import {errorText, useI18n} from '../i18n/index.js';
 import {roomInviteUrl} from '../services/roomSession.js';
+import {InviteQr} from './lobby/InviteQr.js';
+import {PackSelector} from './lobby/PackSelector.js';
+import {RoomSettingsPanel} from './lobby/RoomSettingsPanel.js';
+import {RoomHistoryPanel} from './lobby/RoomHistoryPanel.js';
 import {useGame} from '../context/GameContext.js';
 import {Player} from '../../core/types.js';
 
-export const LobbyView: React.FC = () => {
+/** La sala reunida entre partidas: equipos, preparación de la próxima partida e historial. */
+export const RoomView: React.FC = () => {
   const {
-    gameState,
+    room,
     players,
     myPlayer,
+    hostPlayer,
     isHost,
     switchTeam,
-    startRound,
+    startGame,
     error,
     clearError,
   } = useGame();
@@ -19,25 +25,29 @@ export const LobbyView: React.FC = () => {
 
   const [starting, setStarting] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [showQr, setShowQr] = useState(false);
 
-  if (!gameState) return null;
+  if (!room) return null;
 
   const teamAPlayers = players.filter((p: Player) => p.team === 'A');
   const teamBPlayers = players.filter((p: Player) => p.team === 'B');
 
-  const quorumValid = teamAPlayers.length >= 2 && teamBPlayers.length >= 2;
+  // Solo cuentan los conectados: quien se ha caído no puede jugar.
+  const connectedIn = (team: Player[]) => team.filter((p) => p.isConnected).length;
+  const quorumValid = connectedIn(teamAPlayers) >= 2 && connectedIn(teamBPlayers) >= 2;
+  const nextGameNumber = room.history.reduce((max, g) => Math.max(max, g.gameNumber), 0) + 1;
 
   const handleStartGame = async () => {
     if (!quorumValid || !isHost) return;
     setStarting(true);
     clearError();
-    await startRound();
+    await startGame();
     setStarting(false);
   };
 
   const handleCopyInviteLink = () => {
     if (typeof window !== 'undefined' && navigator.clipboard) {
-      const link = roomInviteUrl(gameState.roomCode);
+      const link = roomInviteUrl(room.roomCode);
       navigator.clipboard.writeText(link);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
@@ -62,7 +72,7 @@ export const LobbyView: React.FC = () => {
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
         <div className="text-center sm:text-left">
           <div className="text-xs font-bold uppercase tracking-wider text-slate-400">{t.lobby.roomCodeLabel}</div>
-          <div className="text-4xl font-black font-mono text-amber-400 tracking-widest">{gameState.roomCode}</div>
+          <div className="text-4xl font-black font-mono text-amber-400 tracking-widest">{room.roomCode}</div>
           <div className="text-xs text-slate-400 mt-0.5">{t.lobby.connectedPlayers(players.length)}</div>
         </div>
 
@@ -73,8 +83,17 @@ export const LobbyView: React.FC = () => {
           >
             <span>{copiedLink ? t.lobby.linkCopied : t.lobby.shareLink}</span>
           </button>
+          <button
+            onClick={() => setShowQr((v) => !v)}
+            aria-expanded={showQr}
+            className="flex-1 sm:flex-none px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-sm font-semibold text-slate-200 transition-colors"
+          >
+            {showQr ? t.lobby.invite.hideQr : t.lobby.invite.showQr}
+          </button>
         </div>
       </div>
+
+      {showQr && <InviteQr roomCode={room.roomCode} />}
 
       {/* Error message */}
       {error && (
@@ -105,6 +124,7 @@ export const LobbyView: React.FC = () => {
                 key={player.id}
                 player={player}
                 isCurrent={player.id === myPlayer?.id}
+                isRoomHost={player.id === room.hostPlayerId}
                 teamColor="rose"
               />
             ))}
@@ -144,6 +164,7 @@ export const LobbyView: React.FC = () => {
                 key={player.id}
                 player={player}
                 isCurrent={player.id === myPlayer?.id}
+                isRoomHost={player.id === room.hostPlayerId}
                 teamColor="sky"
               />
             ))}
@@ -189,8 +210,16 @@ export const LobbyView: React.FC = () => {
         </div>
       </div>
 
+      <PackSelector />
+      <RoomSettingsPanel />
+      <RoomHistoryPanel />
+
       {/* Quorum / Start Section */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl text-center space-y-4">
+        <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+          {t.lobby.nextGame(nextGameNumber)}
+        </div>
+
         {!quorumValid ? (
           <div className="flex items-center justify-center space-x-2 text-amber-400 text-sm font-semibold bg-amber-500/10 border border-amber-500/20 py-3 px-4 rounded-xl">
             <span>{t.lobby.quorumMissing}</span>
@@ -211,7 +240,7 @@ export const LobbyView: React.FC = () => {
           </button>
         ) : (
           <div className="text-sm text-slate-400 italic">
-            {t.lobby.waitingForHostToStart(players.find((p: Player) => p.isHost)?.name || t.common.roles.host.singular)}
+            {t.lobby.waitingForHostToStart(hostPlayer?.name || t.common.roles.host.singular)}
           </div>
         )}
       </div>
@@ -220,9 +249,10 @@ export const LobbyView: React.FC = () => {
   );
 };
 
-const PlayerCard: React.FC<{ player: Player; isCurrent: boolean; teamColor: 'rose' | 'sky' }> = ({
+const PlayerCard: React.FC<{ player: Player; isCurrent: boolean; isRoomHost: boolean; teamColor: 'rose' | 'sky' }> = ({
   player,
   isCurrent,
+  isRoomHost,
   teamColor,
 }) => {
   const { t } = useI18n();
@@ -248,7 +278,7 @@ const PlayerCard: React.FC<{ player: Player; isCurrent: boolean; teamColor: 'ros
         </span>
       </div>
 
-      {player.isHost && (
+      {isRoomHost && (
         <span className="text-xs bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold flex items-center space-x-1">
           <span>👑</span>
           <span>{t.common.hostBadge}</span>

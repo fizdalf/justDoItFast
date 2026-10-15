@@ -1,4 +1,5 @@
 import {beforeEach, describe, expect, it} from 'vitest';
+import {DEFAULT_SETTINGS} from '../../src/core/settings.js';
 import {DisputeEngine} from '../../src/core/DisputeEngine.js';
 import {GameState, Player} from '../../src/core/types.js';
 
@@ -16,14 +17,16 @@ describe('Specification: Foul Triggering, Social Mediation & Host Resolution', (
     ];
 
     mockGameState = {
-      roomCode: 'TEST',
+      gameNumber: 1,
       status: 'PLAYING',
       scores: { A: 2, B: 1 },
       targetScore: 5,
       roundNumber: 3,
       teamInventory: { A: [], B: [] },
       boardTiles: [],
-      selectedPackId: 'classic-1996',
+      packIds: ['classic-1996'],
+      settings: DEFAULT_SETTINGS,
+      participantIds: players.map((p) => p.id),
       currentTurn: {
         activePlayerId: 'host-1',
         activeTeam: 'A',
@@ -99,5 +102,14 @@ describe('Specification: Foul Triggering, Social Mediation & Host Resolution', (
     expect(resolvedState.scores.B).toBe(1);
     expect(resolvedState.currentTurn?.currentWord).toBe('PIANO');
     expect(resolvedState.currentDispute).toBeUndefined();
+  });
+
+  it('GIVEN a game in DISPUTE_PAUSED WHEN the room applies a resolution on behalf of a host outside the rotation THEN it is applied without a host check', () => {
+    const spectatorHostEngine = new DisputeEngine(players.map((p) => ({ ...p, isHost: false })));
+    const pausedState = spectatorHostEngine.triggerFoul(mockGameState, 'rival-1');
+    const resolvedState = spectatorHostEngine.applyResolution(pausedState, 'AWARD_TEAM_B');
+
+    expect(resolvedState.status).toBe('ROUND_OVER');
+    expect(resolvedState.scores.B).toBe(2);
   });
 });

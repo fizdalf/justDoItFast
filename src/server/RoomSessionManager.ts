@@ -1,6 +1,6 @@
 import {Server} from 'socket.io';
 import {DeckEngine} from '../core/index.js';
-import {GameSession, GameSessionOptions} from './GameSession.js';
+import {RoomSession} from './RoomSession.js';
 import {ClientToServerEvents, ServerToClientEvents, SocketData,} from './protocol.js';
 
 export interface SocketMapping {
@@ -9,8 +9,9 @@ export interface SocketMapping {
   playerName: string;
 }
 
-export class GameSessionManager {
-  private sessions: Map<string, GameSession> = new Map();
+/** Todas las salas abiertas y qué socket pertenece a qué jugador. */
+export class RoomSessionManager {
+  private sessions: Map<string, RoomSession> = new Map();
   private socketMappings: Map<string, SocketMapping> = new Map();
   private deckEngine: DeckEngine;
   private io: Server<ClientToServerEvents, ServerToClientEvents, any, SocketData>;
@@ -27,26 +28,15 @@ export class GameSessionManager {
     return this.deckEngine;
   }
 
-  createSession(
-    hostPlayerId: string,
-    hostPlayerName: string,
-    options: GameSessionOptions = {}
-  ): GameSession {
+  createSession(hostPlayerId: string, hostPlayerName: string): RoomSession {
     const roomCode = this.generateRoomCode();
-    const session = new GameSession(
-      roomCode,
-      hostPlayerId,
-      hostPlayerName,
-      this.deckEngine,
-      this.io,
-      options
-    );
+    const session = new RoomSession(roomCode, hostPlayerId, hostPlayerName, this.deckEngine, this.io);
 
     this.sessions.set(roomCode, session);
     return session;
   }
 
-  getSession(roomCode: string): GameSession | undefined {
+  getSession(roomCode: string): RoomSession | undefined {
     return this.sessions.get(roomCode.toUpperCase());
   }
 
@@ -97,12 +87,17 @@ export class GameSessionManager {
     return this.sessions.size;
   }
 
-  getAllSessions(): { roomCode: string; playersCount: number; status: string }[] {
-    return Array.from(this.sessions.values()).map((s) => ({
-      roomCode: s.roomCode,
-      playersCount: s.getPlayers().length,
-      status: s.getGameState().status,
-    }));
+  getAllSessions(): { roomCode: string; playersCount: number; gameNumber: number | null; status: string | null; gamesPlayed: number }[] {
+    return Array.from(this.sessions.values()).map((s) => {
+      const game = s.getCurrentGame();
+      return {
+        roomCode: s.roomCode,
+        playersCount: s.getPlayers().length,
+        gameNumber: game?.gameNumber ?? null,
+        status: game?.status ?? null,
+        gamesPlayed: s.getHistory().length,
+      };
+    });
   }
 
   destroyAll(): void {

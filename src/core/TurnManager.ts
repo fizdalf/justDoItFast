@@ -28,6 +28,10 @@ export class TurnManager {
     this.players = [...players].sort((a, b) => a.seatIndex - b.seatIndex);
   }
 
+  setFastGuessThreshold(seconds: number): void {
+    this.fastGuessThresholdSec = seconds;
+  }
+
   setDirection(direction: 1 | -1): void {
     this.direction = direction;
   }
@@ -104,8 +108,13 @@ export class TurnManager {
   }
 
   private handOver(targetTeam: TeamId, nextCard: CardPayload): TurnState {
-    const nextPlayer = this.findNextConnectedRival(this.currentSeatIndex, targetTeam, this.direction);
-    this.currentSeatIndex = nextPlayer.seatIndex;
+    // Las posiciones son índices de la lista de jugadores de la rotación (que puede ser un
+    // subconjunto de la sala), no el asiento de la sala. Si el portador ya no está en la
+    // rotación (se fue), se parte del hueco que dejó.
+    const activeIdx = this.players.findIndex((p) => p.id === this.currentTurn?.activePlayerId);
+    const fromIdx = activeIdx >= 0 ? activeIdx : this.currentSeatIndex - this.direction;
+    const nextPlayer = this.findNextConnectedRival(fromIdx, targetTeam, this.direction);
+    this.currentSeatIndex = this.players.indexOf(nextPlayer);
 
     this.currentTurn = {
       activePlayerId: nextPlayer.id,
@@ -125,7 +134,7 @@ export class TurnManager {
     const total = this.players.length;
     if (total === 0) throw new GameError('INTERNAL', 'No players available in TurnManager');
 
-    let idx = (fromSeatIndex + step + total) % total;
+    let idx = (((fromSeatIndex + step) % total) + total) % total;
 
     for (let attempts = 0; attempts < total * 2; attempts++) {
       const candidate = this.players[idx];
@@ -139,6 +148,6 @@ export class TurnManager {
     const fallback = this.players.find((p) => p.team === targetTeam);
     if (fallback) return fallback;
 
-    return this.players[fromSeatIndex % total];
+    return this.players[((fromSeatIndex % total) + total) % total];
   }
 }

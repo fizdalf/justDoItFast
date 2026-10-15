@@ -4,11 +4,11 @@ import {useGame} from '../../context/GameContext.js';
 import {Player, PowerUp} from '../../../core/types.js';
 
 export const TeamMateView: React.FC = () => {
-  const { currentTurn, gameState, players, myPlayer, inventory, usePowerUp } = useGame();
+  const { currentTurn, game, players, myPlayer, inventory, usePowerUp } = useGame();
   const { t } = useI18n();
 
-  const category = currentTurn?.category || gameState?.currentTurn?.category || '';
-  const activeId = currentTurn?.activePlayerId || gameState?.currentTurn?.activePlayerId;
+  const category = currentTurn?.category || game?.currentTurn?.category || '';
+  const activeId = currentTurn?.activePlayerId || game?.currentTurn?.activePlayerId;
   const activePlayerName =
     players.find((p: Player) => p.id === activeId)?.name || t.common.roles.holder.singular;
   const myTeam = myPlayer?.team || 'A';

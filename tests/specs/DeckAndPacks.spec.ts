@@ -143,4 +143,65 @@ describe('Specification: Virtual Deck Generation & Word Pack Catalog', () => {
     const imported = newEngine.importPacks(exported, true);
     expect(imported.imported).toBe(exported.length);
   });
+
+  describe('combining several packs in one game deck', () => {
+    const animals: WordPack = {
+      id: 'animals',
+      name: 'Animales',
+      description: 'Test',
+      category: 'Animales',
+      isPremium: false,
+      words: ['PERRO', 'GATO', 'LEÓN', 'TIGRE', 'LOBO'],
+    };
+    const food: WordPack = {
+      id: 'food',
+      name: 'Comida',
+      description: 'Test',
+      category: 'Comida',
+      isPremium: false,
+      words: ['PAN', 'QUESO', 'Gato', 'SOPA', 'ARROZ'],
+    };
+
+    beforeEach(() => {
+      deckEngine.registerPack(animals);
+      deckEngine.registerPack(food);
+    });
+
+    function drawAll(packIds: string | string[]) {
+      const deck = deckEngine.createSessionDeck(packIds);
+      const total = deck.getTotalWordsCount();
+      return { total, cards: Array.from({ length: total }, () => deck.drawNextWord()) };
+    }
+
+    it('GIVEN two packs WHEN a deck is created THEN it contains the words of both, each with the category of its pack', () => {
+      const { total, cards } = drawAll(['animals', 'food']);
+
+      expect(total).toBe(9);
+      expect(cards.find((c) => c.word === 'PERRO')?.category).toBe('Animales');
+      expect(cards.find((c) => c.word === 'QUESO')?.category).toBe('Comida');
+      expect(new Set(cards.map((c) => c.word)).size).toBe(9);
+    });
+
+    it('GIVEN a word repeated across packs (written in different case) WHEN combined THEN it appears once, from the first pack', () => {
+      const { cards } = drawAll(['animals', 'food']);
+
+      const gatos = cards.filter((c) => c.word.toLowerCase() === 'gato');
+      expect(gatos).toHaveLength(1);
+      expect(gatos[0]).toEqual({ word: 'GATO', category: 'Animales' });
+
+      const reversed = drawAll(['food', 'animals']).cards.filter((c) => c.word.toLowerCase() === 'gato');
+      expect(reversed).toHaveLength(1);
+      expect(reversed[0].category).toBe('Comida');
+    });
+
+    it('GIVEN no packs WHEN creating a deck THEN NO_PACKS_SELECTED is raised', () => {
+      expect(() => deckEngine.createSessionDeck([])).toThrow(expect.objectContaining({ code: 'NO_PACKS_SELECTED' }));
+    });
+
+    it('GIVEN an unknown pack among valid ones WHEN creating a deck THEN PACK_NOT_FOUND is raised', () => {
+      expect(() => deckEngine.createSessionDeck(['animals', 'does-not-exist'])).toThrow(
+        expect.objectContaining({ code: 'PACK_NOT_FOUND' })
+      );
+    });
+  });
 });

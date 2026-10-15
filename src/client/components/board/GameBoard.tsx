@@ -4,12 +4,12 @@ import {useGame} from '../../context/GameContext.js';
 import {BoardTile} from '../../../core/types.js';
 
 export const GameBoard: React.FC = () => {
-  const { gameState } = useGame();
+  const { game } = useGame();
   const { t } = useI18n();
 
-  if (!gameState) return null;
+  if (!game) return null;
 
-  const { scores, targetScore, boardTiles } = gameState;
+  const { scores, targetScore, boardTiles } = game;
   const scoreA = scores.A ?? 0;
   const scoreB = scores.B ?? 0;
 

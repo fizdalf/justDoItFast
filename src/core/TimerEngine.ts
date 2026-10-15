@@ -86,6 +86,13 @@ export class TimerEngine {
     }
   }
 
+  /** Cambia el rango de duración secreta; se aplica a partir de la próxima ronda. */
+  setDurationRange(minDurationSec: number, maxDurationSec: number): void {
+    this.minDurationSec = minDurationSec;
+    this.maxDurationSec = maxDurationSec;
+    if (!this.running) this.generateTargetDuration();
+  }
+
   reset(): void {
     this.stop();
     this.accumulatedElapsedMs = 0;

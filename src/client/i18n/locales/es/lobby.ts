@@ -9,11 +9,56 @@ export const lobby = {
   switchTo: (teamName: string) => `Cambiarte al ${teamName}`,
   turnOrderTitle: '💣 Orden de pases de la bomba (asientos alternos)',
   waitingForPlayers: 'Esperando a que se unan jugadores...',
-  quorumMissing: '⚠️ Se necesitan al menos 2 jugadores por equipo (mínimo 4 en total) para iniciar la partida.',
+  quorumMissing: '⚠️ Se necesitan al menos 2 jugadores conectados por equipo (mínimo 4 en total) para empezar la partida.',
   quorumReady: '✅ ¡Equipos listos!',
   starting: 'Armando la bomba...',
-  startGame: '💣 Iniciar partida',
-  waitingForHostToStart: (hostName: string) => `Esperando a que el anfitrión (${hostName}) inicie la partida...`,
+  startGame: '💣 Empezar partida',
+  nextGame: (gameNumber: number) => `Próxima: partida ${gameNumber}`,
+  waitingForHostToStart: (hostName: string) => `Esperando a que el anfitrión (${hostName}) empiece la partida...`,
+
+  invite: {
+    showQr: '📱 Código QR',
+    hideQr: 'Ocultar QR',
+    qrHint: 'Escanéalo con la cámara del móvil para unirte',
+    qrAlt: (roomCode: string) => `Código QR para unirse a la sala ${roomCode}`,
+  },
+
+  pack: {
+    label: '📚 Mazos de palabras',
+    hint: 'Elige uno o varios: sus cables se mezclan en la partida',
+    words: (n: number) => (n === 1 ? '1 palabra' : `${n} palabras`),
+    total: (n: number) => (n === 1 ? 'Total: 1 palabra' : `Total: ${n} palabras`),
+    lastOne: 'Tiene que quedar al menos un mazo',
+  },
+
+  history: {
+    title: '📜 Partidas de la sala',
+    empty: 'Todavía no se ha jugado ninguna partida',
+    gameLabel: (gameNumber: number) => `Partida ${gameNumber}`,
+    winner: (teamName: string) => `Ganó el ${teamName}`,
+    abandoned: 'Terminada antes de tiempo',
+    rounds: (n: number) => (n === 1 ? '1 ronda' : `${n} rondas`),
+  },
+
+  settings: {
+    title: '⚙️ Ajustes de la próxima partida',
+    hostOnly: 'Solo el anfitrión puede cambiarlos',
+    targetScore: 'Puntos para ganar',
+    minRoundDuration: 'Duración mínima de la bomba',
+    maxRoundDuration: 'Duración máxima de la bomba',
+    fastGuess: 'Acierto rápido (gana herramienta)',
+    disconnectGrace: 'Espera si el artificiero se desconecta',
+    toolsTitle: '🧰 Herramientas',
+    toolsEnabled: 'Herramientas activadas',
+    on: 'Sí',
+    off: 'No',
+    maxTools: 'Máximo de herramientas por equipo',
+    freezeDuration: (toolName: string) => `Duración del ${toolName}`,
+    availableTools: 'Herramientas que pueden salir',
+    seconds: (n: number) => `${n} s`,
+    decrease: (label: string) => `Bajar: ${label}`,
+    increase: (label: string) => `Subir: ${label}`,
+  },
 };
 
 export type LobbyMessages = typeof lobby;

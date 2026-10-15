@@ -3,14 +3,14 @@ import {
   ApiErrorCode,
   ApiResponse,
   ClientToServerEvents,
-  PowerUpActivatedPayload,
-  RoundStartedPayload,
+  RoomSnapshot,
   ServerToClientEvents,
-  TimerExplodedPayload,
-  TimerTickPayload,
-  TurnChangedPayload,
+  UpdateSetupPayload,
 } from '../../server/protocol.js';
-import {DisputeResolution, DisputeState, GameState, Player, PowerUpType, TeamId, TurnState,} from '../../core/types.js';
+import {DisputeResolution, DisputeState, Player, PowerUpType, TeamId, TurnState} from '../../core/types.js';
+
+/** Respuesta al entrar en una sala: la foto completa y quién eres. */
+export type JoinedRoom = RoomSnapshot & { player: Player };
 
 /** Error para mostrar al jugador: se traduce por `code`; `message` es solo técnico. */
 export interface ClientError {
@@ -91,25 +91,19 @@ export class SocketService {
     return () => this.errorListeners.delete(callback);
   }
 
-  // Room Actions
-  public async createRoom(
-    playerName: string,
-    selectedPackId?: string
-  ): Promise<ApiResponse<{ roomCode: string; player: Player; gameState: GameState; sessionToken: string }>> {
-    return this.emitWithAck('room:create', { playerName, selectedPackId });
+  // Sala
+  public async createRoom(playerName: string): Promise<ApiResponse<JoinedRoom & { sessionToken: string }>> {
+    return this.emitWithAck('room:create', { playerName });
   }
 
   public async joinRoom(
     roomCode: string,
     playerName: string
-  ): Promise<ApiResponse<{ player: Player; players: Player[]; gameState: GameState; sessionToken: string }>> {
+  ): Promise<ApiResponse<JoinedRoom & { sessionToken: string }>> {
     return this.emitWithAck('room:join', { roomCode, playerName });
   }
 
-  public async rejoinRoom(
-    roomCode: string,
-    sessionToken: string
-  ): Promise<ApiResponse<{ player: Player; players: Player[]; gameState: GameState }>> {
+  public async rejoinRoom(roomCode: string, sessionToken: string): Promise<ApiResponse<JoinedRoom>> {
     return this.emitWithAck('room:rejoin', { roomCode, sessionToken });
   }
 
@@ -117,27 +111,27 @@ export class SocketService {
     return this.emitWithAck('room:leave', undefined);
   }
 
-  public async switchTeam(
-    targetTeam: TeamId
-  ): Promise<ApiResponse<{ player: Player; gameState: GameState }>> {
+  public async switchTeam(targetTeam: TeamId): Promise<ApiResponse<RoomSnapshot>> {
     return this.emitWithAck('room:switch_team', { targetTeam });
   }
 
-  public async selectPack(
-    packId: string
-  ): Promise<ApiResponse<{ gameState: GameState }>> {
-    return this.emitWithAck('room:select_pack', { packId });
+  public async updateSetup(changes: UpdateSetupPayload): Promise<ApiResponse<RoomSnapshot>> {
+    return this.emitWithAck('room:update_setup', changes);
   }
 
-  public async startRound(): Promise<ApiResponse<{ gameState: GameState; currentTurn: TurnState }>> {
+  // Partida
+  public async startGame(): Promise<ApiResponse<RoomSnapshot>> {
+    return this.emitWithAck('game:start', undefined);
+  }
+
+  public async startRound(): Promise<ApiResponse<RoomSnapshot>> {
     return this.emitWithAck('game:start_round', undefined);
   }
 
-  public async returnToLobby(): Promise<ApiResponse<{ gameState: GameState }>> {
-    return this.emitWithAck('game:return_to_lobby', undefined);
+  public async endGame(): Promise<ApiResponse<RoomSnapshot>> {
+    return this.emitWithAck('game:end', undefined);
   }
 
-  // Turn Actions
   public async guessSuccess(): Promise<ApiResponse<{ isFastGuess: boolean; currentTurn: TurnState }>> {
     return this.emitWithAck('turn:guess_success', undefined);
   }
@@ -146,60 +140,48 @@ export class SocketService {
     return this.emitWithAck('turn:foul_triggered', { reason });
   }
 
-  public async resolveDispute(
-    resolution: DisputeResolution
-  ): Promise<ApiResponse<{ gameState: GameState }>> {
+  public async resolveDispute(resolution: DisputeResolution): Promise<ApiResponse<RoomSnapshot>> {
     return this.emitWithAck('host:resolve_dispute', { resolution });
   }
 
-  public async usePowerUp(
-    powerUpId: string
-  ): Promise<ApiResponse<{ powerUpType: PowerUpType }>> {
+  public async usePowerUp(powerUpId: string): Promise<ApiResponse<{ powerUpType: PowerUpType }>> {
     return this.emitWithAck('powerup:use', { powerUpId });
   }
 
-  // Subscriptions to server events
-  public onRoomStateUpdated(callback: (payload: { gameState: GameState; players: Player[] }) => void): () => void {
+  // Eventos del servidor
+  public onRoomStateUpdated(callback: ServerToClientEvents['room:state_updated']): () => void {
     return this.subscribe('room:state_updated', callback);
   }
 
-  public onPlayerJoined(callback: (payload: { player: Player; players: Player[] }) => void): () => void {
-    return this.subscribe('room:player_joined', callback);
-  }
-
-  public onPlayerLeft(callback: (payload: { playerId: string; newHostId?: string; players: Player[] }) => void): () => void {
-    return this.subscribe('room:player_left', callback);
-  }
-
-  public onRoundStarted(callback: (payload: RoundStartedPayload) => void): () => void {
+  public onRoundStarted(callback: ServerToClientEvents['game:round_started']): () => void {
     return this.subscribe('game:round_started', callback);
   }
 
-  public onTurnChanged(callback: (payload: TurnChangedPayload) => void): () => void {
+  public onTurnChanged(callback: ServerToClientEvents['turn:changed']): () => void {
     return this.subscribe('turn:changed', callback);
   }
 
-  public onDisputeStarted(callback: (payload: { dispute: DisputeState; gameState: GameState }) => void): () => void {
+  public onDisputeStarted(callback: ServerToClientEvents['game:dispute_started']): () => void {
     return this.subscribe('game:dispute_started', callback);
   }
 
-  public onDisputeResolved(callback: (payload: { resolution: DisputeResolution; gameState: GameState }) => void): () => void {
+  public onDisputeResolved(callback: ServerToClientEvents['game:dispute_resolved']): () => void {
     return this.subscribe('game:dispute_resolved', callback);
   }
 
-  public onTimerTick(callback: (payload: TimerTickPayload) => void): () => void {
+  public onTimerTick(callback: ServerToClientEvents['timer:tick']): () => void {
     return this.subscribe('timer:tick', callback);
   }
 
-  public onTimerExploded(callback: (payload: TimerExplodedPayload) => void): () => void {
+  public onTimerExploded(callback: ServerToClientEvents['timer:exploded']): () => void {
     return this.subscribe('timer:exploded', callback);
   }
 
-  public onGameOver(callback: (payload: { winner: TeamId; finalScores: Record<TeamId, number>; gameState: GameState }) => void): () => void {
+  public onGameOver(callback: ServerToClientEvents['game:over']): () => void {
     return this.subscribe('game:over', callback);
   }
 
-  public onPowerUpActivated(callback: (payload: PowerUpActivatedPayload) => void): () => void {
+  public onPowerUpActivated(callback: ServerToClientEvents['powerup:activated']): () => void {
     return this.subscribe('powerup:activated', callback);
   }
 
