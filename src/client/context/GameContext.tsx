@@ -1,17 +1,18 @@
-import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
+import React, {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react';
 import {ClientError, socketService, SocketStatus,} from '../services/socketService.js';
+import {clearSession, saveSession, sessionForCurrentUrl, setRoomUrl} from '../services/roomSession.js';
 import {audioService} from '../services/audioService.js';
 import {hapticService} from '../services/hapticService.js';
 import {ApiResponse, TimerExplodedPayload, TimerTickPayload, TurnChangedPayload,} from '../../server/protocol.js';
 import {
-  DisputeResolution,
-  DisputeState,
-  GameState,
-  Player,
-  PowerUp,
-  PowerUpType,
-  TeamId,
-  TurnState,
+    DisputeResolution,
+    DisputeState,
+    GameState,
+    Player,
+    PowerUp,
+    PowerUpType,
+    TeamId,
+    TurnState,
 } from '../../core/types.js';
 
 export interface GameContextValue {
@@ -26,6 +27,8 @@ export interface GameContextValue {
   gameOver: { winner: TeamId; finalScores: Record<TeamId, number>; gameState: GameState } | null;
   inventory: Record<TeamId, PowerUp[]>;
   error: ClientError | null;
+  /** Código de la sala a la que se está volviendo tras recargar (null si no). */
+  restoringRoom: string | null;
   
   // Computed helpers
   myPlayer: Player | undefined;
@@ -35,8 +38,8 @@ export interface GameContextValue {
   isTeammate: boolean;
 
   // Actions
-  createRoom: (playerName: string, packId?: string) => Promise<ApiResponse<{ roomCode: string; player: Player; gameState: GameState }>>;
-  joinRoom: (roomCode: string, playerName: string) => Promise<ApiResponse<{ player: Player; gameState: GameState }>>;
+  createRoom: (playerName: string, packId?: string) => Promise<ApiResponse<{ roomCode: string; player: Player; gameState: GameState; sessionToken: string }>>;
+  joinRoom: (roomCode: string, playerName: string) => Promise<ApiResponse<{ player: Player; gameState: GameState; sessionToken: string }>>;
   leaveRoom: () => Promise<ApiResponse<{}>>;
   switchTeam: (team: TeamId) => Promise<ApiResponse<{ player: Player; gameState: GameState }>>;
   selectPack: (packId: string) => Promise<ApiResponse<{ gameState: GameState }>>;
@@ -63,6 +66,53 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [explosion, setExplosion] = useState<TimerExplodedPayload | null>(null);
   const [gameOver, setGameOver] = useState<{ winner: TeamId; finalScores: Record<TeamId, number>; gameState: GameState } | null>(null);
   const [error, setError] = useState<ClientError | null>(null);
+  const [restoringRoom, setRestoringRoom] = useState<string | null>(
+    () => sessionForCurrentUrl()?.roomCode ?? null
+  );
+  const rejoinedSocketId = useRef<string | undefined>(undefined);
+
+  // Volver a la sala de la URL con la sesión guardada: al cargar la página (F5)
+  // y cada vez que el socket se reconecta tras perder la conexión.
+  useEffect(() => {
+    const tryRejoin = async () => {
+      const socketId = socketService.getSocketId();
+      if (!socketId || rejoinedSocketId.current === socketId) return;
+      rejoinedSocketId.current = socketId;
+
+      const session = sessionForCurrentUrl();
+      if (!session) {
+        setRestoringRoom(null);
+        return;
+      }
+
+      const res = await socketService.rejoinRoom(session.roomCode, session.sessionToken);
+      if (res.success) {
+        setPlayerId(res.data.player.id);
+        setPlayers(res.data.players);
+        setGameState(res.data.gameState);
+        setCurrentTurn(res.data.gameState.currentTurn ?? null);
+        setCurrentDispute(res.data.gameState.currentDispute ?? null);
+      } else if (res.code === 'ROOM_NOT_FOUND' || res.code === 'SESSION_EXPIRED') {
+        // La URL se mantiene: el inicio mostrará el formulario de unirse con ese código.
+        clearSession();
+      }
+      setRestoringRoom(null);
+    };
+
+    return socketService.onStatusChange((status) => {
+      if (status === 'CONNECTED') void tryRejoin();
+    });
+  }, []);
+
+  // La URL siempre refleja la sala en la que estás (también si se pulsa "atrás").
+  useEffect(() => {
+    const roomCode = gameState?.roomCode;
+    if (!roomCode) return;
+    setRoomUrl(roomCode, 'replace');
+    const keepRoomUrl = () => setRoomUrl(roomCode, 'push');
+    window.addEventListener('popstate', keepRoomUrl);
+    return () => window.removeEventListener('popstate', keepRoomUrl);
+  }, [gameState?.roomCode]);
 
   useEffect(() => {
     socketService.connect();
@@ -217,6 +267,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     audioService.enableAudio();
     const res = await socketService.createRoom(playerName, packId);
     if (res.success && res.data) {
+      saveSession({ roomCode: res.data.roomCode, playerId: res.data.player.id, sessionToken: res.data.sessionToken });
+      setRoomUrl(res.data.roomCode);
       setPlayerId(res.data.player.id);
       setGameState(res.data.gameState);
       setPlayers([res.data.player]);
@@ -228,6 +280,12 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     audioService.enableAudio();
     const res = await socketService.joinRoom(roomCode, playerName);
     if (res.success && res.data) {
+      saveSession({
+        roomCode: res.data.gameState.roomCode,
+        playerId: res.data.player.id,
+        sessionToken: res.data.sessionToken,
+      });
+      setRoomUrl(res.data.gameState.roomCode);
       setPlayerId(res.data.player.id);
       setGameState(res.data.gameState);
     }
@@ -236,6 +294,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const leaveRoom = useCallback(async () => {
     const res = await socketService.leaveRoom();
+    clearSession();
+    setRoomUrl(null);
     setPlayerId(null);
     setGameState(null);
     setPlayers([]);
@@ -300,6 +360,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const resetLocalState = useCallback(() => {
+    clearSession();
+    setRoomUrl(null);
     setPlayerId(null);
     setGameState(null);
     setPlayers([]);
@@ -321,6 +383,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     gameOver,
     inventory,
     error,
+    restoringRoom,
     myPlayer,
     isHost,
     isActivePlayer,

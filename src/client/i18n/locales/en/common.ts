@@ -66,5 +66,7 @@ export const common: CommonMessages = {
   close: 'Close',
   dismiss: 'Dismiss',
   aPlayer: 'a player',
+  disconnected: 'disconnected',
+  returningToRoom: (roomCode: string) => `Returning to room ${roomCode}...`,
   waitingForHost: (hostName: string) => `Waiting for the host (${hostName}) to continue...`,
 };

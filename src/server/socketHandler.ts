@@ -45,6 +45,7 @@ export function setupSocketHandlers(
             roomCode: session.roomCode,
             player,
             gameState: session.getGameState(),
+            sessionToken: session.issueSessionToken(playerId),
           },
         });
       } catch (err: any) {
@@ -66,10 +67,8 @@ export function setupSocketHandlers(
           return callback({ success: false, error: `Room ${payload.roomCode} not found`, code: 'ROOM_NOT_FOUND' });
         }
 
-        const playerId =
-          payload.playerId ||
-          socket.data.playerId ||
-          `p_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        // Siempre es un jugador nuevo: para volver como uno existente se usa room:rejoin con su token.
+        const playerId = `p_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
         const player = session.joinPlayer(playerId, payload.playerName.trim());
 
@@ -92,10 +91,44 @@ export function setupSocketHandlers(
           data: {
             player,
             gameState: session.getGameState(),
+            sessionToken: session.issueSessionToken(playerId),
           },
         });
       } catch (err: any) {
         return callback({ success: false, error: err.message || 'Error joining room', code: errorCodeOf(err) });
+      }
+    });
+
+    socket.on('room:rejoin', (payload, callback) => {
+      try {
+        const session = payload?.roomCode ? sessionManager.getSession(payload.roomCode) : undefined;
+        if (!session) {
+          return callback({ success: false, error: `Room ${payload?.roomCode} not found`, code: 'ROOM_NOT_FOUND' });
+        }
+
+        const playerId = payload.sessionToken ? session.resolveSessionToken(payload.sessionToken) : undefined;
+        if (!playerId) {
+          return callback({ success: false, error: 'Invalid or expired session token', code: 'SESSION_EXPIRED' });
+        }
+
+        // Registrar el socket antes de reconectar, para que un 'disconnect' tardío
+        // del socket anterior no vuelva a marcar al jugador como desconectado.
+        const playerName = session.getPlayer(playerId)!.name;
+        socket.join(session.roomCode);
+        socket.data = { playerId, roomCode: session.roomCode, playerName };
+        sessionManager.registerSocket(socket.id, session.roomCode, playerId, playerName);
+
+        const player = session.reconnectPlayer(playerId);
+        return callback({
+          success: true,
+          data: {
+            player,
+            players: session.getPlayers(),
+            gameState: session.getGameState(),
+          },
+        });
+      } catch (err: any) {
+        return callback({ success: false, error: err.message || 'Error rejoining room', code: errorCodeOf(err) });
       }
     });
 
@@ -293,14 +326,13 @@ export function setupSocketHandlers(
     });
 
     socket.on('disconnect', () => {
-      const mapping = sessionManager.getSocketMapping(socket.id);
-      if (mapping) {
-        const session = sessionManager.getSession(mapping.roomCode);
-        if (session) {
-          session.handlePlayerDisconnect(mapping.playerId);
-        }
-        sessionManager.removeSocket(socket.id);
-      }
+      const mapping = sessionManager.removeSocket(socket.id);
+      if (!mapping) return;
+
+      // Tras un F5 el socket nuevo puede haber vuelto antes de que llegue este aviso.
+      if (sessionManager.hasSocketForPlayer(mapping.roomCode, mapping.playerId)) return;
+
+      sessionManager.getSession(mapping.roomCode)?.handlePlayerDisconnect(mapping.playerId);
     });
   });
 }

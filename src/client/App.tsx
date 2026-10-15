@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {GameProvider, useGame} from './context/GameContext.js';
 import {errorText, I18nProvider, useI18n} from './i18n/index.js';
+import {getRoomCodeFromUrl} from './services/roomSession.js';
 import {Header} from './components/Header.js';
 import {HomeView} from './components/HomeView.js';
 import {LobbyView} from './components/LobbyView.js';
@@ -21,11 +22,11 @@ const GameContent: React.FC = () => {
     currentDispute,
     error,
     clearError,
+    restoringRoom,
   } = useGame();
   const { t } = useI18n();
 
   const [showAdmin, setShowAdmin] = useState(false);
-  const [initialRoomCode, setInitialRoomCode] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (!error) return;
@@ -33,23 +34,18 @@ const GameContent: React.FC = () => {
     return () => clearTimeout(timeout);
   }, [error, clearError]);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const roomParam = params.get('room');
-      if (roomParam) {
-        setInitialRoomCode(roomParam.toUpperCase());
-      }
-    }
-  }, []);
-
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans antialiased selection:bg-amber-500 selection:text-slate-950">
       <Header onOpenAdmin={() => setShowAdmin(true)} />
 
       <main className="flex-1 flex flex-col justify-center items-center p-3 sm:p-6 w-full max-w-5xl mx-auto">
-        {!gameState ? (
-          <HomeView initialRoomCode={initialRoomCode} />
+        {!gameState && restoringRoom ? (
+          <div className="flex flex-col items-center space-y-3 text-slate-300 animate-fadeIn">
+            <div className="text-5xl animate-pulse">💣</div>
+            <div className="text-sm font-semibold">{t.common.returningToRoom(restoringRoom)}</div>
+          </div>
+        ) : !gameState ? (
+          <HomeView initialRoomCode={getRoomCodeFromUrl()} />
         ) : gameState.status === 'LOBBY' ? (
           <LobbyView />
         ) : gameState.status === 'GAME_OVER' ? (

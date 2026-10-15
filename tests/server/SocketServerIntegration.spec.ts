@@ -549,4 +549,132 @@ describe('Socket.io Real-Time Game Server Integration', () => {
     expect(newGameRes.success).toBe(true);
     expect((newGameRes as any).data.gameState.roundNumber).toBe(1);
   });
+
+  describe('reconnection (page reload / dropped connection)', () => {
+    async function setupFourPlayers(settings: Record<string, unknown> = {}) {
+      const host = await createClient();
+      const p2 = await createClient();
+      const p3 = await createClient();
+      const p4 = await createClient();
+
+      const createRes: any = await emitAsync(host, 'room:create', { playerName: 'Alice', settings });
+      const roomCode: string = createRes.data.roomCode;
+      const joins: any[] = [];
+      for (const [socket, name] of [[p2, 'Bob'], [p3, 'Charlie'], [p4, 'Diana']] as const) {
+        joins.push(await emitAsync(socket, 'room:join', { roomCode, playerName: name }));
+      }
+      return { host, p2, p3, p4, roomCode, hostRes: createRes.data, joins: joins.map((j) => j.data) };
+    }
+
+    function disconnectAndWait(socket: TestClientSocket, roomCode: string, playerId: string) {
+      socket.disconnect();
+      return new Promise<void>((resolve) => {
+        const check = () =>
+          server.sessionManager.getSession(roomCode)?.getPlayer(playerId)?.isConnected === false
+            ? resolve()
+            : setTimeout(check, 10);
+        check();
+      });
+    }
+
+    it('gives every player a private session token on create and join', async () => {
+      const { hostRes, joins } = await setupFourPlayers();
+      const tokens = [hostRes.sessionToken, ...joins.map((j) => j.sessionToken)];
+      expect(tokens.every((t) => typeof t === 'string' && t.length >= 32)).toBe(true);
+      expect(new Set(tokens).size).toBe(4);
+    });
+
+    it('restores the same player (and host role) after a page reload', async () => {
+      const { host, roomCode, hostRes } = await setupFourPlayers();
+      const hostId = hostRes.player.id;
+
+      await disconnectAndWait(host, roomCode, hostId);
+
+      const reloaded = await createClient();
+      const res: any = await emitAsync(reloaded, 'room:rejoin', { roomCode, sessionToken: hostRes.sessionToken });
+
+      expect(res.success).toBe(true);
+      expect(res.data.player.id).toBe(hostId);
+      expect(res.data.player.isHost).toBe(true);
+      expect(res.data.player.isConnected).toBe(true);
+      expect(res.data.players).toHaveLength(4);
+
+      // And the restored socket can act as that player
+      const startRes = await emitAsync(reloaded, 'game:start_round');
+      expect(startRes.success).toBe(true);
+    });
+
+    it('rejects unknown rooms, invalid tokens and tokens of players who left', async () => {
+      const { p2, roomCode, joins } = await setupFourPlayers();
+      const other = await createClient();
+
+      expect(await emitAsync(other, 'room:rejoin', { roomCode: 'ZZZZ', sessionToken: joins[0].sessionToken }))
+        .toMatchObject({ success: false, code: 'ROOM_NOT_FOUND' });
+      expect(await emitAsync(other, 'room:rejoin', { roomCode, sessionToken: 'not-a-real-token' }))
+        .toMatchObject({ success: false, code: 'SESSION_EXPIRED' });
+
+      await emitAsync(p2, 'room:leave');
+      expect(await emitAsync(other, 'room:rejoin', { roomCode, sessionToken: joins[0].sessionToken }))
+        .toMatchObject({ success: false, code: 'SESSION_EXPIRED' });
+    });
+
+    it('does not let a player take over someone else by sending their public id', async () => {
+      const { roomCode, hostRes } = await setupFourPlayers();
+      const intruder = await createClient();
+
+      const res: any = await emitAsync(intruder, 'room:join', {
+        roomCode,
+        playerName: 'Mallory',
+        playerId: hostRes.player.id,
+      });
+
+      expect(res.success).toBe(true);
+      expect(res.data.player.id).not.toBe(hostRes.player.id);
+      expect(res.data.player.isHost).toBe(false);
+    });
+
+    it('keeps the player connected when the old socket disconnects after the new one rejoined', async () => {
+      const { p2, roomCode, joins } = await setupFourPlayers();
+      const bob = joins[0];
+
+      const newTab = await createClient();
+      await emitAsync(newTab, 'room:rejoin', { roomCode, sessionToken: bob.sessionToken });
+
+      p2.disconnect();
+      await new Promise((r) => setTimeout(r, 100));
+
+      expect(server.sessionManager.getSession(roomCode)!.getPlayer(bob.player.id)!.isConnected).toBe(true);
+    });
+
+    it('waits a grace period, then hands the bomb of a disconnected defuser to a teammate', async () => {
+      const { host, p2, roomCode, hostRes } = await setupFourPlayers({ disconnectGraceSec: 0.3 });
+      await emitAsync(host, 'game:start_round');
+      const session = server.sessionManager.getSession(roomCode)!;
+      expect(session.getGameState().currentTurn!.activePlayerId).toBe(hostRes.player.id);
+
+      const turnChanged = waitForEvent<any>(p2, 'turn:changed');
+      await disconnectAndWait(host, roomCode, hostRes.player.id);
+
+      // Still holding the bomb during the grace period
+      expect(session.getGameState().currentTurn!.activePlayerId).toBe(hostRes.player.id);
+
+      const changed = await turnChanged;
+      const newHolder = session.getPlayer(changed.currentTurn.activePlayerId)!;
+      expect(newHolder.name).toBe('Charlie'); // same team (A), next connected seat
+      expect(newHolder.team).toBe('A');
+    });
+
+    it('keeps the bomb with a defuser who comes back within the grace period', async () => {
+      const { host, roomCode, hostRes } = await setupFourPlayers({ disconnectGraceSec: 0.4 });
+      await emitAsync(host, 'game:start_round');
+      const session = server.sessionManager.getSession(roomCode)!;
+
+      await disconnectAndWait(host, roomCode, hostRes.player.id);
+      const reloaded = await createClient();
+      await emitAsync(reloaded, 'room:rejoin', { roomCode, sessionToken: hostRes.sessionToken });
+
+      await new Promise((r) => setTimeout(r, 600));
+      expect(session.getGameState().currentTurn!.activePlayerId).toBe(hostRes.player.id);
+    });
+  });
 });

@@ -84,6 +84,15 @@ export class GameSessionManager {
     return mapping;
   }
 
+  /** ¿Sigue el jugador conectado desde algún otro socket? (p. ej. tras recargar la página) */
+  hasSocketForPlayer(roomCode: string, playerId: string): boolean {
+    const code = roomCode.toUpperCase();
+    for (const mapping of this.socketMappings.values()) {
+      if (mapping.roomCode === code && mapping.playerId === playerId) return true;
+    }
+    return false;
+  }
+
   getActiveSessionsCount(): number {
     return this.sessions.size;
   }

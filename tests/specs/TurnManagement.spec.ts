@@ -80,4 +80,27 @@ describe('Specification: Circular Turn Rotation & Hot Potato Passing', () => {
     expect(result.durationSec).toBeCloseTo(3.2, 0.5);
     expect(result.isFastGuess).toBe(true); // < 5.0s
   });
+
+  it('GIVEN the defuser disconnected WHEN the bomb is reassigned THEN it goes to the next connected teammate with a new wire', () => {
+    turnManager.startRound(0, { word: 'PALABRA_1', category: 'General' });
+    turnManager.updatePlayers(players.map((p) => (p.id === 'p1' ? { ...p, isConnected: false } : p)));
+
+    const turn = turnManager.reassignTurn({ word: 'PALABRA_2', category: 'General' });
+
+    expect(turn.activePlayerId).toBe('p3');
+    expect(turn.activeTeam).toBe('A');
+    expect(turn.currentWord).toBe('PALABRA_2');
+  });
+
+  it('GIVEN the defuser has no connected teammates WHEN the bomb is reassigned THEN it goes to the rival team', () => {
+    turnManager.startRound(0, { word: 'PALABRA_1', category: 'General' });
+    turnManager.updatePlayers(
+      players.map((p) => (p.id === 'p1' || p.id === 'p3' ? { ...p, isConnected: false } : p))
+    );
+
+    const turn = turnManager.reassignTurn({ word: 'PALABRA_2', category: 'General' });
+
+    expect(turn.activeTeam).toBe('B');
+    expect(['p2', 'p4']).toContain(turn.activePlayerId);
+  });
 });

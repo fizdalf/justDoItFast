@@ -82,6 +82,28 @@ export class TurnManager {
     const currentTeam = this.currentTurn.activeTeam;
     const targetTeam: TeamId = currentTeam === 'A' ? 'B' : 'A';
 
+    return this.handOver(targetTeam, nextCard);
+  }
+
+  /**
+   * Quita la bomba al artificiero actual (p. ej. porque se ha desconectado) y la da
+   * al siguiente compañero conectado de su equipo; si no queda ninguno, al rival.
+   */
+  reassignTurn(nextCard: CardPayload): TurnState {
+    if (!this.currentTurn) {
+      throw new GameError('INVALID_STATE', `No active turn to reassign`);
+    }
+
+    const { activePlayerId, activeTeam } = this.currentTurn;
+    const hasConnectedTeammate = this.players.some(
+      (p) => p.team === activeTeam && p.isConnected && p.id !== activePlayerId
+    );
+    const targetTeam: TeamId = hasConnectedTeammate ? activeTeam : activeTeam === 'A' ? 'B' : 'A';
+
+    return this.handOver(targetTeam, nextCard);
+  }
+
+  private handOver(targetTeam: TeamId, nextCard: CardPayload): TurnState {
     const nextPlayer = this.findNextConnectedRival(this.currentSeatIndex, targetTeam, this.direction);
     this.currentSeatIndex = nextPlayer.seatIndex;
 

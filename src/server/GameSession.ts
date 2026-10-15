@@ -1,23 +1,24 @@
+import {randomUUID} from 'node:crypto';
 import {Server} from 'socket.io';
 import {
-  BoardEngine,
-  DeckEngine,
-  DisputeEngine,
-  PowerUpEngine,
-  RoomManager,
-  TimerEngine,
-  TurnManager,
+    BoardEngine,
+    DeckEngine,
+    DisputeEngine,
+    PowerUpEngine,
+    RoomManager,
+    TimerEngine,
+    TurnManager,
 } from '../core/index.js';
 import {
-  DisputeResolution,
-  DisputeState,
-  GameSettings,
-  GameState,
-  Player,
-  PowerUp,
-  PowerUpType,
-  TeamId,
-  TurnState,
+    DisputeResolution,
+    DisputeState,
+    GameSettings,
+    GameState,
+    Player,
+    PowerUp,
+    PowerUpType,
+    TeamId,
+    TurnState,
 } from '../core/types.js';
 import {ClientToServerEvents, ServerToClientEvents, SocketData,} from './protocol.js';
 
@@ -47,6 +48,10 @@ export class GameSession {
   private settings: GameSettings;
   private startingSeatTracker: number = 0;
   private isDestroyed: boolean = false;
+  /** Token secreto de sesión → playerId. Solo lo conoce el dispositivo del jugador. */
+  private sessionTokens: Map<string, string> = new Map();
+  /** Esperas de gracia de artificieros desconectados, por playerId. */
+  private disconnectTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
 
   constructor(
     roomCode: string,
@@ -66,6 +71,7 @@ export class GameSession {
       maxRoundDurationSec: 65,
       fastGuessThresholdSec: 5.0,
       allowPowerUps: true,
+      disconnectGraceSec: 5,
       ...options.settings,
     };
 
@@ -159,29 +165,43 @@ export class GameSession {
     return player;
   }
 
+  issueSessionToken(playerId: string): string {
+    const token = randomUUID();
+    this.sessionTokens.set(token, playerId);
+    return token;
+  }
+
+  resolveSessionToken(token: string): string | undefined {
+    const playerId = this.sessionTokens.get(token);
+    return playerId && this.getPlayer(playerId) ? playerId : undefined;
+  }
+
+  reconnectPlayer(playerId: string): Player {
+    this.clearDisconnectTimer(playerId);
+    const player = this.getPlayer(playerId);
+    if (!player) {
+      throw new GameError('SESSION_EXPIRED', `Player ${playerId} is no longer in room ${this.roomCode}`);
+    }
+    return this.joinPlayer(playerId, player.name);
+  }
+
   handlePlayerDisconnect(playerId: string): void {
     this.roomManager.setConnectionStatus(this.roomCode, playerId, false);
     const players = this.roomManager.getSeatOrder(this.roomCode);
     this.turnManager.updatePlayers(players);
     this.disputeEngine.updatePlayers(players);
 
-    // Si el jugador desconectado es el jugador activo durante una ronda en curso
+    // Si el artificiero se desconecta, se le espera un poco (p. ej. un F5) antes de
+    // pasar la bomba a un compañero. La bomba sigue corriendo mientras tanto.
     if (
       this.gameState.status === 'PLAYING' &&
       this.gameState.currentTurn?.activePlayerId === playerId
     ) {
-      // Reasignar la bomba al siguiente rival conectado
-      try {
-        const nextCard = this.sessionDeck.drawNextWord();
-        const nextTurn = this.turnManager.passTurn(playerId, nextCard);
-        this.gameState.currentTurn = nextTurn;
-        this.io.to(this.roomCode).emit('turn:changed', {
-          currentTurn: nextTurn,
-          lastGuessFast: false,
-        });
-      } catch (e) {
-        // En caso de que no queden más jugadores
-      }
+      this.clearDisconnectTimer(playerId);
+      this.disconnectTimers.set(
+        playerId,
+        setTimeout(() => this.reassignBombFrom(playerId), this.settings.disconnectGraceSec * 1000)
+      );
     }
 
     this.broadcastState();
@@ -190,6 +210,11 @@ export class GameSession {
   removePlayer(playerId: string): void {
     const room = this.roomManager.getRoom(this.roomCode);
     const wasHost = room?.hostPlayerId === playerId;
+
+    this.clearDisconnectTimer(playerId);
+    for (const [token, owner] of this.sessionTokens) {
+      if (owner === playerId) this.sessionTokens.delete(token);
+    }
 
     this.roomManager.removePlayer(this.roomCode, playerId);
     const players = this.roomManager.getSeatOrder(this.roomCode);
@@ -204,6 +229,28 @@ export class GameSession {
       players,
     });
 
+    this.broadcastState();
+  }
+
+  destroy(): void {
+    this.isDestroyed = true;
+    this.timerEngine.stop();
+    this.disconnectTimers.forEach((timer) => clearTimeout(timer));
+    this.disconnectTimers.clear();
+  }
+
+  private reassignBombFrom(playerId: string): void {
+    this.disconnectTimers.delete(playerId);
+    if (this.isDestroyed || this.gameState.status !== 'PLAYING') return;
+    if (this.gameState.currentTurn?.activePlayerId !== playerId) return;
+    if (this.getPlayer(playerId)?.isConnected) return;
+
+    const nextTurn = this.turnManager.reassignTurn(this.sessionDeck.drawNextWord());
+    this.gameState.currentTurn = nextTurn;
+    this.io.to(this.roomCode).emit('turn:changed', {
+      currentTurn: nextTurn,
+      lastGuessFast: false,
+    });
     this.broadcastState();
   }
 
@@ -528,9 +575,12 @@ export class GameSession {
     return this.getGameState();
   }
 
-  destroy(): void {
-    this.isDestroyed = true;
-    this.timerEngine.stop();
+  private clearDisconnectTimer(playerId: string): void {
+    const timer = this.disconnectTimers.get(playerId);
+    if (timer) {
+      clearTimeout(timer);
+      this.disconnectTimers.delete(playerId);
+    }
   }
 
   private handleTimerTick(elapsedMs: number, remainingMs: number, intervalMs: number): void {

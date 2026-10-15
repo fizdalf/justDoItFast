@@ -5,6 +5,7 @@ export const errors: Record<ApiErrorCode, string> = {
   ROOM_NOT_FOUND: 'No existe ninguna sala con ese código.',
   ROOM_CODE_REQUIRED: 'Escribe el código de la sala.',
   NOT_IN_ROOM: 'No estás en ninguna sala.',
+  SESSION_EXPIRED: 'Ya no formas parte de esa sala. Vuelve a unirte con el código.',
   NAME_REQUIRED: 'Escribe tu nombre.',
   PLAYER_NOT_FOUND: 'Ese jugador ya no está en la sala.',
   NOT_HOST: 'Solo el anfitrión puede hacer eso.',

@@ -70,6 +70,8 @@ export const common = {
   close: 'Cerrar',
   dismiss: 'Descartar',
   aPlayer: 'un jugador',
+  disconnected: 'desconectado',
+  returningToRoom: (roomCode: string) => `Volviendo a la sala ${roomCode}...`,
   waitingForHost: (hostName: string) => `Esperando a que el anfitrión (${hostName}) continúe...`,
 };
 

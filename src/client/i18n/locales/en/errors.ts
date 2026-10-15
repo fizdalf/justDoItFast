@@ -4,6 +4,7 @@ export const errors: ErrorMessages = {
   ROOM_NOT_FOUND: "There's no room with that code.",
   ROOM_CODE_REQUIRED: 'Enter the room code.',
   NOT_IN_ROOM: "You're not in a room.",
+  SESSION_EXPIRED: "You're no longer part of that room. Join again with the code.",
   NAME_REQUIRED: 'Enter your name.',
   PLAYER_NOT_FOUND: "That player isn't in the room anymore.",
   NOT_HOST: 'Only the host can do that.',

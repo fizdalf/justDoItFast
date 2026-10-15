@@ -1,5 +1,6 @@
 import React, {useState} from 'react';
 import {errorText, useI18n} from '../i18n/index.js';
+import {roomInviteUrl} from '../services/roomSession.js';
 import {useGame} from '../context/GameContext.js';
 import {Player} from '../../core/types.js';
 
@@ -36,7 +37,7 @@ export const LobbyView: React.FC = () => {
 
   const handleCopyInviteLink = () => {
     if (typeof window !== 'undefined' && navigator.clipboard) {
-      const link = `${window.location.origin}?room=${gameState.roomCode}`;
+      const link = roomInviteUrl(gameState.roomCode);
       navigator.clipboard.writeText(link);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
@@ -241,6 +242,9 @@ const PlayerCard: React.FC<{ player: Player; isCurrent: boolean; teamColor: 'ros
         </span>
         <span className="font-semibold text-white text-sm">
           {player.name} {isCurrent && <span className="text-amber-400 font-bold text-xs">{t.common.you}</span>}
+          {!player.isConnected && (
+            <span className="ml-1.5 text-[10px] font-bold uppercase text-slate-500">· {t.common.disconnected}</span>
+          )}
         </span>
       </div>
 

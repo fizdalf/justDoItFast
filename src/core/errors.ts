@@ -6,6 +6,7 @@ export type GameErrorCode =
   | 'ROOM_NOT_FOUND'
   | 'ROOM_CODE_REQUIRED'
   | 'NOT_IN_ROOM'
+  | 'SESSION_EXPIRED'
   | 'NAME_REQUIRED'
   | 'PLAYER_NOT_FOUND'
   | 'NOT_HOST'

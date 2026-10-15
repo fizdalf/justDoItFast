@@ -262,13 +262,18 @@ Todo texto visible es traducible y cada idioma puede tener textos propios (no so
 - Regla para todo el trabajo futuro: ningún texto visible hard-coded en componentes ni en mensajes del servidor; cada código de error nuevo necesita su traducción en todos los idiomas.
 - ? Pendiente de decidir: **mazos de palabras por idioma** (campo `language` en `WordPack`, filtro en el selector de mazos y en el panel de administración). Las palabras son contenido, no se traducen.
 
-###   Step 6: Resiliencia de conexión y recarga de página
+### ✓ Step 6: Resiliencia de conexión y recarga de página
 Cumplir el requisito no funcional de reconexión.
 
-- Persistir `playerId` + `roomCode` en `localStorage`; al recargar o reconectar el socket, re-unirse automáticamente con `room:join { playerId }`.
-- El servidor reasocia el nuevo `socket.id` al jugador existente y le reenvía el estado completo.
-- Desconexión del portador: reasignar la patata al **siguiente jugador del mismo equipo** (según los casos límite) tras un breve periodo de gracia, en lugar de pasarla al rival.
-- Indicador visual de jugadores desconectados en lobby y partida; banner de "reconectando…" en el cliente.
+- ✓ **La URL identifica la sala** (`/r/ABCD`; los enlaces antiguos `?room=` siguen funcionando). El estado de la partida no va en la URL: lo manda el servidor.
+- ✓ **Token secreto de sesión** por jugador (`room:create` / `room:join` lo devuelven; solo lo recibe ese dispositivo). Se guarda en `sessionStorage` (por pestaña, sobrevive a F5; varias pestañas del mismo navegador pueden ser jugadores distintos).
+- ✓ Al recargar o reconectarse el socket, el cliente llama a `room:rejoin { roomCode, sessionToken }` y recupera el mismo jugador (incluido el rol de anfitrión). Si la sala ya no existe o el token no vale (`ROOM_NOT_FOUND` / `SESSION_EXPIRED`), se muestra el formulario de unirse con ese código.
+- ✓ Corregido agujero de seguridad: `room:join` ya no acepta un `playerId` del cliente (los ids son públicos; cualquiera podía suplantar a otro jugador, incluido el anfitrión).
+- ✓ Un `disconnect` tardío del socket anterior no marca como desconectado a un jugador que ya ha vuelto con otro socket.
+- ✓ Artificiero desconectado: **periodo de gracia** configurable (`disconnectGraceSec`, 5 s por defecto) y después la bomba pasa al **siguiente compañero conectado de su equipo** (si no queda ninguno, al rival). La bomba sigue corriendo durante la gracia.
+- ✓ Pantalla "Volviendo a la sala…" durante la recarga; indicador "desconectado" en el lobby. "Atrás" del navegador no saca de la sala (solo el botón Salir).
+- ? Limitación conocida: cerrar la pestaña pierde la sesión (`sessionStorage`). Valorar en pruebas reales si en móvil hace falta persistir más (p. ej. `localStorage` con identificador de pestaña).
+- Pendiente para otros pasos: indicador de desconectados durante la partida; limpiar salas abandonadas (si todos se desconectan la sala queda en memoria); en producción el servidor debe servir `index.html` para `/r/*` (Step 9).
 
 ###   Step 7: Configuración de partida del anfitrión y QR
 - Panel de ajustes en el Lobby (solo anfitrión): puntuación objetivo, duración mínima/máxima de ronda, umbral de acierto rápido, power-ups on/off (global y por tipo), máximo de power-ups por equipo, duración de Congelación. Ningún valor de reglas hard-coded: todo sale de `GameSettings` con valores por defecto. Exponer `updateSettings` en `GameContext`.

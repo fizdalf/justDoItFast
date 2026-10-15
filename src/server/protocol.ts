@@ -1,13 +1,13 @@
 import {
-  DisputeResolution,
-  DisputeState,
-  GameSettings,
-  GameState,
-  Player,
-  PowerUp,
-  PowerUpType,
-  TeamId,
-  TurnState,
+    DisputeResolution,
+    DisputeState,
+    GameSettings,
+    GameState,
+    Player,
+    PowerUp,
+    PowerUpType,
+    TeamId,
+    TurnState,
 } from '../core/types.js';
 import type {GameErrorCode} from '../core/errors.js';
 
@@ -27,7 +27,12 @@ export interface CreateRoomPayload {
 export interface JoinRoomPayload {
   roomCode: string;
   playerName: string;
-  playerId?: string;
+}
+
+/** Volver a una sala tras recargar o perder la conexión, con el token secreto recibido al entrar. */
+export interface RejoinRoomPayload {
+  roomCode: string;
+  sessionToken: string;
 }
 
 export interface SwitchTeamPayload {
@@ -91,11 +96,17 @@ export interface RoundStartedPayload {
 export interface ClientToServerEvents {
   'room:create': (
     payload: CreateRoomPayload,
-    callback: (res: ApiResponse<{ roomCode: string; player: Player; gameState: GameState }>) => void
+    callback: (
+      res: ApiResponse<{ roomCode: string; player: Player; gameState: GameState; sessionToken: string }>
+    ) => void
   ) => void;
   'room:join': (
     payload: JoinRoomPayload,
-    callback: (res: ApiResponse<{ player: Player; gameState: GameState }>) => void
+    callback: (res: ApiResponse<{ player: Player; gameState: GameState; sessionToken: string }>) => void
+  ) => void;
+  'room:rejoin': (
+    payload: RejoinRoomPayload,
+    callback: (res: ApiResponse<{ player: Player; players: Player[]; gameState: GameState }>) => void
   ) => void;
   'room:leave': (callback?: (res: ApiResponse<{}>) => void) => void;
   'room:switch_team': (

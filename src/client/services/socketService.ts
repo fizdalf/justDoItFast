@@ -1,14 +1,14 @@
 import {io, Socket} from 'socket.io-client';
 import {
-  ApiErrorCode,
-  ApiResponse,
-  ClientToServerEvents,
-  PowerUpActivatedPayload,
-  RoundStartedPayload,
-  ServerToClientEvents,
-  TimerExplodedPayload,
-  TimerTickPayload,
-  TurnChangedPayload,
+    ApiErrorCode,
+    ApiResponse,
+    ClientToServerEvents,
+    PowerUpActivatedPayload,
+    RoundStartedPayload,
+    ServerToClientEvents,
+    TimerExplodedPayload,
+    TimerTickPayload,
+    TurnChangedPayload,
 } from '../../server/protocol.js';
 import {DisputeResolution, DisputeState, GameState, Player, PowerUpType, TeamId, TurnState,} from '../../core/types.js';
 
@@ -95,15 +95,22 @@ export class SocketService {
   public async createRoom(
     playerName: string,
     selectedPackId?: string
-  ): Promise<ApiResponse<{ roomCode: string; player: Player; gameState: GameState }>> {
+  ): Promise<ApiResponse<{ roomCode: string; player: Player; gameState: GameState; sessionToken: string }>> {
     return this.emitWithAck('room:create', { playerName, selectedPackId });
   }
 
   public async joinRoom(
     roomCode: string,
     playerName: string
-  ): Promise<ApiResponse<{ player: Player; gameState: GameState }>> {
+  ): Promise<ApiResponse<{ player: Player; gameState: GameState; sessionToken: string }>> {
     return this.emitWithAck('room:join', { roomCode, playerName });
+  }
+
+  public async rejoinRoom(
+    roomCode: string,
+    sessionToken: string
+  ): Promise<ApiResponse<{ player: Player; players: Player[]; gameState: GameState }>> {
+    return this.emitWithAck('room:rejoin', { roomCode, sessionToken });
   }
 
   public async leaveRoom(): Promise<ApiResponse<{}>> {

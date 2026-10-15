@@ -66,6 +66,8 @@ export interface GameSettings {
   maxRoundDurationSec: number;
   fastGuessThresholdSec: number;
   allowPowerUps: boolean;
+  /** Segundos que se espera a un artificiero desconectado antes de pasar la bomba a un compañero. */
+  disconnectGraceSec: number;
 }
 
 export interface RoundResult {
