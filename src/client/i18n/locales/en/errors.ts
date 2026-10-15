@@ -21,6 +21,8 @@ export const errors: ErrorMessages = {
   PACK_TOO_FEW_WORDS: 'A deck needs at least 5 different words.',
   INVALID_IMPORT: "The file doesn't contain a valid list of decks.",
   POWERUP_NOT_FOUND: "That tool isn't available anymore.",
+  POWERUP_NOT_ALLOWED: "You can't use that tool right now.",
+  FROZEN: 'The jammer is blocking the button! Wait a few seconds.',
   UNAUTHORIZED: 'Wrong admin token.',
   INTERNAL: 'Something went wrong. Please try again.',
   NOT_CONNECTED: 'No connection to the server.',

@@ -64,7 +64,10 @@ function makeGame(overrides: Partial<GameState> = {}): GameState {
       turnStartTime: 0,
       requiredGuesses: 1,
       successfulGuesses: 0,
+      doubleRevealed: false,
       isFrozen: false,
+      rewardForfeited: false,
+      direction: 1,
     },
     ...overrides,
   };

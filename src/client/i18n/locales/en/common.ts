@@ -37,6 +37,18 @@ export const common: CommonMessages = {
       name: 'Jammer',
       description: "Blocks the rival defuser's button for a few seconds.",
     },
+    SHIELD: {
+      name: 'Bomb Suit',
+      description: 'Kicks in by itself if the bomb blows up on your team: it re-arms with a short fuse and goes to the rival.',
+    },
+    XRAY: {
+      name: 'X-Ray',
+      description: 'Your team sees roughly how much time the bomb has left.',
+    },
+    REWIRE: {
+      name: 'Rewire Timer',
+      description: "The bomb's remaining time is secretly redrawn.",
+    },
   },
 
   connection: {

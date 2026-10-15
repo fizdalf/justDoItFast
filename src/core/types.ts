@@ -3,7 +3,18 @@ export type TeamId = 'A' | 'B';
 /** Estado de una partida en curso. Fuera de una partida, la sala está reunida sin jugar (no hay GameState). */
 export type GameStatus = 'PLAYING' | 'DISPUTE_PAUSED' | 'ROUND_OVER' | 'GAME_OVER';
 
-export type PowerUpType = 'REVERSE' | 'DOUBLE_BURDEN' | 'FREEZE' | 'SKIP';
+/**
+ * Herramientas. Nombres de juego (por idioma) en los diccionarios del cliente:
+ * REVERSE = Devolver al remitente, SKIP = Otro cable, DOUBLE_BURDEN = Doble detonador,
+ * FREEZE = Inhibidor, SHIELD = Traje antiexplosivos, XRAY = Rayos X, REWIRE = Reprogramar temporizador.
+ */
+export type PowerUpType = 'REVERSE' | 'SKIP' | 'DOUBLE_BURDEN' | 'FREEZE' | 'SHIELD' | 'XRAY' | 'REWIRE';
+
+/** Lectura aproximada del tiempo que le queda a la bomba (Rayos X). */
+export type XrayReading = 'LONG' | 'MEDIUM' | 'SHORT';
+
+/** Por qué cambió el turno (para sonidos y avisos; el estado llega aparte). */
+export type TurnChangeReason = 'PASS' | 'BOUNCE' | 'SKIP' | 'EXTRA_WIRE' | 'REASSIGN' | 'SHIELD';
 
 export type PriceTier = 'FREE' | 'TIER_1' | 'TIER_2';
 
@@ -48,10 +59,26 @@ export interface TurnState {
   currentWord: string;
   category: string;
   turnStartTime: number;
+  /**
+   * Cables que hay que cortar en este turno (1 + Doble detonadores). Mientras el equipo
+   * portador no lo ha descubierto, en su vista (y la de espectadores) vale 1.
+   */
   requiredGuesses: number;
   successfulGuesses: number;
+  /** El equipo portador ya sabe que lleva Doble detonador (tras su primer acierto o un rebote). */
+  doubleRevealed: boolean;
+  /** Inhibidor activo: el artificiero no puede cortar el cable. */
   isFrozen: boolean;
+  /** Fin del bloqueo, en el reloj del servidor (uso interno). */
   freezeExpiresAt?: number;
+  /** Ms de bloqueo que quedaban al enviar el estado (el cliente cuenta atrás desde ahí). */
+  freezeRemainingMs?: number;
+  /** Se usó Otro cable: este turno ya no gana herramientas. */
+  rewardForfeited: boolean;
+  /** Quién pasó la bomba al artificiero actual (destino de Devolver al remitente). */
+  passedByPlayerId?: string;
+  /** Sentido de los pases: 1 normal, -1 invertido (Devolver al remitente lo cambia). */
+  direction: 1 | -1;
 }
 
 export interface BoardTile {
@@ -72,6 +99,11 @@ export interface GameSettings {
   maxPowerUpsPerTeam: number;
   /** Segundos que el Inhibidor bloquea el botón del artificiero rival. */
   freezeDurationSec: number;
+  /** Mecha máxima tras salvarse con el Traje antiexplosivos (se sortea entre la mitad y este valor). */
+  shieldFuseSec: number;
+  /** Rango en el que Reprogramar temporizador vuelve a sortear el tiempo restante. */
+  rewireMinSec: number;
+  rewireMaxSec: number;
   /** Segundos que se espera a un artificiero desconectado antes de pasar la bomba a un compañero. */
   disconnectGraceSec: number;
 }

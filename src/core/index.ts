@@ -8,3 +8,4 @@ export * from './DeckEngine.js';
 export * from './BoardEngine.js';
 export * from './errors.js';
 export * from './settings.js';
+export * from './powerUpRules.js';

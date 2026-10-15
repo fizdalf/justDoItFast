@@ -8,7 +8,8 @@ import {
   PowerUpType,
   RoomState,
   TeamId,
-  TurnState,
+  TurnChangeReason,
+  XrayReading,
 } from '../core/types.js';
 import type {GameErrorCode} from '../core/errors.js';
 
@@ -20,8 +21,10 @@ export type ApiResponse<T> =
   | { success: false; error: string; code: ApiErrorCode };
 
 /**
- * Foto completa de lo que ve un jugador: la sala y, si hay una en curso, la partida.
- * `game` es null mientras la sala está reunida sin jugar.
+ * Foto completa de lo que ve UN jugador: la sala y, si hay una en curso, la partida.
+ * `game` es null mientras la sala está reunida sin jugar. La partida viene filtrada para
+ * quien la recibe: solo las herramientas de su equipo, el cable solo para el artificiero y
+ * los saboteadores, y el Doble detonador oculto al equipo portador hasta que se revela.
  */
 export interface RoomSnapshot {
   room: RoomState;
@@ -61,9 +64,8 @@ export interface UsePowerUpPayload {
   powerUpId: string;
 }
 
+/** Solo el ritmo del tic-tac: el tiempo restante es secreto y nunca sale del servidor. */
 export interface TimerTickPayload {
-  elapsedMs: number;
-  remainingMs: number;
   intervalMs: number;
   activePlayerId: string;
 }
@@ -75,24 +77,6 @@ export interface TimerExplodedPayload {
   scores: Record<TeamId, number>;
   isGameOver: boolean;
   winner?: TeamId;
-}
-
-export interface TurnChangedPayload {
-  currentTurn: TurnState;
-  lastGuessFast: boolean;
-  awardedPowerUp?: PowerUp;
-}
-
-export interface PowerUpActivatedPayload {
-  powerUp: PowerUp;
-  activatedByTeam: TeamId;
-  currentTurn?: TurnState;
-}
-
-export interface RoundStartedPayload {
-  roundNumber: number;
-  currentTurn: TurnState;
-  game: GameState;
 }
 
 export interface ClientToServerEvents {
@@ -131,9 +115,8 @@ export interface ClientToServerEvents {
    * antes, abandona la partida (queda en el historial como no terminada).
    */
   'game:end': (callback: (res: ApiResponse<RoomSnapshot>) => void) => void;
-  'turn:guess_success': (
-    callback: (res: ApiResponse<{ isFastGuess: boolean; currentTurn: TurnState }>) => void
-  ) => void;
+  /** El artificiero corta el cable. Si quedan cables (Doble detonador), sigue con otro; si no, pasa la bomba. */
+  'turn:guess_success': (callback: (res: ApiResponse<{ passed: boolean }>) => void) => void;
   /** Cantar falta: la ronda se detiene y el anfitrión decide (el motivo se discute en la mesa). */
   'turn:foul_triggered': (callback: (res: ApiResponse<{ dispute: DisputeState }>) => void) => void;
   'host:resolve_dispute': (
@@ -146,17 +129,29 @@ export interface ClientToServerEvents {
   ) => void;
 }
 
+/**
+ * Los eventos solo avisan (sonidos, vibración, notificaciones); el estado completo llega
+ * siempre en `room:state_updated`, filtrado para cada jugador.
+ */
 export interface ServerToClientEvents {
-  /** Estado completo tras cualquier cambio de sala o partida. Es la fuente de verdad del cliente. */
   'room:state_updated': (payload: RoomSnapshot) => void;
-  'game:round_started': (payload: RoundStartedPayload) => void;
+  'game:round_started': (payload: { roundNumber: number }) => void;
   'timer:tick': (payload: TimerTickPayload) => void;
-  'turn:changed': (payload: TurnChangedPayload) => void;
-  'game:dispute_started': (payload: { dispute: DisputeState; game: GameState }) => void;
-  'game:dispute_resolved': (payload: { resolution: DisputeResolution; game: GameState }) => void;
-  'powerup:activated': (payload: PowerUpActivatedPayload) => void;
+  'turn:changed': (payload: { reason: TurnChangeReason }) => void;
+  'game:dispute_started': (payload: { dispute: DisputeState }) => void;
+  'game:dispute_resolved': (payload: { resolution: DisputeResolution }) => void;
   'timer:exploded': (payload: TimerExplodedPayload) => void;
-  'game:over': (payload: { winner: TeamId; finalScores: Record<TeamId, number>; game: GameState }) => void;
+  'game:over': (payload: { winner: TeamId; finalScores: Record<TeamId, number> }) => void;
+  /** Herramienta ganada (acierto rápido o casilla). Solo al equipo que la gana. */
+  'powerup:awarded': (payload: { powerUp: PowerUp; source: 'FAST_GUESS' | 'TILE' }) => void;
+  /** Herramienta usada. A todos, salvo las secretas (Doble detonador): solo al equipo que la usa. */
+  'powerup:activated': (payload: { type: PowerUpType; team: TeamId; byPlayerId: string }) => void;
+  /** El equipo portador descubre el Doble detonador (al cortar el primer cable o porque se lo devuelven). A todos. */
+  'powerup:double_revealed': (payload: { requiredGuesses: number; bounced: boolean; holderTeam: TeamId }) => void;
+  /** Resultado de Rayos X. Solo al equipo que lo usa. */
+  'powerup:xray': (payload: { reading: XrayReading }) => void;
+  /** El Traje antiexplosivos salvó al artificiero: la bomba se rearma y pasa al rival. A todos. */
+  'bomb:shielded': (payload: { playerId: string; team: TeamId }) => void;
   'error:message': (payload: { code: GameErrorCode; message: string }) => void;
 }
 

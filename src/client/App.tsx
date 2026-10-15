@@ -14,6 +14,7 @@ import {GameOverView} from './components/views/GameOverView.js';
 import {RoundOverView} from './components/views/RoundOverView.js';
 import {SpectatorView} from './components/views/SpectatorView.js';
 import {AdminDeckEditor} from './components/admin/AdminDeckEditor.js';
+import {NoticeStack} from './components/NoticeStack.js';
 
 const GameContent: React.FC = () => {
   const {
@@ -86,6 +87,9 @@ const GameContent: React.FC = () => {
           <button onClick={clearError} aria-label={t.common.dismiss} className="font-bold text-rose-300 ml-2">×</button>
         </div>
       )}
+
+      {/* Avisos de herramientas (bajo la cabecera) */}
+      {game && <NoticeStack />}
 
       {showAdmin && <AdminDeckEditor onClose={() => setShowAdmin(false)} />}
     </div>

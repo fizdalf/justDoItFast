@@ -16,12 +16,12 @@ function expectInvalid(fn: () => unknown) {
 }
 
 describe('Specification: Configurable game settings', () => {
-  it('GIVEN no changes THEN the defaults apply (2 tools per team, 3 s jammer, all tools enabled)', () => {
+  it('GIVEN no changes THEN the defaults apply (2 tools per team, 3 s jammer, all 7 tools enabled)', () => {
     const settings = resolveSettings();
     expect(settings).toEqual(DEFAULT_SETTINGS);
     expect(settings.maxPowerUpsPerTeam).toBe(2);
     expect(settings.freezeDurationSec).toBe(3);
-    expect(settings.enabledPowerUps).toHaveLength(4);
+    expect(settings.enabledPowerUps).toHaveLength(7);
   });
 
   it('GIVEN partial changes THEN they are merged over the current settings', () => {

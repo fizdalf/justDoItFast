@@ -22,6 +22,8 @@ export const errors: Record<ApiErrorCode, string> = {
   PACK_TOO_FEW_WORDS: 'Un mazo necesita al menos 5 palabras distintas.',
   INVALID_IMPORT: 'El archivo no contiene una lista de mazos válida.',
   POWERUP_NOT_FOUND: 'Esa herramienta ya no está disponible.',
+  POWERUP_NOT_ALLOWED: 'Ahora no puedes usar esa herramienta.',
+  FROZEN: '¡El inhibidor bloquea el botón! Espera unos segundos.',
   UNAUTHORIZED: 'Token de administrador incorrecto.',
   INTERNAL: 'Algo ha fallado. Inténtalo de nuevo.',
   NOT_CONNECTED: 'Sin conexión con el servidor.',

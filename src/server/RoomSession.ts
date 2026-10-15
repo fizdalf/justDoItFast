@@ -10,7 +10,6 @@ import {
     PowerUpType,
     RoomState,
     TeamId,
-    TurnState,
 } from '../core/types.js';
 import {ClientToServerEvents, RoomSnapshot, ServerToClientEvents, SocketData, UpdateSetupPayload,} from './protocol.js';
 import {Game} from './Game.js';
@@ -19,6 +18,11 @@ import {GameError} from '../core/errors.js';
 import {DEFAULT_SETTINGS, resolveSettings} from '../core/settings.js';
 
 export const DEFAULT_PACK_ID = 'classic-1996';
+
+/** Sala de socket.io personal de cada jugador: para enviarle su foto filtrada y avisos secretos. */
+export function playerRoom(roomCode: string, playerId: string): string {
+  return `${roomCode}#${playerId}`;
+}
 
 /**
  * Una sala: el grupo de gente reunida durante toda la sesión. Guarda jugadores, equipos,
@@ -73,10 +77,11 @@ export class RoomSession {
     };
   }
 
-  getSnapshot(): RoomSnapshot {
+  /** Lo que ve un jugador concreto (null = un observador sin equipo). */
+  getSnapshot(viewerId: string | null): RoomSnapshot {
     return {
       room: this.getRoomState(),
-      game: this.currentGame ? this.currentGame.getState() : null,
+      game: this.currentGame ? this.currentGame.getViewFor(viewerId) : null,
     };
   }
 
@@ -205,6 +210,13 @@ export class RoomSession {
           if (this.isDestroyed || this.currentGame !== game) return;
           (this.io.to(this.roomCode).emit as any)(event, ...args);
         },
+        emitToTeam: (team, event, ...args) => {
+          if (this.isDestroyed || this.currentGame !== game) return;
+          const rooms = this.getPlayers()
+            .filter((p) => p.team === team && game.isParticipant(p.id))
+            .map((p) => playerRoom(this.roomCode, p.id));
+          if (rooms.length > 0) (this.io.to(rooms).emit as any)(event, ...args);
+        },
         getRoomPlayers: () => this.roomManager.getSeatOrder(this.roomCode),
         onStateChanged: () => {
           if (this.currentGame === game) this.broadcastState();
@@ -224,7 +236,7 @@ export class RoomSession {
       throw err;
     }
     this.gameCounter++;
-    return this.getSnapshot();
+    return this.getSnapshot(playerId);
   }
 
   // --- Partidas ---
@@ -232,7 +244,7 @@ export class RoomSession {
   startRound(playerId: string): RoomSnapshot {
     this.assertHost(playerId, 'start a round');
     this.requireGame().startRound();
-    return this.getSnapshot();
+    return this.getSnapshot(playerId);
   }
 
   /**
@@ -250,10 +262,10 @@ export class RoomSession {
     this.currentGame = null;
 
     this.broadcastState();
-    return this.getSnapshot();
+    return this.getSnapshot(playerId);
   }
 
-  recordGuessSuccess(playerId: string): { isFastGuess: boolean; currentTurn: TurnState } {
+  recordGuessSuccess(playerId: string): { passed: boolean } {
     return this.requireParticipant(playerId).recordGuessSuccess(playerId);
   }
 
@@ -264,7 +276,7 @@ export class RoomSession {
   resolveDispute(playerId: string, resolution: DisputeResolution): RoomSnapshot {
     this.assertHost(playerId, 'resolve disputes');
     this.requireGame().resolveDispute(resolution);
-    return this.getSnapshot();
+    return this.getSnapshot(playerId);
   }
 
   usePowerUp(playerId: string, powerUpId: string): { powerUpType: PowerUpType } {
@@ -304,8 +316,11 @@ export class RoomSession {
     return game;
   }
 
+  /** Cada jugador recibe su propia foto: la partida va filtrada según su papel. */
   private broadcastState(): void {
     if (this.isDestroyed) return;
-    this.io.to(this.roomCode).emit('room:state_updated', this.getSnapshot());
+    for (const player of this.getPlayers()) {
+      this.io.to(playerRoom(this.roomCode, player.id)).emit('room:state_updated', this.getSnapshot(player.id));
+    }
   }
 }

@@ -23,6 +23,8 @@ export type GameErrorCode =
   | 'PACK_TOO_FEW_WORDS'
   | 'INVALID_IMPORT'
   | 'POWERUP_NOT_FOUND'
+  | 'POWERUP_NOT_ALLOWED'
+  | 'FROZEN'
   | 'UNAUTHORIZED'
   | 'INTERNAL';
 

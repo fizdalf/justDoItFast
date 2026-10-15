@@ -3,7 +3,7 @@ import {afterEach, describe, expect, it, vi} from 'vitest';
 import React from 'react';
 import {cleanup, fireEvent, render, screen, waitFor} from '@testing-library/react';
 import {GameSettings, RoomState} from '../../src/core/types.js';
-import {DEFAULT_SETTINGS} from '../../src/core/settings.js';
+import {ALL_POWER_UPS, DEFAULT_SETTINGS} from '../../src/core/settings.js';
 import {es} from '../../src/client/i18n/locales/es/index.js';
 
 const mockGame: Record<string, any> = {};
@@ -73,6 +73,45 @@ describe('RoomSettingsPanel', () => {
 
     fireEvent.click(screen.getByText(es.common.powerUps.FREEZE.name));
     expect(mockGame.updateSetup).not.toHaveBeenCalled();
+  });
+
+  it('lists all seven tools', () => {
+    setGame(true);
+    render(<RoomSettingsPanel />);
+    for (const type of ALL_POWER_UPS) {
+      expect(screen.getByText(es.common.powerUps[type].name)).toBeDefined();
+    }
+  });
+
+  it('shows the bomb suit and rewire steppers only when those tools are enabled', () => {
+    const tools = es.common.powerUps;
+    setGame(true, { enabledPowerUps: ['FREEZE'] });
+    render(<RoomSettingsPanel />);
+    expect(screen.queryByText(labels.shieldFuse(tools.SHIELD.name))).toBeNull();
+    expect(screen.queryByText(labels.rewireMin(tools.REWIRE.name))).toBeNull();
+    expect(screen.queryByText(labels.rewireMax(tools.REWIRE.name))).toBeNull();
+    cleanup();
+
+    setGame(true, { enabledPowerUps: ['SHIELD', 'REWIRE'] });
+    render(<RoomSettingsPanel />);
+    expect(screen.getByText(labels.shieldFuse(tools.SHIELD.name))).toBeDefined();
+    expect(screen.getByText(labels.rewireMin(tools.REWIRE.name))).toBeDefined();
+    expect(screen.getByText(labels.rewireMax(tools.REWIRE.name))).toBeDefined();
+
+    fireEvent.click(screen.getByLabelText(labels.increase(labels.shieldFuse(tools.SHIELD.name))));
+    expect(mockGame.updateSetup).toHaveBeenCalledWith({ settings: { shieldFuseSec: DEFAULT_SETTINGS.shieldFuseSec + 1 } });
+  });
+
+  it('keeps the rewire minimum below the maximum', () => {
+    const name = es.common.powerUps.REWIRE.name;
+    setGame(true, { rewireMinSec: 20, rewireMaxSec: 20 });
+    render(<RoomSettingsPanel />);
+
+    fireEvent.click(screen.getByLabelText(labels.increase(labels.rewireMin(name))));
+    expect(mockGame.updateSetup).toHaveBeenLastCalledWith({ settings: { rewireMinSec: 25, rewireMaxSec: 25 } });
+
+    fireEvent.click(screen.getByLabelText(labels.decrease(labels.rewireMax(name))));
+    expect(mockGame.updateSetup).toHaveBeenLastCalledWith({ settings: { rewireMaxSec: 15, rewireMinSec: 15 } });
   });
 
   it('hides tool settings when tools are switched off', () => {

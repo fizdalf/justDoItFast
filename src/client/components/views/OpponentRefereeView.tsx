@@ -3,16 +3,19 @@ import {useI18n} from '../../i18n/index.js';
 import {useGame} from '../../context/GameContext.js';
 import {Player} from '../../../core/types.js';
 import {PlayLayout} from './PlayLayout.js';
+import {FrozenBadge, WireCounter} from './TurnStatus.js';
 import {HoldButton} from '../HoldButton.js';
+import {ToolsBar} from './ToolsBar.js';
 
 export const OpponentRefereeView: React.FC = () => {
   const { currentTurn, game, players, triggerFoul } = useGame();
   const { t } = useI18n();
   const [submitting, setSubmitting] = useState(false);
 
-  const word = currentTurn?.currentWord || game?.currentTurn?.currentWord || '...';
-  const category = currentTurn?.category || game?.currentTurn?.category || '';
-  const activeId = currentTurn?.activePlayerId || game?.currentTurn?.activePlayerId;
+  const turn = currentTurn ?? game?.currentTurn;
+  const word = turn?.currentWord || '...';
+  const category = turn?.category || '';
+  const activeId = turn?.activePlayerId;
   const activePlayerName =
     players.find((p: Player) => p.id === activeId)?.name || t.common.roles.holder.singular;
 
@@ -35,6 +38,7 @@ export const OpponentRefereeView: React.FC = () => {
       }
       footer={
         <>
+          <ToolsBar />
           <HoldButton
             onHold={handleFoul}
             disabled={submitting}
@@ -52,6 +56,12 @@ export const OpponentRefereeView: React.FC = () => {
         <span className="text-[11px] font-bold font-mono uppercase tracking-widest text-sky-400 bg-sky-500/10 border border-sky-500/20 px-3 py-1 rounded-full">
           {t.game.saboteurs.wireLabel(category)}
         </span>
+        {(turn?.requiredGuesses ?? 1) > 1 || turn?.isFrozen ? (
+          <div className="flex flex-wrap justify-center gap-2">
+            <WireCounter turn={turn} />
+            <FrozenBadge turn={turn} />
+          </div>
+        ) : null}
         <h2 className="text-[clamp(1.75rem,9vw,3rem)] leading-tight font-black text-white tracking-wide break-words select-none uppercase w-full">
           {word}
         </h2>

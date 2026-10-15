@@ -94,7 +94,8 @@ describe('Socket.io Real-Time Game Server Integration', () => {
   }
 
   function gameOf(roomCode: string): GameState {
-    const game = sessionOf(roomCode).getSnapshot().game;
+    // Estado completo sin filtrar (lo que ve cada jugador se comprueba aparte)
+    const game = sessionOf(roomCode).getCurrentGame()?.getState();
     if (!game) throw new Error('Expected a game in progress');
     return game;
   }
@@ -184,7 +185,7 @@ describe('Socket.io Real-Time Game Server Integration', () => {
   });
 
   it('runs a full round cycle: start game, guess words, pass the bomb', async () => {
-    const { host, p2, hostRes } = await setupFourPlayers();
+    const { host, p2, hostRes, roomCode } = await setupFourPlayers();
 
     const roundStarted = waitForEvent<any>(p2, 'game:round_started');
     const startRes = dataOf(await emitAsync<RoomSnapshot>(host, 'game:start'));
@@ -198,69 +199,77 @@ describe('Socket.io Real-Time Game Server Integration', () => {
     expect(startRes.game!.currentTurn!.currentWord).toBeTruthy();
 
     const started = await roundStarted;
-    expect(started.roundNumber).toBe(1);
-    expect(started.game.status).toBe('PLAYING');
+    expect(started).toEqual({ roundNumber: 1 });
 
     // Active player (Host Alice) hits guess success
     const turnChangePromise = waitForEvent<any>(p2, 'turn:changed');
-    const guessRes = await emitAsync<{ isFastGuess: boolean; currentTurn: TurnState }>(host, 'turn:guess_success');
-    expect(guessRes.success).toBe(true);
+    const guessRes = await emitAsync<{ passed: boolean }>(host, 'turn:guess_success');
+    expect(guessRes).toMatchObject({ success: true, data: { passed: true } });
 
-    const turnChangeEvent = await turnChangePromise;
-    expect(turnChangeEvent.currentTurn.activeTeam).toBe('B');
-    expect(typeof turnChangeEvent.currentTurn.activePlayerId).toBe('string');
-    expect(turnChangeEvent.currentTurn.activePlayerId.length).toBeGreaterThan(0);
+    // El evento solo avisa; el turno nuevo está en el estado
+    expect(await turnChangePromise).toEqual({ reason: 'PASS' });
+    expect(gameOf(roomCode).currentTurn!.activeTeam).toBe('B');
+    expect(gameOf(roomCode).currentTurn!.passedByPlayerId).toBe(hostRes.player.id);
   });
 
   it('handles dispute mediation: rival triggers foul, freezes round, host resolves', async () => {
-    const { host, p2, p3 } = await setupFourPlayers();
+    const { host, p2, p3, roomCode } = await setupFourPlayers();
     await emitAsync(host, 'game:start');
 
     // Rival (Bob on Team B) calls foul while Alice (Team A) is active
-    const disputePromise = waitForEvent<{ dispute: DisputeState; game: GameState }>(host, 'game:dispute_started');
+    const disputePromise = waitForEvent<{ dispute: DisputeState }>(host, 'game:dispute_started');
 
     const foulRes = await emitAsync<{ dispute: DisputeState }>(p2, 'turn:foul_triggered');
     expect(foulRes.success).toBe(true);
 
     const disputeEvent = await disputePromise;
     expect(disputeEvent.dispute.triggeredByTeam).toBe('B');
-    expect(disputeEvent.game.status).toBe('DISPUTE_PAUSED');
+    expect(gameOf(roomCode).status).toBe('DISPUTE_PAUSED');
 
     // Host Alice resolves dispute in favor of Team B
-    const resolvePromise = waitForEvent<{ resolution: string; game: GameState }>(p3, 'game:dispute_resolved');
+    const resolvePromise = waitForEvent<{ resolution: string }>(p3, 'game:dispute_resolved');
 
     const resolveRes = await emitAsync<RoomSnapshot>(host, 'host:resolve_dispute', { resolution: 'AWARD_TEAM_B' });
     expect(resolveRes.success).toBe(true);
     expect(dataOf(resolveRes).game!.status).toBe('ROUND_OVER');
 
-    const resolveEvent = await resolvePromise;
-    expect(resolveEvent.game.status).toBe('ROUND_OVER');
-    expect(resolveEvent.game.scores.B).toBe(1);
-    expect(resolveEvent.game.scores.A).toBe(0);
+    expect(await resolvePromise).toEqual({ resolution: 'AWARD_TEAM_B' });
+    expect(gameOf(roomCode).status).toBe('ROUND_OVER');
+    expect(gameOf(roomCode).scores).toEqual({ A: 0, B: 1 });
   });
 
-  it('handles fast guess power-up reward and activation', async () => {
-    const { host, p2, p3, roomCode } = await setupFourPlayers({ fastGuessThresholdSec: 10 });
+  it('rewards a fast guess with a tool only the team knows about', async () => {
+    const { host, p2, p3, roomCode } = await setupFourPlayers({ fastGuessThresholdSec: 10, enabledPowerUps: ['XRAY'] });
     await emitAsync(host, 'game:start');
 
+    const awardedToA = waitForEvent<any>(p3, 'powerup:awarded');
+    let awardedToB = false;
+    p2.on('powerup:awarded', () => (awardedToB = true));
+
     // Alice guesses fast
-    const guessRes = await emitAsync<{ isFastGuess: boolean; currentTurn: TurnState }>(host, 'turn:guess_success');
-    expect(guessRes.success).toBe(true);
-    expect((guessRes as any).data.isFastGuess).toBe(true);
+    expect(await emitAsync(host, 'turn:guess_success')).toMatchObject({ success: true, data: { passed: true } });
+    expect((await awardedToA).source).toBe('FAST_GUESS');
 
     const inventoryA = gameOf(roomCode).teamInventory.A;
-    expect(inventoryA.length).toBeGreaterThan(0);
+    expect(inventoryA.map((p) => p.type)).toEqual(['XRAY']);
+    await new Promise((r) => setTimeout(r, 50));
+    expect(awardedToB).toBe(false);
 
-    const powerUp = inventoryA[0];
+    // Charlie (Team A) uses X-ray: everybody hears about it, only Team A gets the reading
+    const activated = waitForEvent<any>(p2, 'powerup:activated');
+    const reading = waitForEvent<any>(p3, 'powerup:xray');
+    let readingToB = false;
+    p2.on('powerup:xray', () => (readingToB = true));
 
-    // Charlie (on Team A) activates the power-up
-    const powerUpPromise = waitForEvent<any>(p2, 'powerup:activated');
-    const useRes = await emitAsync<{ powerUpType: string }>(p3, 'powerup:use', { powerUpId: powerUp.id });
-    expect(useRes.success).toBe(true);
-
-    const activatedEvent = await powerUpPromise;
-    expect(activatedEvent.powerUp.id).toBe(powerUp.id);
-    expect(activatedEvent.activatedByTeam).toBe('A');
+    expect(await emitAsync(p3, 'powerup:use', { powerUpId: inventoryA[0].id })).toMatchObject({
+      success: true,
+      data: { powerUpType: 'XRAY' },
+    });
+    expect(await activated).toMatchObject({ type: 'XRAY', team: 'A' });
+    expect(['LONG', 'MEDIUM', 'SHORT']).toContain((await reading).reading);
+    await new Promise((r) => setTimeout(r, 50));
+    expect(readingToB).toBe(false);
+    expect(gameOf(roomCode).teamInventory.A).toHaveLength(0);
   });
 
   it('handles player disconnection gracefully during a game round', async () => {
@@ -348,7 +357,7 @@ describe('Socket.io Real-Time Game Server Integration', () => {
     const startFail2 = await emitAsync(p2, 'game:start');
     expect(startFail2).toMatchObject({ success: false, code: 'NOT_HOST' });
 
-    expect(sessionOf(roomCode).getSnapshot().game).toBeNull();
+    expect(sessionOf(roomCode).getSnapshot(null).game).toBeNull();
   });
 
   it('requires 2 connected players per team to start a game', async () => {
@@ -417,7 +426,7 @@ describe('Socket.io Real-Time Game Server Integration', () => {
     // A rejected change does not apply any part of it
     expect(await emitAsync(host, 'room:update_setup', { settings: { targetScore: 9 }, packIds: [] }))
       .toMatchObject({ success: false, code: 'NO_PACKS_SELECTED' });
-    expect(sessionOf(roomCode).getSnapshot().room.setup.settings.targetScore).toBe(5);
+    expect(sessionOf(roomCode).getSnapshot(null).room.setup.settings.targetScore).toBe(5);
 
     const update = waitForEvent<RoomSnapshot>(p2, 'room:state_updated');
     const res = await emitAsync(host, 'room:update_setup', {
@@ -460,8 +469,8 @@ describe('Socket.io Real-Time Game Server Integration', () => {
     const seen: TurnState[] = [game!.currentTurn!];
     for (let i = 0; i < 9; i++) {
       const active = gameOf(roomCode).currentTurn!.activePlayerId;
-      const res = dataOf(await emitAsync<{ currentTurn: TurnState }>(socketsById.get(active)!, 'turn:guess_success'));
-      seen.push(res.currentTurn);
+      dataOf(await emitAsync(socketsById.get(active)!, 'turn:guess_success'));
+      seen.push(gameOf(roomCode).currentTurn!);
     }
 
     expect(new Set(seen.map((t) => t.currentWord)).size).toBe(10);
@@ -484,10 +493,9 @@ describe('Socket.io Real-Time Game Server Integration', () => {
 
     await emitAsync(host, 'game:start');
 
+    // El tic-tac solo da el ritmo: el tiempo restante nunca sale del servidor
     const tickData = await tickPromise;
-    expect(tickData).toBeDefined();
-    expect(typeof tickData.elapsedMs).toBe('number');
-    expect(typeof tickData.remainingMs).toBe('number');
+    expect(Object.keys(tickData).sort()).toEqual(['activePlayerId', 'intervalMs']);
 
     const explodeData = await explodePromise;
     expect(explodeData).toBeDefined();
@@ -529,7 +537,7 @@ describe('Socket.io Real-Time Game Server Integration', () => {
     expect(afterRound1.room.history).toEqual([]);
 
     // Only from ROUND_OVER
-    const gameOverPromise = waitForEvent<{ winner: string; finalScores: any; game: GameState }>(p3, 'game:over');
+    const gameOverPromise = waitForEvent<{ winner: string; finalScores: any }>(p3, 'game:over');
 
     // Round 2 -> GAME_OVER
     const afterRound2 = await playRoundAwardedToB('game:start_round');
@@ -539,7 +547,6 @@ describe('Socket.io Real-Time Game Server Integration', () => {
     const gameOver = await gameOverPromise;
     expect(gameOver.winner).toBe('B');
     expect(gameOver.finalScores).toEqual({ A: 0, B: 2 });
-    expect(gameOver.game.status).toBe('GAME_OVER');
 
     // The summary is recorded as soon as the game is over; the podium stays until the host closes it
     expect(afterRound2.room.history).toHaveLength(1);
@@ -703,12 +710,13 @@ describe('Socket.io Real-Time Game Server Integration', () => {
     await emitAsync(host, 'room:leave');
 
     const changed = await turnChanged;
-    expect(changed.currentTurn.activePlayerId).toBe(joins[1].player.id); // Charlie, same team
+    expect(changed).toEqual({ reason: 'REASSIGN' });
+    expect(gameOf(roomCode).currentTurn!.activePlayerId).toBe(joins[1].player.id); // Charlie, same team
     const game = gameOf(roomCode);
     expect(game.participantIds).not.toContain(hostRes.player.id);
     expect(game.participantIds).toHaveLength(3);
     // Host role moves on
-    expect(sessionOf(roomCode).getSnapshot().room.hostPlayerId).not.toBe(hostRes.player.id);
+    expect(sessionOf(roomCode).getSnapshot(null).room.hostPlayerId).not.toBe(hostRes.player.id);
   });
 
   it('lets a host who is a spectator manage the game', async () => {
@@ -723,7 +731,7 @@ describe('Socket.io Real-Time Game Server Integration', () => {
       await disconnectAndWait(socket, roomCode, j.player.id);
     }
     await emitAsync(host, 'room:leave');
-    expect(sessionOf(roomCode).getSnapshot().room.hostPlayerId).toBe(eve.player.id);
+    expect(sessionOf(roomCode).getSnapshot(null).room.hostPlayerId).toBe(eve.player.id);
 
     // The others come back
     const back: TestClientSocket[] = [];
@@ -853,7 +861,8 @@ describe('Socket.io Real-Time Game Server Integration', () => {
       expect(gameOf(roomCode).currentTurn!.activePlayerId).toBe(hostRes.player.id);
 
       const changed = await turnChanged;
-      const newHolder = sessionOf(roomCode).getPlayer(changed.currentTurn.activePlayerId)!;
+      expect(changed).toEqual({ reason: 'REASSIGN' });
+      const newHolder = sessionOf(roomCode).getPlayer(gameOf(roomCode).currentTurn!.activePlayerId)!;
       expect(newHolder.name).toBe('Charlie'); // same team (A), next connected seat
       expect(newHolder.team).toBe('A');
     });

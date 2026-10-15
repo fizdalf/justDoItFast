@@ -308,7 +308,7 @@ Una **sala** es el grupo de gente reunida (dura toda la sesión); dentro se jueg
 - ✓ Corregido de paso: una falta rechazada (p. ej. cantada por el propio equipo) dejaba el temporizador pausado; si el artificiero abandona la sala, la bomba pasa al momento sin esperar la gracia; la rotación ya no depende de `seatIndex` (fallaba con participantes que son un subconjunto de la sala).
 - Pendiente menor: `room:switch_team` no valida que el equipo sea A/B; si todos los participantes abandonan y quedan espectadores, la partida sigue sin rotación hasta que el anfitrión la termina; `Player.isHost` duplica `RoomState.hostPlayerId` (el cliente usa este último).
 
-###   Step 8: Power-ups y casillas con reglas reales
+### ✓ Step 8: Power-ups y casillas con reglas reales
 Contexto de diseño: la duración de la ronda es secreta pero el tic-tac acelera, así que tener la patata es más peligroso cuanto más avanza la ronda; los power-ups ganan valor tarde.
 
 Decisiones de diseño (todas confirmadas):
@@ -333,11 +333,16 @@ Decisiones de diseño (todas confirmadas):
   - Power-ups = **mantener pulsado ~0,5 s** con animación de llenado.
   - ✓ **¡Falta!** = **mantener pulsado 0,5 s** (componente `HoldButton`, reutilizable para las herramientas), **sin motivos**: la app solo permite cantar la falta y al anfitrión asignar el punto o reiniciar la ronda; el motivo se discute en la mesa. Eliminado `foulReason` del protocolo y del modelo.
   - Sin bloqueo de "Acertado" al recibir la patata (por ahora no se espera que los Rebotes sean tan rápidos como para causar dobles toques; revisar tras pruebas reales).
-- Validación en servidor de quién y cuándo puede usar cada power-up; `GameSession.recordGuessSuccess` respeta `requiredGuesses` (nueva palabra sin pasar turno) y rechaza aciertos mientras `isFrozen`.
-- UI: botones de power-up solo cuando son utilizables; cuenta atrás de congelación; revelación sorpresa de *Doble Reto* al primer acierto ("¡Doble Reto! Otra más"); aviso de activación a todos **excepto** para *Doble Reto*, que solo ve el equipo que lo lanzó hasta revelarse.
-- Efectos de casilla al avanzar: *Comodín Sorpresa* otorga un power-up aleatorio; *Doble Tiempo* alarga la siguiente ronda.
+- ✓ **Servidor implementado** (`src/server/Game.ts`): reglas de las 7 herramientas, Traje al explotar, efectos de casilla (*Comodín Sorpresa* da una herramienta al equipo que avanza; *Doble Tiempo* duplica la duración de la siguiente ronda).
+- ✓ Reglas de uso compartidas servidor/cliente en `src/core/powerUpRules.ts` (`POWER_UP_USAGE`, `canUsePowerUp`): HOLDER (Devolver, Otro cable), RIVALS (Doble detonador, Inhibidor), TEAM (Rayos X, Reprogramar), PASSIVE (Traje). Errores `POWERUP_NOT_ALLOWED` y `FROZEN`.
+- ✓ **Cada jugador recibe solo lo que puede ver** (`Game.getViewFor`, salas socket.io personales): herramientas solo de su equipo, el cable solo artificiero y saboteadores (antes ayudantes y espectadores lo recibían aunque la UI lo ocultara), Doble detonador oculto al equipo portador. La API REST usa la vista de observador.
+- ✓ **Corregida fuga del tiempo secreto:** `timer:tick` enviaba el tiempo restante exacto a todos; ahora solo el ritmo (`intervalMs`). Riesgo residual conocido: el ritmo del tic-tac permite estimar el progreso (es la señal pública del juego).
+- ✓ Los eventos solo avisan (`turn:changed {reason}`, `powerup:awarded/activated/double_revealed/xray`, `bomb:shielded`); el estado llega siempre filtrado en `room:state_updated`.
+- ✓ Herramientas nuevas (Step 8b), decisiones por defecto a validar jugando: **Traje** pasivo (se gasta solo al explotar; mecha nueva entre `shieldFuseSec/2` y `shieldFuseSec`, 8 s; la bomba pasa al rival); **Rayos X** para cualquiera del equipo, lectura LONG/MEDIUM/SHORT (umbrales 20 s y 10 s, `XRAY_THRESHOLDS_SEC`) solo para su equipo; **Reprogramar** para cualquiera del equipo, resortea el tiempo restante entre `rewireMinSec` y `rewireMaxSec` (5–30 s).
+- ✓ Cliente: barra de herramientas por rol (`HoldButton`, activas solo cuando `canUsePowerUp` lo permite, pistas de cuándo se pueden usar, Traje como insignia pasiva), botón del artificiero **congelado con cuenta atrás**, contador de cables («Cable 2/3»), indicador de sentido invertido, avisos (`NoticeStack`) para herramientas ganadas/usadas, Doble detonador revelado o devuelto, lectura de Rayos X y Traje; ajustes nuevos en la sala (mecha del Traje, rango de Reprogramar).
+- Pendiente de validar jugando: valores por defecto de las herramientas nuevas; los avisos tapan unos segundos el marcador compacto.
 
-### * Step 8b: Rebranding «¡Solo desactívala rápido!» y power-ups temáticos
+### ✓ Step 8b: Rebranding «¡Solo desactívala rápido!» y power-ups temáticos
 Tema propio de bombas y artificieros. Se toman **ideas de mecánica** de otros juegos (no protegidas), nunca nombres, textos ni arte (evitar p. ej. *Exploding Kittens*, *Pass the Bomb*, *Tick Tack Bumm*). Hacer una búsqueda rápida de marcas antes de publicar.
 
 - ✓ Nombre: **«¡Solo desactívala rápido!»** (grafía confirmada).
@@ -345,7 +350,7 @@ Tema propio de bombas y artificieros. Se toman **ideas de mecánica** de otros j
 - ✓ **Vocabulario centralizado** en los diccionarios de idioma (`src/client/i18n/locales/<idioma>/common.ts`): nombre, roles, equipos y herramientas, por idioma.
 - ✓ **Textos de toda la UI actualizados** al tema (cabecera, inicio, lobby, vistas por rol, disputa, resumen de ronda, podio, tablero, `<title>`, favicon 💣, `package.json`). Los power-ups se llaman **herramientas** en la UI.
 - ✓ Nombres temáticos: *Rebote* → **Devolver al remitente**; *Salto* → **Otro cable**; *Doble Reto* → **Doble detonador**; *Congelación* → **Inhibidor**.
-- ✓ Herramientas nuevas aceptadas (a validar en pruebas reales; si no molan se cambian): **Traje antiexplosivos** (sobrevives una explosión; la bomba se rearma con mecha corta y la pasas), **Rayos X** (tu equipo ve aproximadamente cuánto tiempo queda), **Reprogramar temporizador** (el tiempo restante se resortea en secreto). Pendiente de implementar junto con el Step 8.
+- ✓ Herramientas nuevas aceptadas (a validar en pruebas reales; si no molan se cambian): **Traje antiexplosivos**, **Rayos X**, **Reprogramar temporizador**. Reglas implementadas: ver Step 8.
 - El rediseño visual va en su propio paso (Step 10).
 
 ###   Step 9: Pulido sensorial, PWA y despliegue

@@ -41,6 +41,18 @@ export const common = {
       name: 'Inhibidor',
       description: 'Bloquea el botón del artificiero rival durante unos segundos.',
     },
+    SHIELD: {
+      name: 'Traje antiexplosivos',
+      description: 'Se activa sola si la bomba os explota: se rearma con mecha corta y pasa al rival.',
+    },
+    XRAY: {
+      name: 'Rayos X',
+      description: 'Tu equipo ve más o menos cuánto le queda a la bomba.',
+    },
+    REWIRE: {
+      name: 'Reprogramar temporizador',
+      description: 'El tiempo que le queda a la bomba se vuelve a sortear en secreto.',
+    },
   } as Record<PowerUpType, { name: string; description: string }>,
 
   connection: {

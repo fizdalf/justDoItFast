@@ -12,6 +12,9 @@ const UI_RANGES = {
   fastGuessThresholdSec: { min: 2, max: 10, step: 1 },
   maxPowerUpsPerTeam: { min: 1, max: 5, step: 1 },
   freezeDurationSec: { min: 1, max: 10, step: 1 },
+  shieldFuseSec: { min: 3, max: 20, step: 1 },
+  rewireMinSec: { min: 5, max: 90, step: 5 },
+  rewireMaxSec: { min: 5, max: 120, step: 5 },
   disconnectGraceSec: { min: 0, max: 30, step: 5 },
 } as const;
 
@@ -38,6 +41,8 @@ export const RoomSettingsPanel: React.FC<{ collapsible?: boolean }> = ({ collaps
     // Mantener mínimo ≤ máximo moviendo el otro extremo si hace falta.
     if (key === 'minRoundDurationSec' && next > settings.maxRoundDurationSec) changes.maxRoundDurationSec = next;
     if (key === 'maxRoundDurationSec' && next < settings.minRoundDurationSec) changes.minRoundDurationSec = next;
+    if (key === 'rewireMinSec' && next > settings.rewireMaxSec) changes.rewireMaxSec = next;
+    if (key === 'rewireMaxSec' && next < settings.rewireMinSec) changes.rewireMinSec = next;
     change(changes);
   };
 
@@ -128,7 +133,17 @@ export const RoomSettingsPanel: React.FC<{ collapsible?: boolean }> = ({ collaps
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {stepper('maxPowerUpsPerTeam', labels.maxTools)}
-              {stepper('freezeDurationSec', labels.freezeDuration(t.common.powerUps.FREEZE.name), labels.seconds)}
+              {/* Ajustes propios de cada herramienta, solo si puede salir */}
+              {settings.enabledPowerUps.includes('FREEZE') &&
+                stepper('freezeDurationSec', labels.freezeDuration(t.common.powerUps.FREEZE.name), labels.seconds)}
+              {settings.enabledPowerUps.includes('SHIELD') &&
+                stepper('shieldFuseSec', labels.shieldFuse(t.common.powerUps.SHIELD.name), labels.seconds)}
+              {settings.enabledPowerUps.includes('REWIRE') && (
+                <>
+                  {stepper('rewireMinSec', labels.rewireMin(t.common.powerUps.REWIRE.name), labels.seconds)}
+                  {stepper('rewireMaxSec', labels.rewireMax(t.common.powerUps.REWIRE.name), labels.seconds)}
+                </>
+              )}
             </div>
 
             <div>

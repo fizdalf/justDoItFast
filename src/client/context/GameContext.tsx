@@ -3,14 +3,7 @@ import {ClientError, JoinedRoom, socketService, SocketStatus} from '../services/
 import {clearSession, saveSession, sessionForCurrentUrl, setRoomUrl} from '../services/roomSession.js';
 import {audioService} from '../services/audioService.js';
 import {hapticService} from '../services/hapticService.js';
-import {
-  ApiResponse,
-  RoomSnapshot,
-  TimerExplodedPayload,
-  TimerTickPayload,
-  TurnChangedPayload,
-  UpdateSetupPayload,
-} from '../../server/protocol.js';
+import {ApiResponse, RoomSnapshot, TimerExplodedPayload, TimerTickPayload, UpdateSetupPayload} from '../../server/protocol.js';
 import {
   DisputeResolution,
   DisputeState,
@@ -21,13 +14,27 @@ import {
   RoomState,
   TeamId,
   TurnState,
+  XrayReading,
 } from '../../core/types.js';
 
 export interface GameOverInfo {
   winner: TeamId;
   finalScores: Record<TeamId, number>;
-  game: GameState;
 }
+
+/** Aviso de partida: guarda los datos del evento y se traduce al pintarlo. */
+export type NoticeEvent =
+  | { kind: 'AWARDED'; powerUp: PowerUp; source: 'FAST_GUESS' | 'TILE' }
+  | { kind: 'ACTIVATED'; type: PowerUpType; team: TeamId; byPlayerId: string }
+  | { kind: 'DOUBLE_REVEALED'; requiredGuesses: number; bounced: boolean; holderTeam: TeamId }
+  | { kind: 'XRAY'; reading: XrayReading }
+  | { kind: 'SHIELDED'; playerId: string; team: TeamId };
+
+export type Notice = NoticeEvent & { id: number };
+
+/** Cuánto se ve cada aviso (Rayos X se queda más para que el equipo lo lea). */
+export const NOTICE_DURATION_MS = { default: 4000, XRAY: 6000 } as const;
+const MAX_NOTICES = 3;
 
 export interface GameContextValue {
   socketStatus: SocketStatus;
@@ -44,6 +51,8 @@ export interface GameContextValue {
   gameOver: GameOverInfo | null;
   inventory: Record<TeamId, PowerUp[]>;
   error: ClientError | null;
+  /** Avisos de herramientas en pantalla (se descartan solos). */
+  notices: Notice[];
   /** Código de la sala a la que se está volviendo tras recargar (null si no). */
   restoringRoom: string | null;
 
@@ -66,11 +75,12 @@ export interface GameContextValue {
   startGame: () => Promise<ApiResponse<RoomSnapshot>>;
   startRound: () => Promise<ApiResponse<RoomSnapshot>>;
   endGame: () => Promise<ApiResponse<RoomSnapshot>>;
-  guessSuccess: () => Promise<ApiResponse<{ isFastGuess: boolean; currentTurn: TurnState }>>;
+  guessSuccess: () => Promise<ApiResponse<{ passed: boolean }>>;
   triggerFoul: () => Promise<ApiResponse<{ dispute: DisputeState }>>;
   resolveDispute: (resolution: DisputeResolution) => Promise<ApiResponse<RoomSnapshot>>;
   usePowerUp: (powerUpId: string) => Promise<ApiResponse<{ powerUpType: PowerUpType }>>;
   clearError: () => void;
+  dismissNotice: (id: number) => void;
   resetLocalState: () => void;
 }
 
@@ -81,44 +91,68 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [room, setRoom] = useState<RoomState | null>(null);
   const [game, setGame] = useState<GameState | null>(null);
-  const [currentTurn, setCurrentTurn] = useState<TurnState | null>(null);
-  const [currentDispute, setCurrentDispute] = useState<DisputeState | null>(null);
   const [lastTick, setLastTick] = useState<TimerTickPayload | null>(null);
   const [explosion, setExplosion] = useState<TimerExplodedPayload | null>(null);
   const [gameOver, setGameOver] = useState<GameOverInfo | null>(null);
   const [error, setError] = useState<ClientError | null>(null);
+  const [notices, setNotices] = useState<Notice[]>([]);
+  const noticeTimers = useRef(new Map<number, ReturnType<typeof setTimeout>>());
+  const nextNoticeId = useRef(1);
   const [restoringRoom, setRestoringRoom] = useState<string | null>(
     () => sessionForCurrentUrl()?.roomCode ?? null
   );
   const rejoinedSocketId = useRef<string | undefined>(undefined);
 
-  /** Aplica una foto completa de sala + partida (la fuente de verdad). */
-  const applySnapshot = useCallback((snapshot: RoomSnapshot) => {
-    setRoom(snapshot.room);
-    setGame(snapshot.game);
-    if (snapshot.game) {
-      setCurrentTurn(snapshot.game.currentTurn ?? null);
-      setCurrentDispute(snapshot.game.currentDispute ?? null);
-    } else {
-      // De vuelta en la sala: se olvida todo lo de la partida anterior.
-      setCurrentTurn(null);
-      setCurrentDispute(null);
-      setExplosion(null);
-      setGameOver(null);
-      setLastTick(null);
-    }
+  const dismissNotice = useCallback((id: number) => {
+    const timer = noticeTimers.current.get(id);
+    if (timer) clearTimeout(timer);
+    noticeTimers.current.delete(id);
+    setNotices((list) => list.filter((n) => n.id !== id));
   }, []);
+
+  const pushNotice = useCallback(
+    (event: NoticeEvent) => {
+      const id = nextNoticeId.current++;
+      setNotices((list) => [...list, { ...event, id }].slice(-MAX_NOTICES));
+      const duration = event.kind === 'XRAY' ? NOTICE_DURATION_MS.XRAY : NOTICE_DURATION_MS.default;
+      noticeTimers.current.set(id, setTimeout(() => dismissNotice(id), duration));
+    },
+    [dismissNotice]
+  );
+
+  const clearNotices = useCallback(() => {
+    noticeTimers.current.forEach((timer) => clearTimeout(timer));
+    noticeTimers.current.clear();
+    setNotices([]);
+  }, []);
+
+  useEffect(() => clearNotices, [clearNotices]);
+
+  /** Aplica una foto completa de sala + partida (la fuente de verdad). */
+  const applySnapshot = useCallback(
+    (snapshot: RoomSnapshot) => {
+      setRoom(snapshot.room);
+      setGame(snapshot.game);
+      if (!snapshot.game) {
+        // De vuelta en la sala: se olvida todo lo de la partida anterior.
+        setExplosion(null);
+        setGameOver(null);
+        setLastTick(null);
+        clearNotices();
+      }
+    },
+    [clearNotices]
+  );
 
   const clearLocalState = useCallback(() => {
     setPlayerId(null);
     setRoom(null);
     setGame(null);
-    setCurrentTurn(null);
-    setCurrentDispute(null);
     setExplosion(null);
     setGameOver(null);
     setLastTick(null);
-  }, []);
+    clearNotices();
+  }, [clearNotices]);
 
   // Volver a la sala de la URL con la sesión guardada: al cargar la página (F5)
   // y cada vez que el socket se reconecta tras perder la conexión.
@@ -163,39 +197,25 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     socketService.connect();
 
+    // Los eventos solo avisan (sonido, vibración, avisos); el estado llega en room:state_updated.
     const unsubs = [
       socketService.onStatusChange((status) => setSocketStatus(status)),
       socketService.onError((err) => setError(err)),
       socketService.onRoomStateUpdated(applySnapshot),
 
-      socketService.onRoundStarted((payload) => {
-        setGame(payload.game);
-        setCurrentTurn(payload.currentTurn);
-        setCurrentDispute(null);
+      socketService.onRoundStarted(() => {
         setExplosion(null);
         audioService.playSuccess();
       }),
 
-      socketService.onTurnChanged((payload: TurnChangedPayload) => {
-        setCurrentTurn(payload.currentTurn);
-        setCurrentDispute(null);
+      socketService.onTurnChanged(() => {
         setExplosion(null);
         audioService.playSuccess();
       }),
 
-      socketService.onDisputeStarted((payload) => {
-        setCurrentDispute(payload.dispute);
-        setGame(payload.game);
+      socketService.onDisputeStarted(() => {
         audioService.playFoulBuzzer();
         hapticService.vibrateFoul();
-      }),
-
-      socketService.onDisputeResolved((payload) => {
-        setCurrentDispute(null);
-        setGame(payload.game);
-        if (payload.game.currentTurn) {
-          setCurrentTurn(payload.game.currentTurn);
-        }
       }),
 
       socketService.onTimerTick((tick) => {
@@ -214,17 +234,42 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         hapticService.vibrateExplosion();
       }),
 
-      socketService.onGameOver((go) => {
-        setGameOver(go);
-        setGame(go.game);
+      socketService.onGameOver(({ winner, finalScores }) => {
+        setGameOver({ winner, finalScores });
         audioService.playExplosion();
+      }),
+
+      socketService.onPowerUpAwarded(({ powerUp, source }) => {
+        pushNotice({ kind: 'AWARDED', powerUp, source });
+        hapticService.vibrateTick(60);
+      }),
+
+      socketService.onPowerUpActivated(({ type, team, byPlayerId }) => {
+        pushNotice({ kind: 'ACTIVATED', type, team, byPlayerId });
+        hapticService.vibrateTick(60);
+      }),
+
+      socketService.onDoubleRevealed(({ requiredGuesses, bounced, holderTeam }) => {
+        pushNotice({ kind: 'DOUBLE_REVEALED', requiredGuesses, bounced, holderTeam });
+        hapticService.vibrateFoul();
+      }),
+
+      socketService.onXray(({ reading }) => {
+        pushNotice({ kind: 'XRAY', reading });
+        hapticService.vibrateTick(60);
+      }),
+
+      socketService.onBombShielded(({ playerId: savedPlayerId, team }) => {
+        pushNotice({ kind: 'SHIELDED', playerId: savedPlayerId, team });
+        audioService.playFoulBuzzer();
+        hapticService.vibrateExplosion();
       }),
 
       socketService.onErrorMessage((err) => setError(err)),
     ];
 
     return () => unsubs.forEach((unsub) => unsub());
-  }, [playerId, applySnapshot]);
+  }, [playerId, applySnapshot, pushNotice]);
 
   const players = useMemo(() => room?.players ?? [], [room]);
 
@@ -242,8 +287,10 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isSpectator = !!game && !!playerId && !game.participantIds.includes(playerId);
 
-  const activePlayerId = currentTurn?.activePlayerId ?? game?.currentTurn?.activePlayerId ?? null;
-  const activeTeam = currentTurn?.activeTeam ?? game?.currentTurn?.activeTeam ?? null;
+  const currentTurn = game?.currentTurn ?? null;
+  const currentDispute = game?.currentDispute ?? null;
+  const activePlayerId = currentTurn?.activePlayerId ?? null;
+  const activeTeam = currentTurn?.activeTeam ?? null;
 
   // Los roles solo tienen sentido para quien participa en la partida.
   const isActivePlayer = !isSpectator && !!playerId && !!activePlayerId && playerId === activePlayerId;
@@ -345,6 +392,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     gameOver,
     inventory,
     error,
+    notices,
     restoringRoom,
     myPlayer,
     hostPlayer,
@@ -366,6 +414,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     resolveDispute,
     usePowerUp,
     clearError,
+    dismissNotice,
     resetLocalState,
   };
 

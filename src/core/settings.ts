@@ -1,7 +1,7 @@
 import {GameError} from './errors.js';
 import {GameSettings, PowerUpType} from './types.js';
 
-export const ALL_POWER_UPS: PowerUpType[] = ['REVERSE', 'SKIP', 'DOUBLE_BURDEN', 'FREEZE'];
+export const ALL_POWER_UPS: PowerUpType[] = ['REVERSE', 'SKIP', 'DOUBLE_BURDEN', 'FREEZE', 'SHIELD', 'XRAY', 'REWIRE'];
 
 export const DEFAULT_SETTINGS: GameSettings = {
   targetScore: 5,
@@ -12,6 +12,9 @@ export const DEFAULT_SETTINGS: GameSettings = {
   enabledPowerUps: [...ALL_POWER_UPS],
   maxPowerUpsPerTeam: 2,
   freezeDurationSec: 3,
+  shieldFuseSec: 8,
+  rewireMinSec: 5,
+  rewireMaxSec: 30,
   disconnectGraceSec: 5,
 };
 
@@ -30,6 +33,9 @@ export const SETTINGS_LIMITS: Record<NumericSetting, { min: number; max: number;
   fastGuessThresholdSec: { min: 0.5, max: 60 },
   maxPowerUpsPerTeam: { min: 1, max: 20, integer: true },
   freezeDurationSec: { min: 0.5, max: 60 },
+  shieldFuseSec: { min: 2, max: 60 },
+  rewireMinSec: { min: 1, max: 300 },
+  rewireMaxSec: { min: 1, max: 300 },
   disconnectGraceSec: { min: 0, max: 120 },
 };
 
@@ -67,6 +73,9 @@ export function resolveSettings(changes: Partial<GameSettings> = {}, base: GameS
 
   if (next.minRoundDurationSec > next.maxRoundDurationSec) {
     invalid('minRoundDurationSec cannot be greater than maxRoundDurationSec');
+  }
+  if (next.rewireMinSec > next.rewireMaxSec) {
+    invalid('rewireMinSec cannot be greater than rewireMaxSec');
   }
 
   return next;

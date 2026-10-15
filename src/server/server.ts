@@ -154,7 +154,8 @@ export async function createServer(options: CreateServerOptions = {}): Promise<A
     }
 
     // `status` es el de la partida en curso, o null si la sala está reunida sin jugar.
-    const snapshot = session.getSnapshot();
+    // Vista de observador: la API pública no revela cables, herramientas ni detonadores secretos.
+    const snapshot = session.getSnapshot(null);
     return {
       success: true,
       data: {

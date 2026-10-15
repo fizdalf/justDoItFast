@@ -99,6 +99,24 @@ export class TimerEngine {
     this.generateTargetDuration();
   }
 
+  /** Reprograma la bomba en marcha: desde ahora le quedan `remainingMs` (el tic-tac se adapta). */
+  setRemainingMs(remainingMs: number): void {
+    this.targetDurationMs = this.getElapsedMs() + Math.max(0, Math.round(remainingMs));
+    if (this.running && !this.paused) {
+      if (this.tickTimeoutId) clearTimeout(this.tickTimeoutId);
+      this.tickTimeoutId = null;
+      this.scheduleNextTick();
+    }
+  }
+
+  /** Rearma la bomba desde cero con una duración concreta y la pone en marcha. */
+  restartWithDuration(durationMs: number): void {
+    this.stop();
+    this.accumulatedElapsedMs = 0;
+    this.targetDurationMs = Math.max(0, Math.round(durationMs));
+    this.start();
+  }
+
   calculateTickIntervalMs(elapsedMs: number, targetDurationMs: number): number {
     const progress = Math.min(1, Math.max(0, elapsedMs / targetDurationMs));
     const baseInterval = 1000;

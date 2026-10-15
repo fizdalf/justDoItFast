@@ -28,11 +28,18 @@ export const GameBoard: React.FC<{ compact?: boolean }> = ({ compact = false }) 
   const track = (boardTiles ?? []).filter((tile) => tile.index > 0);
 
   if (compact) {
+    // Devolver al remitente invierte el sentido de los pases
+    const reversed = game.currentTurn?.direction === -1;
     return (
       <div className="w-full flex items-center justify-between gap-2 bg-slate-900/90 border border-slate-800 rounded-xl px-3 py-2">
         <TeamScore team="A" name={t.common.teams.A} score={scores.A ?? 0} />
-        <span className="text-[11px] font-mono font-bold uppercase text-slate-400 whitespace-nowrap">
-          {t.game.board.goal(targetScore)}
+        <span className="flex flex-col items-center leading-tight">
+          <span className="text-[11px] font-mono font-bold uppercase text-slate-400 whitespace-nowrap">
+            {t.game.board.goal(targetScore)}
+          </span>
+          {reversed && (
+            <span className="text-[10px] font-bold text-purple-300 whitespace-nowrap">↺ {t.game.turn.reversed}</span>
+          )}
         </span>
         <TeamScore team="B" name={t.common.teams.B} score={scores.B ?? 0} alignRight />
       </div>

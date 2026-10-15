@@ -1,6 +1,6 @@
 import {Server, Socket} from 'socket.io';
 import {RoomSessionManager} from './RoomSessionManager.js';
-import {RoomSession} from './RoomSession.js';
+import {playerRoom, RoomSession} from './RoomSession.js';
 import {ApiResponse, ClientToServerEvents, ServerToClientEvents, SocketData,} from './protocol.js';
 import {errorCodeOf} from '../core/errors.js';
 
@@ -16,7 +16,7 @@ export function setupSocketHandlers(
 ): void {
   /** Registra el socket como jugador de la sala (y lo mete en la sala de socket.io). */
   function attachSocket(socket: GameSocket, session: RoomSession, playerId: string, playerName: string): void {
-    socket.join(session.roomCode);
+    socket.join([session.roomCode, playerRoom(session.roomCode, playerId)]);
     socket.data = { playerId, roomCode: session.roomCode, playerName };
     sessionManager.registerSocket(socket.id, session.roomCode, playerId, playerName);
   }
@@ -60,7 +60,7 @@ export function setupSocketHandlers(
         return callback({
           success: true,
           data: {
-            ...session.getSnapshot(),
+            ...session.getSnapshot(playerId),
             player: session.getPlayer(playerId)!,
             sessionToken: session.issueSessionToken(playerId),
           },
@@ -97,7 +97,7 @@ export function setupSocketHandlers(
         return callback({
           success: true,
           data: {
-            ...session.getSnapshot(),
+            ...session.getSnapshot(playerId),
             player,
             sessionToken: session.issueSessionToken(playerId),
           },
@@ -128,7 +128,7 @@ export function setupSocketHandlers(
         return callback({
           success: true,
           data: {
-            ...session.getSnapshot(),
+            ...session.getSnapshot(playerId),
             player,
           },
         });
@@ -149,6 +149,7 @@ export function setupSocketHandlers(
             }
           }
           socket.leave(mapping.roomCode);
+          socket.leave(playerRoom(mapping.roomCode, mapping.playerId));
           sessionManager.removeSocket(socket.id);
         }
         if (typeof callback === 'function') callback({ success: true, data: {} });
@@ -160,14 +161,14 @@ export function setupSocketHandlers(
     socket.on('room:switch_team', (payload, callback) => {
       handleRoomAction(socket, callback, 'Error switching team', (session, playerId) => {
         session.switchTeam(playerId, payload?.targetTeam);
-        return session.getSnapshot();
+        return session.getSnapshot(playerId);
       });
     });
 
     socket.on('room:update_setup', (payload, callback) => {
       handleRoomAction(socket, callback, 'Error updating setup', (session, playerId) => {
         session.updateSetup(playerId, payload ?? {});
-        return session.getSnapshot();
+        return session.getSnapshot(playerId);
       });
     });
 

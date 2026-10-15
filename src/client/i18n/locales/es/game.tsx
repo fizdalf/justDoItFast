@@ -1,5 +1,6 @@
 import React from 'react';
-import type {TileType} from '../../../../core/types.js';
+import type {PowerUpType, TileType, XrayReading} from '../../../../core/types.js';
+import type {PowerUpUsage} from '../../../../core/powerUpRules.js';
 
 export const game = {
   // Vista del artificiero (tiene la bomba)
@@ -9,6 +10,63 @@ export const game = {
     loadingWire: 'CARGANDO...',
     hint: 'Vale todo: palabras, mímica, sonidos... menos decir la palabra o una de su familia (para «perrera», nada de «perro»). Cuando tus ayudantes la acierten, ¡corta el cable!',
     cutWire: '¡CABLE CORTADO!',
+    frozen: (seconds?: number) => (seconds === undefined ? '¡INHIBIDO!' : `¡INHIBIDO! ${seconds} s`),
+  },
+
+  // Estado del turno visible para todos los que juegan
+  turn: {
+    wireCounter: (current: number, total: number) => `Cable ${current}/${total}`,
+    frozenBadge: (seconds?: number) => (seconds === undefined ? '❄️ Inhibido' : `❄️ Inhibido · ${seconds} s`),
+    reversed: 'Sentido invertido',
+  },
+
+  // Barra de herramientas del propio equipo
+  tools: {
+    /** Cuándo se puede usar cada herramienta (se muestra en las que aún no se pueden usar). */
+    usageHints: {
+      HOLDER: 'Solo el artificiero',
+      RIVALS: 'Cuando el rival tiene la bomba',
+      TEAM: 'Durante la ronda',
+      PASSIVE: 'Se activa sola si os explota',
+    } as Record<PowerUpUsage, string>,
+    notPlaying: 'Con la ronda en marcha',
+    holdHint: 'Mantén pulsada una herramienta para usarla',
+  },
+
+  // Avisos que aparecen arriba durante la partida
+  notices: {
+    awarded: (toolName: string) => `🎁 Nueva herramienta: ${toolName}`,
+    awardedSource: {
+      FAST_GUESS: 'Por cortar el cable rápido',
+      TILE: 'Por la casilla sorpresa',
+    } as Record<'FAST_GUESS' | 'TILE', string>,
+    activated: (playerName: string, teamName: string, toolName: string) => `${playerName} (${teamName}) usa ${toolName}`,
+    /** Qué hace cada herramienta al usarse (segunda línea del aviso). */
+    effects: {
+      REVERSE: 'La bomba vuelve a quien la pasó y cambia el sentido de los pases',
+      SKIP: 'Cable nuevo, pero este turno ya no gana herramientas',
+      DOUBLE_BURDEN: 'El artificiero rival tendrá que cortar un cable más (aún no lo sabe)',
+      FREEZE: 'El botón del artificiero queda bloqueado unos segundos',
+      SHIELD: 'El traje antiexplosivos está listo',
+      XRAY: 'Ha mirado cuánto le queda a la bomba',
+      REWIRE: 'El temporizador se ha reprogramado: nadie sabe cuánto queda',
+    } as Record<PowerUpType, string>,
+    doubleRevealed: {
+      ours: '¡Doble detonador! Otro cable más',
+      theirs: (teamName: string) => `El ${teamName} ha descubierto el doble detonador`,
+      bouncedToUs: '¡Te han devuelto el doble detonador!',
+      bounced: (teamName: string) => `¡El doble detonador vuelve al ${teamName}!`,
+      wires: (n: number) => `Hay que cortar ${n} cables`,
+    },
+    xrayTitle: (toolName: string) => `🩻 ${toolName}`,
+    xray: {
+      LONG: 'Le queda bastante',
+      MEDIUM: 'A medio camino',
+      SHORT: '¡Está a punto!',
+    } as Record<XrayReading, string>,
+    xrayHint: 'Solo lo ve tu equipo',
+    shielded: (toolName: string, playerName: string) => `🦺 ¡El ${toolName} salva a ${playerName}!`,
+    shieldedDetail: (teamName: string) => `La bomba se rearma con mecha corta y pasa al ${teamName}`,
   },
 
   // Vista de los ayudantes (compañeros del artificiero)

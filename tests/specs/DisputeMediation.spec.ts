@@ -36,6 +36,9 @@ describe('Specification: Foul Triggering, Social Mediation & Host Resolution', (
         requiredGuesses: 1,
         successfulGuesses: 0,
         isFrozen: false,
+        doubleRevealed: false,
+        rewardForfeited: false,
+        direction: 1,
       },
     };
 

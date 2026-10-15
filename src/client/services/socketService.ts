@@ -7,7 +7,7 @@ import {
   ServerToClientEvents,
   UpdateSetupPayload,
 } from '../../server/protocol.js';
-import {DisputeResolution, DisputeState, Player, PowerUpType, TeamId, TurnState} from '../../core/types.js';
+import {DisputeResolution, DisputeState, Player, PowerUpType, TeamId} from '../../core/types.js';
 
 /** Respuesta al entrar en una sala: la foto completa y quién eres. */
 export type JoinedRoom = RoomSnapshot & { player: Player };
@@ -132,7 +132,7 @@ export class SocketService {
     return this.emitWithAck('game:end', undefined);
   }
 
-  public async guessSuccess(): Promise<ApiResponse<{ isFastGuess: boolean; currentTurn: TurnState }>> {
+  public async guessSuccess(): Promise<ApiResponse<{ passed: boolean }>> {
     return this.emitWithAck('turn:guess_success', undefined);
   }
 
@@ -183,6 +183,22 @@ export class SocketService {
 
   public onPowerUpActivated(callback: ServerToClientEvents['powerup:activated']): () => void {
     return this.subscribe('powerup:activated', callback);
+  }
+
+  public onPowerUpAwarded(callback: ServerToClientEvents['powerup:awarded']): () => void {
+    return this.subscribe('powerup:awarded', callback);
+  }
+
+  public onDoubleRevealed(callback: ServerToClientEvents['powerup:double_revealed']): () => void {
+    return this.subscribe('powerup:double_revealed', callback);
+  }
+
+  public onXray(callback: ServerToClientEvents['powerup:xray']): () => void {
+    return this.subscribe('powerup:xray', callback);
+  }
+
+  public onBombShielded(callback: ServerToClientEvents['bomb:shielded']): () => void {
+    return this.subscribe('bomb:shielded', callback);
   }
 
   public onErrorMessage(callback: ServerToClientEvents['error:message']): () => void {

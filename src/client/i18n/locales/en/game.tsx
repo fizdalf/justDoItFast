@@ -8,6 +8,58 @@ export const game: GameMessages = {
     loadingWire: 'LOADING...',
     hint: "Anything goes: words, mime, sounds... except saying the word or one from its family (for «doghouse», no «dog»). When your backup gets it, cut the wire!",
     cutWire: 'WIRE CUT!',
+    frozen: (seconds?: number) => (seconds === undefined ? 'JAMMED!' : `JAMMED! ${seconds} s`),
+  },
+
+  turn: {
+    wireCounter: (current: number, total: number) => `Wire ${current}/${total}`,
+    frozenBadge: (seconds?: number) => (seconds === undefined ? '❄️ Jammed' : `❄️ Jammed · ${seconds} s`),
+    reversed: 'Order reversed',
+  },
+
+  tools: {
+    usageHints: {
+      HOLDER: 'Defuser only',
+      RIVALS: 'When the rival has the bomb',
+      TEAM: 'During the round',
+      PASSIVE: 'Kicks in if it blows up on you',
+    },
+    notPlaying: 'While the round is running',
+    holdHint: 'Press and hold a tool to use it',
+  },
+
+  notices: {
+    awarded: (toolName: string) => `🎁 New tool: ${toolName}`,
+    awardedSource: {
+      FAST_GUESS: 'For cutting the wire fast',
+      TILE: 'From the mystery tile',
+    },
+    activated: (playerName: string, teamName: string, toolName: string) => `${playerName} (${teamName}) uses ${toolName}`,
+    effects: {
+      REVERSE: 'The bomb goes back to whoever passed it and the passing order flips',
+      SKIP: "New wire, but this turn can't earn tools anymore",
+      DOUBLE_BURDEN: "The rival defuser will have to cut one more wire (they don't know yet)",
+      FREEZE: "The defuser's button is blocked for a few seconds",
+      SHIELD: 'The bomb suit is ready',
+      XRAY: 'They checked how much time the bomb has left',
+      REWIRE: 'The timer has been rewired: nobody knows how much is left',
+    },
+    doubleRevealed: {
+      ours: 'Double detonator! One more wire',
+      theirs: (teamName: string) => `The ${teamName} found the double detonator`,
+      bouncedToUs: 'The double detonator was sent back to you!',
+      bounced: (teamName: string) => `The double detonator goes back to the ${teamName}!`,
+      wires: (n: number) => `${n} wires to cut`,
+    },
+    xrayTitle: (toolName: string) => `🩻 ${toolName}`,
+    xray: {
+      LONG: 'Plenty of time left',
+      MEDIUM: 'About halfway',
+      SHORT: 'About to blow!',
+    },
+    xrayHint: 'Only your team sees this',
+    shielded: (toolName: string, playerName: string) => `🦺 The ${toolName} saves ${playerName}!`,
+    shieldedDetail: (teamName: string) => `The bomb re-arms with a short fuse and goes to the ${teamName}`,
   },
 
   helpers: {

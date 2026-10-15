@@ -1,5 +1,4 @@
-import {PowerUp, PowerUpType, TeamId, TurnState} from './types.js';
-import {CardPayload} from './TurnManager.js';
+import {PowerUp, PowerUpType, TeamId} from './types.js';
 
 import {GameError} from './errors.js';
 
@@ -11,7 +10,7 @@ export interface PowerUpEngineOptions {
   maxPerTeam?: number;
 }
 
-const ALL_TYPES: PowerUpType[] = ['REVERSE', 'DOUBLE_BURDEN', 'FREEZE', 'SKIP'];
+const ALL_TYPES: PowerUpType[] = ['REVERSE', 'SKIP', 'DOUBLE_BURDEN', 'FREEZE', 'SHIELD', 'XRAY', 'REWIRE'];
 
 export class PowerUpEngine {
   private fastGuessThresholdSec: number;
@@ -54,6 +53,11 @@ export class PowerUpEngine {
 
   evaluateGuessSpeed(durationSec: number, team: TeamId): PowerUp | undefined {
     if (durationSec >= this.fastGuessThresholdSec) return undefined;
+    return this.grantRandom(team);
+  }
+
+  /** Herramienta aleatoria entre las permitidas, si el equipo no tiene el inventario lleno. */
+  grantRandom(team: TeamId): PowerUp | undefined {
     if (this.enabledTypes.length === 0) return undefined;
     if (this.teamInventories[team].length >= this.maxPerTeam) return undefined;
 
@@ -61,65 +65,18 @@ export class PowerUpEngine {
     return this.grantPowerUp(team, randomType);
   }
 
-  applyPowerUp(
-    team: TeamId,
-    powerUpId: string,
-    context: { currentDirection: 1 | -1 }
-  ): { newDirection: 1 | -1 } {
-    this.consumePowerUp(team, powerUpId, 'REVERSE');
-    const newDirection = (context.currentDirection * -1) as 1 | -1;
-    return { newDirection };
-  }
-
-  applyDoubleBurden(team: TeamId, powerUpId: string, turnState: TurnState): TurnState {
-    this.consumePowerUp(team, powerUpId, 'DOUBLE_BURDEN');
-    return {
-      ...turnState,
-      requiredGuesses: 2,
-    };
-  }
-
-  applyFreeze(
-    team: TeamId,
-    powerUpId: string,
-    turnState: TurnState,
-    durationMs: number = 3000
-  ): TurnState {
-    this.consumePowerUp(team, powerUpId, 'FREEZE');
-    return {
-      ...turnState,
-      isFrozen: true,
-      freezeExpiresAt: Date.now() + durationMs,
-    };
-  }
-
-  applySkip(
-    team: TeamId,
-    powerUpId: string,
-    turnState: TurnState,
-    nextCard: CardPayload
-  ): TurnState {
-    this.consumePowerUp(team, powerUpId, 'SKIP');
-    return {
-      ...turnState,
-      currentWord: nextCard.word,
-      category: nextCard.category,
-      turnStartTime: Date.now(),
-      successfulGuesses: 0,
-    };
-  }
-
-  private consumePowerUp(team: TeamId, powerUpId: string, expectedType: PowerUpType): void {
+  /** Gasta una herramienta concreta del inventario del equipo. */
+  consume(team: TeamId, powerUpId: string): PowerUp {
     const index = this.teamInventories[team].findIndex((p) => p.id === powerUpId);
     if (index === -1) {
       throw new GameError('POWERUP_NOT_FOUND', `Power-up ${powerUpId} not found in team ${team} inventory`);
     }
+    return this.teamInventories[team].splice(index, 1)[0];
+  }
 
-    const item = this.teamInventories[team][index];
-    if (item.type !== expectedType) {
-      throw new GameError('INTERNAL', `Expected power-up of type ${expectedType}, found ${item.type}`);
-    }
-
-    this.teamInventories[team].splice(index, 1);
+  /** Gasta la primera herramienta de un tipo, si el equipo la tiene (p. ej. el Traje al explotar). */
+  consumeFirstOfType(team: TeamId, type: PowerUpType): PowerUp | undefined {
+    const index = this.teamInventories[team].findIndex((p) => p.type === type);
+    return index === -1 ? undefined : this.teamInventories[team].splice(index, 1)[0];
   }
 }

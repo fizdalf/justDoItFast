@@ -1,104 +1,72 @@
 import {beforeEach, describe, expect, it} from 'vitest';
 import {PowerUpEngine} from '../../src/core/PowerUpEngine.js';
-import {TurnState} from '../../src/core/types.js';
+import {ALL_POWER_UPS} from '../../src/core/settings.js';
+import {canUsePowerUp, POWER_UP_USAGE} from '../../src/core/powerUpRules.js';
+import {GameError} from '../../src/core/errors.js';
 
-describe('Specification: Anti-Stall Speed Rewards & Tactical Power-Ups', () => {
+describe('Specification: Anti-Stall Speed Rewards & Tool Inventory', () => {
   let powerUpEngine: PowerUpEngine;
 
   beforeEach(() => {
     powerUpEngine = new PowerUpEngine({ fastGuessThresholdSec: 5.0 });
   });
 
-  it('GIVEN a guess completed in under 5 seconds WHEN evaluated THEN it awards a tactical power-up to the team inventory', () => {
+  it('GIVEN a guess completed in under 5 seconds WHEN evaluated THEN it awards a tool to the team inventory', () => {
     const reward = powerUpEngine.evaluateGuessSpeed(3.8, 'A');
 
     expect(reward).toBeDefined();
-    expect(['REVERSE', 'DOUBLE_BURDEN', 'FREEZE', 'SKIP']).toContain(reward?.type);
+    expect(ALL_POWER_UPS).toContain(reward?.type);
 
     const inventory = powerUpEngine.getTeamInventory('A');
     expect(inventory).toHaveLength(1);
     expect(inventory[0].id).toBe(reward?.id);
   });
 
-  it('GIVEN a slow guess (>= 5 seconds) WHEN evaluated THEN no power-up is awarded', () => {
+  it('GIVEN a slow guess (>= 5 seconds) WHEN evaluated THEN no tool is awarded', () => {
     const reward = powerUpEngine.evaluateGuessSpeed(6.1, 'A');
 
     expect(reward).toBeUndefined();
     expect(powerUpEngine.getTeamInventory('A')).toHaveLength(0);
   });
 
-  it('GIVEN a team activating REVERSE WHEN applied THEN direction is inverted and potato rebounds to previous player', () => {
-    const reversePowerUp = powerUpEngine.grantPowerUp('A', 'REVERSE');
+  it('GIVEN a tool in the inventory WHEN consumed THEN it is removed and returned; unknown ids are rejected', () => {
+    const tool = powerUpEngine.grantPowerUp('A', 'FREEZE');
 
-    const result = powerUpEngine.applyPowerUp('A', reversePowerUp.id, {
-      currentDirection: 1, // normal clockwise
+    expect(powerUpEngine.consume('A', tool.id)).toEqual(tool);
+    expect(powerUpEngine.getTeamInventory('A')).toHaveLength(0);
+    expect(() => powerUpEngine.consume('A', tool.id)).toThrow(GameError);
+    // Las herramientas son del equipo: el rival no puede gastarlas
+    const other = powerUpEngine.grantPowerUp('A', 'SKIP');
+    expect(() => powerUpEngine.consume('B', other.id)).toThrow(GameError);
+  });
+
+  it('GIVEN a team with a bomb suit WHEN the bomb explodes THEN the first suit of that type is spent', () => {
+    powerUpEngine.grantPowerUp('A', 'XRAY');
+    const suit = powerUpEngine.grantPowerUp('A', 'SHIELD');
+
+    expect(powerUpEngine.consumeFirstOfType('B', 'SHIELD')).toBeUndefined();
+    expect(powerUpEngine.consumeFirstOfType('A', 'SHIELD')).toEqual(suit);
+    expect(powerUpEngine.getTeamInventory('A').map((p) => p.type)).toEqual(['XRAY']);
+  });
+
+  it('GIVEN the usage rules THEN defensive tools are for the holder, offensive ones for rivals, info/gamble tools for anyone and the suit is passive', () => {
+    expect(POWER_UP_USAGE).toMatchObject({
+      REVERSE: 'HOLDER', SKIP: 'HOLDER', DOUBLE_BURDEN: 'RIVALS', FREEZE: 'RIVALS',
+      XRAY: 'TEAM', REWIRE: 'TEAM', SHIELD: 'PASSIVE',
     });
 
-    expect(result.newDirection).toBe(-1); // reversed
-    expect(powerUpEngine.getTeamInventory('A')).toHaveLength(0); // consumed
-  });
+    const playing = { status: 'PLAYING' as const, holderId: 'a1', holderTeam: 'A' as const };
+    const holder = { ...playing, myPlayerId: 'a1', myTeam: 'A' as const };
+    const helper = { ...playing, myPlayerId: 'a2', myTeam: 'A' as const };
+    const saboteur = { ...playing, myPlayerId: 'b1', myTeam: 'B' as const };
 
-  it('GIVEN a team activating DOUBLE_BURDEN against rival WHEN applied THEN target turn requires 2 correct guesses before passing', () => {
-    const doublePowerUp = powerUpEngine.grantPowerUp('A', 'DOUBLE_BURDEN');
-
-    const turnState: TurnState = {
-      activePlayerId: 'p2',
-      activeTeam: 'B',
-      currentWord: 'SOL',
-      category: 'General',
-      turnStartTime: Date.now(),
-      requiredGuesses: 1,
-      successfulGuesses: 0,
-      isFrozen: false,
-    };
-
-    const modifiedTurn = powerUpEngine.applyDoubleBurden('A', doublePowerUp.id, turnState);
-
-    expect(modifiedTurn.requiredGuesses).toBe(2);
-    expect(powerUpEngine.getTeamInventory('A')).toHaveLength(0);
-  });
-
-  it('GIVEN a team activating FREEZE against active rival WHEN applied THEN rival is temporarily frozen', () => {
-    const freezePowerUp = powerUpEngine.grantPowerUp('A', 'FREEZE');
-
-    const turnState: TurnState = {
-      activePlayerId: 'p2',
-      activeTeam: 'B',
-      currentWord: 'LUNA',
-      category: 'General',
-      turnStartTime: Date.now(),
-      requiredGuesses: 1,
-      successfulGuesses: 0,
-      isFrozen: false,
-    };
-
-    const frozenTurn = powerUpEngine.applyFreeze('A', freezePowerUp.id, turnState, 3000);
-
-    expect(frozenTurn.isFrozen).toBe(true);
-    expect(frozenTurn.freezeExpiresAt).toBeGreaterThan(Date.now() + 2500);
-    expect(powerUpEngine.getTeamInventory('A')).toHaveLength(0);
-  });
-
-  it('GIVEN an active player with SKIP power-up WHEN activated THEN current word is discarded and replaced with a fresh word', () => {
-    const skipPowerUp = powerUpEngine.grantPowerUp('A', 'SKIP');
-
-    const turnState: TurnState = {
-      activePlayerId: 'p1',
-      activeTeam: 'A',
-      currentWord: 'DIFÍCIL',
-      category: 'General',
-      turnStartTime: Date.now(),
-      requiredGuesses: 1,
-      successfulGuesses: 0,
-      isFrozen: false,
-    };
-
-    const updatedTurn = powerUpEngine.applySkip('A', skipPowerUp.id, turnState, {
-      word: 'FÁCIL',
-      category: 'General',
-    });
-
-    expect(updatedTurn.currentWord).toBe('FÁCIL');
-    expect(powerUpEngine.getTeamInventory('A')).toHaveLength(0);
+    expect(canUsePowerUp('REVERSE', holder)).toBe(true);
+    expect(canUsePowerUp('REVERSE', helper)).toBe(false);
+    expect(canUsePowerUp('FREEZE', saboteur)).toBe(true);
+    expect(canUsePowerUp('FREEZE', helper)).toBe(false);
+    expect(canUsePowerUp('XRAY', helper)).toBe(true);
+    expect(canUsePowerUp('REWIRE', saboteur)).toBe(true);
+    expect(canUsePowerUp('SHIELD', holder)).toBe(false);
+    expect(canUsePowerUp('XRAY', { ...helper, status: 'ROUND_OVER' })).toBe(false);
   });
 });
