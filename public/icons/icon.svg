@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#020617"/>
+  <g id="bomb">
+    <path d="M318 138 q36 -58 96 -40" stroke="#fbbf24" stroke-width="16" fill="none" stroke-linecap="round"/>
+    <polygon points="432,58 444,86 474,90 450,108 458,138 432,120 406,138 414,108 390,90 420,86" fill="#fde047"/>
+    <rect x="276" y="140" width="76" height="60" rx="12" fill="#f59e0b" transform="rotate(42 314 170)"/>
+    <circle cx="232" cy="296" r="150" fill="#1e293b" stroke="#f59e0b" stroke-width="18"/>
+    <circle cx="180" cy="244" r="36" fill="#475569"/>
+  </g>
+</svg>

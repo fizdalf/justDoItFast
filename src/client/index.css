@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #020617;
+  color: #f8fafc;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
