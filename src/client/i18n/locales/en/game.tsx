@@ -42,13 +42,11 @@ export const game: GameMessages = {
 
   helpers: {
     roleBadge: '🧰 Backup',
-    clueGiver: (holderName: string) => `Clues from ${holderName}`,
     guessAloud: 'GUESS!',
   },
 
   saboteurs: {
     roleBadge: '🕵️ Saboteur',
-    clueGiver: (holderName: string) => `${holderName} is giving clues`,
     foul: 'FOUL!',
     holdHint: 'press and hold',
   },

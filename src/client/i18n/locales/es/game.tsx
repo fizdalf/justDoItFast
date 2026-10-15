@@ -47,14 +47,12 @@ export const game = {
   // Vista de los ayudantes (compañeros del artificiero)
   helpers: {
     roleBadge: '🧰 Ayudante',
-    clueGiver: (holderName: string) => `Pistas de ${holderName}`,
     guessAloud: '¡ADIVINA!',
   },
 
   // Vista de los saboteadores (equipo rival del artificiero)
   saboteurs: {
     roleBadge: '🕵️ Saboteador',
-    clueGiver: (holderName: string) => `${holderName} da las pistas`,
     foul: '¡FALTA!',
     holdHint: 'mantén pulsado',
   },

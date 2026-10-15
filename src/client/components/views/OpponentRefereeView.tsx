@@ -1,7 +1,6 @@
 import React, {useState} from 'react';
 import {useI18n} from '../../i18n/index.js';
 import {useGame} from '../../context/GameContext.js';
-import {Player} from '../../../core/types.js';
 import {PlayLayout} from './PlayLayout.js';
 import {FrozenBadge, WireCounter} from './TurnStatus.js';
 import {HoldButton} from '../HoldButton.js';
@@ -9,13 +8,11 @@ import {ToolsBar} from './ToolsBar.js';
 import {WordCard} from './ActiveGiverView.js';
 
 export const OpponentRefereeView: React.FC = () => {
-  const { currentTurn, game, players, triggerFoul } = useGame();
+  const { currentTurn, game, triggerFoul } = useGame();
   const { t } = useI18n();
   const [submitting, setSubmitting] = useState(false);
 
   const turn = currentTurn ?? game?.currentTurn;
-  const activePlayerName =
-    players.find((p: Player) => p.id === turn?.activePlayerId)?.name || t.common.roles.holder.singular;
 
   const handleFoul = async () => {
     if (submitting) return;
@@ -27,12 +24,9 @@ export const OpponentRefereeView: React.FC = () => {
   return (
     <PlayLayout
       banner={
-        <>
-          <span className="inline-block px-4 py-1.5 rounded-full text-sm font-black uppercase tracking-wide bg-sky-500/10 text-sky-300 border border-sky-500/30">
-            {t.game.saboteurs.roleBadge}
-          </span>
-          <p className="text-sm text-slate-400">{t.game.saboteurs.clueGiver(activePlayerName)}</p>
-        </>
+        <span className="inline-block px-4 py-1.5 rounded-full text-sm font-black uppercase tracking-wide bg-sky-500/10 text-sky-300 border border-sky-500/30">
+          {t.game.saboteurs.roleBadge}
+        </span>
       }
       footer={
         <>
