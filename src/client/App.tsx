@@ -15,6 +15,7 @@ import {RoundOverView} from './components/views/RoundOverView.js';
 import {SpectatorView} from './components/views/SpectatorView.js';
 import {AdminDeckEditor} from './components/admin/AdminDeckEditor.js';
 import {NoticeStack} from './components/NoticeStack.js';
+import {LocalSoundTest} from './components/LocalSoundTest.js';
 
 const GameContent: React.FC = () => {
   const {
@@ -92,6 +93,7 @@ const GameContent: React.FC = () => {
       {game && <NoticeStack />}
 
       {showAdmin && <AdminDeckEditor onClose={() => setShowAdmin(false)} />}
+      <LocalSoundTest />
     </div>
   );
 };

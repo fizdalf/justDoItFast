@@ -119,12 +119,11 @@ export class TimerEngine {
 
   calculateTickIntervalMs(elapsedMs: number, targetDurationMs: number): number {
     const progress = Math.min(1, Math.max(0, elapsedMs / targetDurationMs));
-    const baseInterval = 1000;
-    const minInterval = 150;
-    const k = 1.9;
-
-    const calculated = baseInterval * Math.exp(-k * progress);
-    return Math.max(minInterval, Math.round(calculated));
+    // Keep the pacing in broad stages so the tick gives urgency without
+    // continuously revealing how much fuse time remains.
+    if (progress < 1 / 3) return 1500;
+    if (progress < 2 / 3) return 750;
+    return 400;
   }
 
   private generateTargetDuration(): void {

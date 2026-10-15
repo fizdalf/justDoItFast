@@ -3,7 +3,13 @@ import {ClientError, JoinedRoom, socketService, SocketStatus} from '../services/
 import {clearSession, saveSession, sessionForCurrentUrl, setRoomUrl} from '../services/roomSession.js';
 import {audioService} from '../services/audioService.js';
 import {hapticService} from '../services/hapticService.js';
-import {ApiResponse, RoomSnapshot, TimerExplodedPayload, TimerTickPayload, UpdateSetupPayload} from '../../server/protocol.js';
+import {
+  ApiResponse,
+  RoomSnapshot,
+  TimerExplodedPayload,
+  TimerTickPayload,
+  UpdateSetupPayload
+} from '../../server/protocol.js';
 import {
   DisputeResolution,
   DisputeState,
@@ -221,9 +227,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       socketService.onTimerTick((tick) => {
         setLastTick(tick);
         if (playerId && tick.activePlayerId === playerId) {
-          const interval = tick.intervalMs || 1000;
-          const urgencyHz = 700 + Math.max(0, Math.floor((1000 - interval) * 1.5));
-          audioService.playTick(urgencyHz, 50);
+          audioService.playTick();
           hapticService.vibrateTick(45);
         }
       }),
