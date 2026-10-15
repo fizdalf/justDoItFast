@@ -15,6 +15,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAdmin }) => {
   const [isMuted, setIsMuted] = useState(audioService.getIsMuted());
   const [copied, setCopied] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const labels = t.common.header;
 
   const toggleMute = () => {
@@ -120,6 +121,17 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAdmin }) => {
               <span>{isMuted ? '🔇' : '🔊'}</span>
             </button>
 
+            <button
+              role="menuitem"
+              onClick={() => {
+                setMenuOpen(false);
+                setHelpOpen(true);
+              }}
+              className={`${menuItem} border-t border-slate-800`}
+            >
+              <span>{t.common.help.menuItem}</span>
+            </button>
+
             {onOpenAdmin && !room && (
               <button
                 role="menuitem"
@@ -152,6 +164,34 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAdmin }) => {
             )}
           </div>
         </>
+      )}
+
+      {helpOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="help-title"
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-end sm:items-center justify-center sm:p-4 animate-fadeIn"
+          onClick={() => setHelpOpen(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-slate-900 border border-slate-700 rounded-t-3xl sm:rounded-3xl p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] max-w-md w-full max-h-[85dvh] overflow-y-auto space-y-4"
+          >
+            <h2 id="help-title" className="text-xl font-black text-amber-400">{t.common.help.title}</h2>
+            <ul className="space-y-3">
+              {t.common.help.rules.map((rule) => (
+                <li key={rule} className="text-base text-slate-200 leading-snug">{rule}</li>
+              ))}
+            </ul>
+            <button
+              onClick={() => setHelpOpen(false)}
+              className="w-full min-h-[48px] bg-slate-800 active:bg-slate-700 border border-slate-700 rounded-xl text-sm font-bold text-slate-200"
+            >
+              {t.common.close}
+            </button>
+          </div>
+        </div>
       )}
     </header>
   );

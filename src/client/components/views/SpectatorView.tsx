@@ -25,7 +25,6 @@ export const SpectatorView: React.FC = () => {
         </div>
         <h2 className="text-lg font-black text-amber-400 uppercase tracking-wide">{labels.title}</h2>
         <p className="text-sm text-slate-300">{labels.body}</p>
-        <p className="text-xs text-slate-500 italic">{labels.hint}</p>
       </div>
 
       {game.status === 'GAME_OVER' ? (

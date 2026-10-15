@@ -47,7 +47,7 @@ test('a whole game on phones: room, roles, foul, rounds, podium and back to the 
   const helpers = [];
   for (const p of players) if (p !== holder && !(await p.getByRole('button', { name: FOUL }).count())) helpers.push(p);
   expect(helpers).toHaveLength(1);
-  await expect(helpers[0].getByText(/ADIVINA EN VOZ ALTA/)).toBeVisible();
+  await expect(helpers[0].getByText(/^¡ADIVINA!$/)).toBeVisible();
   await snapshot(helpers[0], testInfo, 'helper');
 
   // El cable solo lo ven artificiero y saboteadores

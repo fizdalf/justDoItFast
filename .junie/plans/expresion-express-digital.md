@@ -50,6 +50,7 @@ El sistema digital conserva la emoción física de la "patata caliente" y el ace
   - Objetivos táctiles de al menos 44 px; ventanas modales como hojas que suben desde abajo; respetar las zonas seguras (`env(safe-area-inset-*)`) y usar `dvh`.
   - Durante la partida, marcador compacto en una línea; el tablero completo solo entre rondas.
   - Verificación visual con capturas en viewport móvil (390×844 y 375×667) de todo el flujo.
+- **Poca información en pantalla** (decidido; feedback de una jugadora con TDAH, vale para todos en un juego con prisa): cada pantalla de juego muestra solo **qué eres, lo grande (cable o «¡ADIVINA!») y un botón**. Nada de frases explicativas ni reglas durante la partida: las reglas están en «❓ Cómo se juega» del menú. Las herramientas solo aparecen cuando se pueden usar.
 - **Resiliencia ante reconexiones**: Si un jugador pierde conexión brevemente, el servidor preserva su estado y sincroniza la vista al reconectar.
 - **Imparcialidad garantizada**: El tiempo de detonación se calcula y almacena exclusivamente en memoria del servidor, evitando cualquier lectura o manipulación por parte del cliente.
 

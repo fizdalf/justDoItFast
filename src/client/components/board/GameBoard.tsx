@@ -31,8 +31,8 @@ export const GameBoard: React.FC<{ compact?: boolean }> = ({ compact = false }) 
     // Devolver al remitente invierte el sentido de los pases
     const reversed = game.currentTurn?.direction === -1;
     return (
-      <div className="w-full flex items-center justify-between gap-2 bg-slate-900/90 border border-slate-800 rounded-xl px-3 py-2">
-        <TeamScore team="A" name={t.common.teams.A} score={scores.A ?? 0} />
+      <div className="w-full flex items-center justify-between gap-2 px-2 py-1">
+        <TeamScore team="A" name={t.common.teams.A} score={scores.A ?? 0} hideName />
         <span className="flex flex-col items-center leading-tight">
           <span className="text-[11px] font-mono font-bold uppercase text-slate-400 whitespace-nowrap">
             {t.game.board.goal(targetScore)}
@@ -41,7 +41,7 @@ export const GameBoard: React.FC<{ compact?: boolean }> = ({ compact = false }) 
             <span className="text-[10px] font-bold text-purple-300 whitespace-nowrap">↺ {t.game.turn.reversed}</span>
           )}
         </span>
-        <TeamScore team="B" name={t.common.teams.B} score={scores.B ?? 0} alignRight />
+        <TeamScore team="B" name={t.common.teams.B} score={scores.B ?? 0} alignRight hideName />
       </div>
     );
   }
@@ -70,16 +70,18 @@ export const GameBoard: React.FC<{ compact?: boolean }> = ({ compact = false }) 
   );
 };
 
-const TeamScore: React.FC<{ team: TeamId; name: string; score: number; large?: boolean; alignRight?: boolean }> = ({
-  team,
-  name,
-  score,
-  large,
-  alignRight,
-}) => (
+const TeamScore: React.FC<{
+  team: TeamId;
+  name: string;
+  score: number;
+  large?: boolean;
+  alignRight?: boolean;
+  /** Solo el punto de color (el nombre queda para lectores de pantalla). */
+  hideName?: boolean;
+}> = ({ team, name, score, large, alignRight, hideName }) => (
   <div className={`flex items-center gap-1.5 min-w-0 ${alignRight ? 'flex-row-reverse text-right' : ''}`}>
     <span className={`w-2.5 h-2.5 shrink-0 rounded-full ${TEAM_STYLE[team].dot}`} />
-    <span className={`truncate text-xs font-bold ${TEAM_STYLE[team].text}`}>{name}</span>
+    <span className={hideName ? 'sr-only' : `truncate text-xs font-bold ${TEAM_STYLE[team].text}`}>{name}</span>
     <span className={`font-black text-white tabular-nums ${large ? 'text-2xl' : 'text-lg'}`}>{score}</span>
   </div>
 );

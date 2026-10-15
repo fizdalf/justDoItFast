@@ -74,7 +74,6 @@ describe('RoundOverView', () => {
     expect(screen.getByText('Alice')).toBeDefined();
     expect(screen.getByText('Patata')).toBeDefined();
     expect(screen.getByText(/\+1 punto para el Equipo Azul/)).toBeDefined();
-    expect(screen.getByText(/Tu equipo avanza/)).toBeDefined();
   });
 
   it('lets only the host start the next round', () => {

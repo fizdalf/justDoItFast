@@ -77,6 +77,18 @@ export const common = {
     roomCode: 'Código de sala',
   },
 
+  help: {
+    menuItem: '❓ Cómo se juega',
+    title: 'Cómo se juega',
+    rules: [
+      '💣 Si tienes la bomba, haz que tu equipo adivine la palabra: vale todo (palabras, mímica, sonidos…).',
+      '✂️ Cuando la acierten, pulsa «¡Cable cortado!» y la bomba pasa al otro equipo.',
+      '💥 La bomba explota cuando quiere. Si explota en tu mano, punto para el rival.',
+      '🚨 ¿Una pista se pasa (como «lugar donde hay perros» para «perrera»)? El rival mantiene pulsado «¡Falta!» y lo decidís entre todos.',
+      '🧰 Acertar rápido da herramientas. Aparecen cuando las puedes usar: mantén pulsado para usarlas.',
+    ],
+  },
+
   you: '(Tú)',
   hostBadge: 'Anfitrión',
   back: 'Volver',

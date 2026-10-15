@@ -144,7 +144,6 @@ describe('Tool notices', () => {
 
     const title = notices.activated('Beto', es.common.teams.B, es.common.powerUps.REWIRE.name);
     expect(screen.getByText(title)).toBeDefined();
-    expect(screen.getByText(notices.effects.REWIRE)).toBeDefined();
 
     fireEvent.click(screen.getByText(title));
     expect(screen.queryByText(title)).toBeNull();
@@ -155,6 +154,5 @@ describe('Tool notices', () => {
     emit('onPowerUpAwarded', { powerUp: { id: 'p', type: 'FREEZE' }, source: 'FAST_GUESS' });
 
     expect(screen.getByText(notices.awarded(es.common.powerUps.FREEZE.name))).toBeDefined();
-    expect(screen.getByText(notices.awardedSource.FAST_GUESS)).toBeDefined();
   });
 });

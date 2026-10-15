@@ -78,59 +78,53 @@ function setContext(me: string, currentTurn: TurnState, extra: Partial<GameState
 const toolButton = (type: PowerUpType) =>
   screen.getByRole('button', { name: new RegExp(es.common.powerUps[type].name) }) as HTMLButtonElement;
 
-const hints = es.game.tools.usageHints;
+const shown = (type: PowerUpType) =>
+  screen.queryByRole('button', { name: new RegExp(es.common.powerUps[type].name) }) !== null;
 
 describe('ToolsBar', () => {
   afterEach(cleanup);
 
-  it('the holder can use defensive and team tools, not the offensive ones', () => {
+  it('the holder only sees defensive and team tools', () => {
     setContext('a1', turn());
     render(<ToolsBar />);
 
-    expect(toolButton('REVERSE').disabled).toBe(false);
-    expect(toolButton('SKIP').disabled).toBe(false);
-    expect(toolButton('XRAY').disabled).toBe(false);
-    expect(toolButton('REWIRE').disabled).toBe(false);
-    expect(toolButton('FREEZE').disabled).toBe(true);
-    expect(toolButton('DOUBLE_BURDEN').disabled).toBe(true);
-    expect(toolButton('FREEZE').textContent).toContain(hints.RIVALS);
+    expect(shown('REVERSE')).toBe(true);
+    expect(shown('SKIP')).toBe(true);
+    expect(shown('XRAY')).toBe(true);
+    expect(shown('REWIRE')).toBe(true);
+    expect(shown('FREEZE')).toBe(false);
+    expect(shown('DOUBLE_BURDEN')).toBe(false);
   });
 
-  it('helpers can only use team tools', () => {
+  it('helpers only see team tools', () => {
     setContext('a2', turn());
     render(<ToolsBar />);
 
-    expect(toolButton('REVERSE').disabled).toBe(true);
-    expect(toolButton('REVERSE').textContent).toContain(hints.HOLDER);
-    expect(toolButton('FREEZE').disabled).toBe(true);
-    expect(toolButton('XRAY').disabled).toBe(false);
+    expect(shown('REVERSE')).toBe(false);
+    expect(shown('FREEZE')).toBe(false);
+    expect(shown('XRAY')).toBe(true);
   });
 
-  it('saboteurs can use offensive and team tools', () => {
+  it('saboteurs see offensive and team tools', () => {
     setContext('b1', turn());
     render(<ToolsBar />);
 
-    expect(toolButton('FREEZE').disabled).toBe(false);
-    expect(toolButton('DOUBLE_BURDEN').disabled).toBe(false);
-    expect(toolButton('REWIRE').disabled).toBe(false);
-    expect(toolButton('SKIP').disabled).toBe(true);
+    expect(shown('FREEZE')).toBe(true);
+    expect(shown('DOUBLE_BURDEN')).toBe(true);
+    expect(shown('REWIRE')).toBe(true);
+    expect(shown('SKIP')).toBe(false);
   });
 
-  it('shows the bomb suit as a passive badge, not a button', () => {
+  it('never shows the passive bomb suit', () => {
     setContext('a1', turn());
     render(<ToolsBar />);
-
-    expect(screen.queryByRole('button', { name: new RegExp(es.common.powerUps.SHIELD.name) })).toBeNull();
-    expect(screen.getByText(es.common.powerUps.SHIELD.name)).toBeDefined();
-    expect(screen.getByText(hints.PASSIVE)).toBeDefined();
+    expect(screen.queryByText(es.common.powerUps.SHIELD.name)).toBeNull();
   });
 
-  it('disables every tool while the round is paused', () => {
+  it('shows nothing while the round is paused', () => {
     setContext('b1', turn(), { status: 'DISPUTE_PAUSED' });
-    render(<ToolsBar />);
-
-    expect(toolButton('FREEZE').disabled).toBe(true);
-    expect(toolButton('FREEZE').textContent).toContain(es.game.tools.notPlaying);
+    const { container } = render(<ToolsBar />);
+    expect(container.textContent).toBe('');
   });
 
   it('renders nothing when the team has no tools', () => {
@@ -156,14 +150,13 @@ describe('Using a tool', () => {
     expect(mockGame.usePowerUp).toHaveBeenCalledWith('t-FREEZE');
   });
 
-  it('a tap that is not held does nothing, and disabled tools ignore holds', async () => {
+  it('a tap that is not held does nothing', async () => {
     setContext('b1', turn());
     render(<ToolsBar />);
 
     fireEvent.pointerDown(toolButton('FREEZE'));
     act(() => vi.advanceTimersByTime(200));
     fireEvent.pointerUp(toolButton('FREEZE'));
-    fireEvent.pointerDown(toolButton('SKIP'));
     await act(async () => vi.advanceTimersByTime(1000));
     expect(mockGame.usePowerUp).not.toHaveBeenCalled();
   });

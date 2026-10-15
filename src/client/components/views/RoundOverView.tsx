@@ -4,7 +4,7 @@ import {useGame} from '../../context/GameContext.js';
 import {Player} from '../../../core/types.js';
 
 export const RoundOverView: React.FC = () => {
-  const { game, players, myPlayer, hostPlayer, isHost, isSpectator, startRound } = useGame();
+  const { game, players, hostPlayer, isHost, startRound } = useGame();
   const { t } = useI18n();
   const [starting, setStarting] = useState(false);
 
@@ -13,7 +13,6 @@ export const RoundOverView: React.FC = () => {
   const result = game.lastRoundResult;
   const winningTeam = result?.winningTeam;
   const isTeamAWinner = winningTeam === 'A';
-  const didMyTeamScore = !!myPlayer && myPlayer.team === winningTeam;
   const explodedPlayer = players.find((p: Player) => p.id === result?.explodedPlayerId);
 
   const handleNextRound = async () => {
@@ -34,7 +33,6 @@ export const RoundOverView: React.FC = () => {
         <h2 className="text-3xl font-black text-amber-400 uppercase tracking-tight">
           {result?.reason === 'DISPUTE' ? t.game.roundOver.titleDispute : t.game.roundOver.titleExplosion}
         </h2>
-        <p className="text-sm text-slate-400">{t.game.roundOver.roundEnded(game.roundNumber)}</p>
       </div>
 
       {/* Round Details Card */}
@@ -49,11 +47,7 @@ export const RoundOverView: React.FC = () => {
                 )
               )}
             </div>
-          ) : (
-            <div className="text-sm text-slate-300">
-              {t.game.roundOver.disputeResolved}
-            </div>
-          )}
+          ) : null}
 
           <div className={`text-lg font-bold px-5 py-2 rounded-full inline-block border shadow-lg ${
             isTeamAWinner
@@ -63,11 +57,6 @@ export const RoundOverView: React.FC = () => {
             {isTeamAWinner ? '🔴' : '🔵'} {t.game.roundOver.pointFor(t.common.teams[winningTeam ?? 'A'])}
           </div>
 
-          {myPlayer && !isSpectator && (
-            <div className={`text-xs font-bold uppercase tracking-wider ${didMyTeamScore ? 'text-emerald-400' : 'text-slate-500'}`}>
-              {didMyTeamScore ? t.game.roundOver.myTeamScored : t.game.roundOver.myTeamDidNotScore}
-            </div>
-          )}
         </div>
       )}
 

@@ -72,6 +72,18 @@ export const common: CommonMessages = {
     roomCode: 'Room code',
   },
 
+  help: {
+    menuItem: '❓ How to play',
+    title: 'How to play',
+    rules: [
+      '💣 If you have the bomb, get your team to guess the word: anything goes (words, mime, sounds…).',
+      '✂️ When they get it, press «Wire cut!» and the bomb goes to the other team.',
+      '💥 The bomb goes off whenever it wants. If it blows up in your hands, the other team scores.',
+      '🚨 A clue goes too far (like «place full of dogs» for «doghouse»)? The rivals hold «Foul!» and you settle it together.',
+      '🧰 Fast guesses earn tools. They show up when you can use them: press and hold to use one.',
+    ],
+  },
+
   you: '(You)',
   hostBadge: 'Host',
   back: 'Back',

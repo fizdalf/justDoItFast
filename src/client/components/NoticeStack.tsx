@@ -35,7 +35,6 @@ function noticeText(
     case 'AWARDED':
       return {
         title: labels.awarded(t.common.powerUps[notice.powerUp.type].name),
-        detail: labels.awardedSource[notice.source],
         tone: 'tool',
       };
     case 'ACTIVATED':
@@ -45,7 +44,6 @@ function noticeText(
           t.common.teams[notice.team],
           t.common.powerUps[notice.type].name
         ),
-        detail: labels.effects[notice.type],
         tone: 'tool',
       };
     case 'DOUBLE_REVEALED': {

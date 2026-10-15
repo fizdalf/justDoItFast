@@ -32,9 +32,6 @@ export const HostDisputeModal: React.FC = () => {
           <h2 className="text-2xl font-black text-rose-400 uppercase tracking-wide">
             {t.game.dispute.title}
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
-            {t.game.dispute.subtitle}
-          </p>
         </div>
 
         {/* Dispute Details Box */}
@@ -86,9 +83,6 @@ export const HostDisputeModal: React.FC = () => {
             <div className="inline-block animate-spin text-2xl">⏳</div>
             <div className="text-sm font-semibold text-slate-300">
               {t.game.dispute.waiting(hostPlayer?.name || t.common.roles.host.singular)}
-            </div>
-            <div className="text-xs text-slate-500 italic">
-              {t.game.dispute.waitingHint}
             </div>
           </div>
         )}

@@ -43,7 +43,7 @@ describe('Client React Views & Components', () => {
       </GameProvider>
     );
 
-    expect(screen.getByText(/ROL: Saboteador/i)).toBeDefined();
+    expect(screen.getByText(/Saboteador/i)).toBeDefined();
     expect(screen.getByText(/^¡FALTA!$/i)).toBeDefined();
   });
 
@@ -54,8 +54,8 @@ describe('Client React Views & Components', () => {
       </GameProvider>
     );
 
-    expect(screen.getByText(/ROL: Ayudante/i)).toBeDefined();
-    expect(screen.getByText(/¡ADIVINA EN VOZ ALTA!/i)).toBeDefined();
+    expect(screen.getByText(/Ayudante/i)).toBeDefined();
+    expect(screen.getByText(/^¡ADIVINA!$/i)).toBeDefined();
   });
 
   it('GameOverView renders victory celebration and score cards', () => {
