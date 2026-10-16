@@ -1,7 +1,7 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {TimerEngine} from '../../src/core/TimerEngine.js';
 
-describe('Specification: Authoritative Server Timer & Exponential Acceleration', () => {
+describe('Specification: Authoritative Server Timer & Three-Stage Tick Pacing', () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -18,18 +18,17 @@ describe('Specification: Authoritative Server Timer & Exponential Acceleration',
     expect(duration).toBeLessThanOrEqual(65);
   });
 
-  it('GIVEN an active timer WHEN time progresses THEN tick interval decreases exponentially (accelerates)', () => {
+  it('GIVEN an active timer WHEN time progresses THEN tick interval changes in three broad stages', () => {
     const timer = new TimerEngine({ minDurationSec: 40, maxDurationSec: 40 }); // Fixed 40s for predictability
-    const tickIntervals: number[] = [];
 
     // Calculate tick intervals at 0s, 20s, and 35s into a 40s round
     const intervalAtStart = timer.calculateTickIntervalMs(0, 40000);
     const intervalAtMid = timer.calculateTickIntervalMs(20000, 40000);
     const intervalAtEnd = timer.calculateTickIntervalMs(35000, 40000);
 
-    expect(intervalAtStart).toBeGreaterThan(intervalAtMid);
-    expect(intervalAtMid).toBeGreaterThan(intervalAtEnd);
-    expect(intervalAtEnd).toBeLessThanOrEqual(250); // fast urgent tick
+    expect(intervalAtStart).toBe(1500);
+    expect(intervalAtMid).toBe(750);
+    expect(intervalAtEnd).toBe(400);
   });
 
   it('GIVEN a running timer WHEN paused THEN time stops accumulating and ticks cease', () => {

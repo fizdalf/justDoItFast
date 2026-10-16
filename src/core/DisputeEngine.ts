@@ -116,7 +116,11 @@ export class DisputeEngine {
               turnStartTime: Date.now(),
               requiredGuesses: 1,
               successfulGuesses: 0,
+              doubleRevealed: false,
               isFrozen: false,
+              freezeExpiresAt: undefined,
+              freezeRemainingMs: undefined,
+              rewardForfeited: false,
             }
           : undefined,
       };

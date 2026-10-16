@@ -355,6 +355,9 @@ export class Game {
     if (resolution === 'RESTART_ROUND') {
       const freshCard = this.sessionDeck.drawNextWord();
       this.gameState = this.disputeEngine.applyResolution(this.gameState, resolution, freshCard);
+      if (this.gameState.currentTurn) {
+        this.turnManager.replaceCurrentTurn(this.gameState.currentTurn);
+      }
       this.timerEngine.reset();
       this.timerEngine.start();
 

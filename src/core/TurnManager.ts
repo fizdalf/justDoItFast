@@ -58,6 +58,14 @@ export class TurnManager {
     return this.currentTurn;
   }
 
+  /** Replaces the active turn object after an external state transition. */
+  replaceCurrentTurn(turn: TurnState): void {
+    this.currentTurn = turn;
+    this.direction = turn.direction;
+    const seatIndex = this.players.findIndex((player) => player.id === turn.activePlayerId);
+    if (seatIndex >= 0) this.currentSeatIndex = seatIndex;
+  }
+
   recordGuessSuccess(actingPlayerId: string): GuessResult {
     if (!this.currentTurn || this.currentTurn.activePlayerId !== actingPlayerId) {
       throw new GameError('NOT_ACTIVE_PLAYER', `Only active player can submit a guess`);

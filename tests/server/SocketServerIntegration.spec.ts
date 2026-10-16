@@ -238,6 +238,21 @@ describe('Socket.io Real-Time Game Server Integration', () => {
     expect(gameOf(roomCode).scores).toEqual({ A: 0, B: 1 });
   });
 
+  it('keeps the active turn synchronized after a foul restarts the round', async () => {
+    const { host, p2, roomCode, hostRes, socketsById } = await setupFourPlayers();
+    await emitAsync(host, 'game:start');
+    expect(gameOf(roomCode).currentTurn!.activePlayerId).toBe(hostRes.player.id);
+
+    dataOf(await emitAsync(p2, 'turn:foul_triggered'));
+    const restarted = dataOf(await emitAsync<RoomSnapshot>(host, 'host:resolve_dispute', { resolution: 'RESTART_ROUND' }));
+    expect(restarted.game!.status).toBe('PLAYING');
+    expect(restarted.game!.currentTurn!.successfulGuesses).toBe(0);
+
+    const guess = dataOf(await emitAsync<{ passed: boolean }>(socketsById.get(hostRes.player.id)!, 'turn:guess_success'));
+    expect(guess.passed).toBe(true);
+    expect(gameOf(roomCode).currentTurn!.activeTeam).toBe('B');
+  });
+
   it('rewards a fast guess with a tool only the team knows about', async () => {
     const { host, p2, p3, roomCode } = await setupFourPlayers({ fastGuessThresholdSec: 10, enabledPowerUps: ['XRAY'] });
     await emitAsync(host, 'game:start');
